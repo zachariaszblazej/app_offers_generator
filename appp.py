@@ -8,8 +8,7 @@ import locale, os
 from tkcalendar import Calendar, DateEntry
 import sqlite3
 
-import Table
-
+DATABASE_PATH = '../FakeHantechServer/DocumentsCreationData.db'
 # db =sqltor.connect(host = 'localhost',
 #                    user = 'root' ,
 #                    passwd = 'admin')
@@ -110,15 +109,12 @@ label_BG.place(x=0, y=0)
 
 ## GÓRNA SEKCJA
 
-# label11=Label(window,text="Miejscowość",font="times 12")
-# label11.place(x=500,y=100)
 town = Entry(window, width=10)
 town.place(x=640,y=90)
 town.insert(0, "Wałbrzych")
 
 date_entry = DateEntry(window, width=15, date_pattern="dd MM yyyy", borderwidth=2)
 date_entry.place(x=740, y=90)
-# date_entry.insert(0, datetime.datetime.now().strftime("%d %B %Y"))
 
 
 address1_value = StringVar(window, value=textData['address_1'])
@@ -184,7 +180,7 @@ client_nip_entry.place(x=660,y=360)
 
 # Client search button
 search_client_button = Button(window, text="Szukaj klienta", command=lambda: open_client_search())
-search_client_button.place(x=880, y=270)
+search_client_button.place(x=900, y=360)
 
 
  
@@ -270,7 +266,7 @@ grandtotal.place(x=1150,y=985)
 def get_clients_from_db():
     """Fetch all clients from the database"""
     try:
-        conn = sqlite3.connect('DocumentsCreationData.db')
+        conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients ORDER BY CompanyName")
         clients = cursor.fetchall()
