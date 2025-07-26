@@ -6,7 +6,6 @@ This application has been refactored to improve code organization and maintainab
 
 ### Core Modules
 
-- **`launcher.py`** - Application launcher with startup screen
 - **`main.py`** - Main application with navigation menu and full functionality
 - **`navigation.py`** - Navigation system and menu components
 - **`ui_components.py`** - UI components and layout management
@@ -40,14 +39,8 @@ This application has been refactored to improve code organization and maintainab
 
 ## Running the Application
 
-### Recommended Way
-Run the launcher:
-```bash
-python launcher.py
-```
-
-### Direct Launch
-To run the main application directly:
+### Main Application
+Run the application directly:
 ```bash
 python main.py
 ```
@@ -71,11 +64,7 @@ python appp.py
 - Integration of all components
 - Multi-screen coordination
 - Complete offer generation functionality
-
-### `launcher.py`
-- Startup screen interface
-- Application launcher
-- Clean entry point for users
+- Direct entry point for users
 
 ### `navigation.py`
 - Navigation manager for frame switching
@@ -158,8 +147,7 @@ The new version includes a main menu with the following options:
 - **State Preservation** - Form data is preserved during navigation
 
 ### Interface Structure
-- **Launcher** (`launcher.py`) - Clean startup screen
-- **Main Application** (`main.py`) - Full featured application with navigation
+- **Main Application** (`main.py`) - Direct startup with menu and full functionality
 - **Legacy Files** - Previous versions kept for reference
 
 ## Future Enhancements

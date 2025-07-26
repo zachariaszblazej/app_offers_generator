@@ -7,12 +7,6 @@ System tworzenia ofert handlowych z pełną funkcjonalnością zarządzania klie
 ### Uruchomienie aplikacji
 
 ```bash
-python launcher.py
-```
-
-lub bezpośrednio:
-
-```bash
 python main.py
 ```
 
@@ -44,8 +38,7 @@ Po uruchomieniu aplikacji zobaczysz menu główne z opcjami:
 ## 📁 Struktura projektu
 
 ```
-├── launcher.py          # Launcher aplikacji
-├── main.py             # Główna aplikacja z nawigacją
+├── main.py             # Główna aplikacja z menu i nawigacją
 ├── navigation.py       # System nawigacji
 ├── ui_components.py    # Komponenty interfejsu
 ├── database.py         # Operacje bazodanowe
