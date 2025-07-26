@@ -114,3 +114,46 @@ def add_client_to_db(nip, company_name, address_p1, address_p2, alias):
         return True, "Klient został pomyślnie dodany do bazy"
     except sqlite3.Error as e:
         return False, f"Błąd podczas dodawania klienta: {e}"
+
+def validate_supplier_nip(nip):
+    """Validate NIP format and uniqueness for suppliers"""
+    # Check if NIP has exactly 10 digits
+    if not nip.isdigit() or len(nip) != 10:
+        return False, "NIP musi składać się z dokładnie 10 cyfr"
+    
+    # Check if NIP already exists in supplier database
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM Suppliers WHERE Nip = ?", (nip,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        if count > 0:
+            return False, "Dostawca z tym NIP już istnieje w bazie"
+        
+        return True, "NIP jest prawidłowy"
+    except sqlite3.Error as e:
+        return False, f"Błąd sprawdzania NIP: {e}"
+
+def add_supplier_to_db(nip, company_name, address_p1, address_p2):
+    """Add a new supplier to the database"""
+    try:
+        # Validate NIP
+        nip_valid, nip_message = validate_supplier_nip(nip)
+        if not nip_valid:
+            return False, nip_message
+        
+        # Insert supplier
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Suppliers (Nip, CompanyName, AddressP1, AddressP2) 
+            VALUES (?, ?, ?, ?)
+        """, (nip, company_name, address_p1, address_p2))
+        conn.commit()
+        conn.close()
+        
+        return True, "Dostawca został pomyślnie dodany do bazy"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas dodawania dostawcy: {e}"
