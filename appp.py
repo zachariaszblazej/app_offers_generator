@@ -9,30 +9,6 @@ from tkcalendar import Calendar, DateEntry
 import sqlite3
 
 DATABASE_PATH = '../FakeHantechServer/DocumentsCreationData.db'
-# db =sqltor.connect(host = 'localhost',
-#                    user = 'root' ,
-#                    passwd = 'admin')
-
-# cursor = db.cursor()
-# cursor.execute("CREATE DATABASE IF NOT EXISTS BILLING_SOFT")
-# cursor.execute('''USE BILLING_SOFT;
-#                 CREATE TABLE IF NOT EXISTS INVOICE (invoice_number int primary key ,
-#                 customer_name varchar(30),
-#                 customer_id varchar(10),
-#                 date date ,
-#                 amount float(9,2))''')
-
-#INSERTING DATA INTO DB
-# def Save():
-#     db =sqltor.connect(host = 'localhost',
-#                    user = 'root' ,
-#                    passwd = 'admin',
-#                    database = 'BILLING_SOFT')
-#     cursor = db.cursor()
-#     cursor.execute('''INSERT INTO INVOICE VALUES
-#               (%s,'%s','%s','%s','%s')'''%(invoice_number.get(),customer_name.get(),customer_id.get(),date_entry.get(),grandtotal.get()))
-#     db.commit()
-#     db.close()
     
 #TO ADD TOTAL COST        
 def Calc():
@@ -392,6 +368,4 @@ Save_Button.grid(row = 2, column = 3)
 Generate_Offer_Button = Button(window, text="Twórz ofertę", command = GenerateOffer)
 Generate_Offer_Button.place(x=700, y=800)
 
-
-#db.close()
 window.mainloop()
