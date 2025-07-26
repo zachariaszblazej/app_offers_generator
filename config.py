@@ -27,6 +27,10 @@ BACKGROUND_IMAGE = 'background_offer_1.png'
 WINDOW_SIZE = "1600x1200"
 TAX_RATE = 0.18  # 18% VAT
 
+# Application Info
+APP_VERSION = "2.0"
+APP_TITLE = "Generator Ofert - System tworzenia ofert"
+
 # Table columns configuration
 TABLE_COLUMNS = ('PID', 'PNAME', 'QTY', 'U_PRICE', 'TOTAL')
 TABLE_COLUMN_HEADERS = {

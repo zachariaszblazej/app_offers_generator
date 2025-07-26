@@ -6,12 +6,18 @@ This application has been refactored to improve code organization and maintainab
 
 ### Core Modules
 
-- **`main.py`** - Main application entry point and application logic
+- **`launcher.py`** - Application launcher with startup screen
+- **`main.py`** - Main application with navigation menu and full functionality
+- **`navigation.py`** - Navigation system and menu components
 - **`ui_components.py`** - UI components and layout management
 - **`database.py`** - Database operations and client management
 - **`offer_generator.py`** - Document generation functionality
 - **`table_manager.py`** - Product table management
 - **`config.py`** - Configuration constants and settings
+
+### Legacy Files (For Reference)
+- **`main_old.py`** - Previous refactored version (direct offer creation)
+- **`appp.py`** - Original monolithic file
 
 ### Original Files
 - **`appp.py`** - Original monolithic file (kept for reference)
@@ -29,17 +35,30 @@ This application has been refactored to improve code organization and maintainab
 6. **Database Integration**: Both client and supplier search with auto-fill functionality
 7. **Automatic Offer Numbering**: Auto-generation of sequential offer numbers with proper file naming
 8. **Offer Tracking**: Database storage of offer information and file paths
+9. **Navigation System**: Multi-screen interface with main menu and navigation
+10. **Unified Interface**: Single, modern interface with all features integrated
 
 ## Running the Application
 
-To run the refactored application:
+### Recommended Way
+Run the launcher:
+```bash
+python launcher.py
+```
 
+### Direct Launch
+To run the main application directly:
 ```bash
 python main.py
 ```
 
-To run the original application:
+### Legacy Versions (For Reference)
+To run the old refactored version:
+```bash
+python main_old.py
+```
 
+To run the original monolithic version:
 ```bash
 python appp.py
 ```
@@ -47,10 +66,23 @@ python appp.py
 ## Module Responsibilities
 
 ### `main.py`
-- Application initialization
-- Main window setup
-- Event handling coordination
-- Application lifecycle management
+- Main application with navigation menu
+- Frame management and initialization
+- Integration of all components
+- Multi-screen coordination
+- Complete offer generation functionality
+
+### `launcher.py`
+- Startup screen interface
+- Application launcher
+- Clean entry point for users
+
+### `navigation.py`
+- Navigation manager for frame switching
+- Main menu interface
+- Offer creation frame wrapper
+- Back button functionality
+- Screen transition management
 
 ### `ui_components.py`
 - Form layout and widget creation
@@ -109,6 +141,26 @@ The application now supports automatic generation of offer numbers with the foll
 - Generated offer number: `219/OF/2025/AFD3D`
 - File saved as: `219_OF_2025_AFD3D.docx`
 - Database entry: OfferOrderNumber=219, OfferFilePath=../FakeHantechServer/Oferty/219_OF_2025_AFD3D.docx
+
+## Navigation System
+
+### Main Menu
+The new version includes a main menu with the following options:
+- **Stwórz nową ofertę** - Navigate to offer creation interface
+- **Przeglądaj oferty** - (Future feature) Browse existing offers
+- **Ustawienia** - (Future feature) Application settings
+- **Zamknij aplikację** - Exit the application
+
+### Navigation Features
+- **Back Button** - Return to main menu from any screen
+- **Modal Windows** - Client and supplier search windows
+- **Frame Management** - Smooth transitions between different screens
+- **State Preservation** - Form data is preserved during navigation
+
+### Interface Structure
+- **Launcher** (`launcher.py`) - Clean startup screen
+- **Main Application** (`main.py`) - Full featured application with navigation
+- **Legacy Files** - Previous versions kept for reference
 
 ## Future Enhancements
 

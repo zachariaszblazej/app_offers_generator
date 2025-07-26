@@ -1,14 +1,13 @@
 from tkinter import *
 from tkinter import ttk
 import locale
-from navigation import NavigationManager, MainMenuFrame, OfferCreationFrame
 from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow
 from offer_generator import generate_offer_document, convert_date
-from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
+from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE
 from table_manager import ProductTable
 
-class OfferGeneratorMainApp:
-    """Main application class with navigation support"""
+class OfferGeneratorApp:
+    """Main application class for the Offer Generator"""
     
     def __init__(self):
         # Set locale
@@ -16,65 +15,13 @@ class OfferGeneratorMainApp:
         
         # Create main window
         self.window = Tk()
-        self.window.title(APP_TITLE)
         self.window.geometry(WINDOW_SIZE)
         
-        # Initialize navigation manager
-        self.nav_manager = NavigationManager(self.window)
-        
-        # Create frames
-        self.setup_frames()
-        
-        # Start with main menu
-        self.nav_manager.show_frame('main_menu')
-        
-        # Initialize offer creation components (but don't show them yet)
-        self.setup_offer_components()
-    
-    def setup_frames(self):
-        """Setup navigation frames"""
-        # Main menu frame
-        self.nav_manager.add_frame('main_menu', MainMenuFrame)
-        
-        # Offer creation frame
-        self.nav_manager.add_frame('offer_creation', OfferCreationFrame, OfferGeneratorApp)
-    
-    def setup_offer_components(self):
-        """Setup offer creation components"""
-        # These will be initialized when needed
-        self.offer_components_initialized = False
-    
-    def run(self):
-        """Start the application"""
-        self.window.mainloop()
-
-class OfferGeneratorApp:
-    """Original offer generator app, now embedded within a frame"""
-    
-    def __init__(self, parent_frame, nav_manager):
-        self.parent_frame = parent_frame
-        self.nav_manager = nav_manager
-        # Use content_container instead of offer_container
-        self.window = parent_frame.content_container
-        
-        # Initialize components
-        self.setup_ui()
-        
-        # Initialize calculation variables
-        self.count = 0
-    
-    def setup_ui(self):
-        """Setup all UI components within the parent frame"""
         # Set background
-        try:
-            bg = PhotoImage(file=BACKGROUND_IMAGE)
-            label_BG = Label(self.window, image=bg)
-            label_BG.place(x=0, y=0)
-            label_BG.image = bg  # Keep a reference
-        except Exception as e:
-            print(f"Could not load background image: {e}")
-            # If background image fails, use a solid color
-            self.window.configure(bg='#f5f5f5')
+        bg = PhotoImage(file=BACKGROUND_IMAGE)
+        label_BG = Label(self.window, image=bg)
+        label_BG.place(x=0, y=0)
+        label_BG.image = bg  # Keep a reference
         
         # Initialize UI components
         self.ui = UIComponents(self.window)
@@ -83,6 +30,13 @@ class OfferGeneratorApp:
         self.product_table = ProductTable(self.window)
         
         # Create UI sections
+        self.setup_ui()
+        
+        # Initialize calculation variables
+        self.count = 0
+        
+    def setup_ui(self):
+        """Setup all UI components"""
         self.ui.create_upper_section()
         self.ui.create_offer_section()
         input_frame = self.ui.create_product_input_section()
@@ -158,10 +112,14 @@ class OfferGeneratorApp:
         
         # Generate document
         generate_offer_document(context_data)
+    
+    def run(self):
+        """Start the application"""
+        self.window.mainloop()
 
 def main():
-    """Main entry point with navigation"""
-    app = OfferGeneratorMainApp()
+    """Main entry point"""
+    app = OfferGeneratorApp()
     app.run()
 
 if __name__ == "__main__":
