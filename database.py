@@ -56,3 +56,61 @@ def save_offer_to_db(offer_order_number, offer_file_path):
     except sqlite3.Error as e:
         tkinter.messagebox.showerror("Database Error", f"Error saving offer to database: {e}")
         return False
+
+def validate_nip(nip):
+    """Validate NIP format and uniqueness"""
+    # Check if NIP has exactly 10 digits
+    if not nip.isdigit() or len(nip) != 10:
+        return False, "NIP musi składać się z dokładnie 10 cyfr"
+    
+    # Check if NIP already exists in database
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM Clients WHERE Nip = ?", (nip,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        if count > 0:
+            return False, "Klient z tym NIP już istnieje w bazie"
+        
+        return True, "NIP jest prawidłowy"
+    except sqlite3.Error as e:
+        return False, f"Błąd sprawdzania NIP: {e}"
+
+def validate_alias(alias):
+    """Validate alias format"""
+    if "_" in alias:
+        return False, "Alias nie może zawierać znaku '_'"
+    
+    if not alias.strip():
+        return False, "Alias nie może być pusty"
+    
+    return True, "Alias jest prawidłowy"
+
+def add_client_to_db(nip, company_name, address_p1, address_p2, alias):
+    """Add a new client to the database"""
+    try:
+        # Validate NIP
+        nip_valid, nip_message = validate_nip(nip)
+        if not nip_valid:
+            return False, nip_message
+        
+        # Validate alias
+        alias_valid, alias_message = validate_alias(alias)
+        if not alias_valid:
+            return False, alias_message
+        
+        # Insert client
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Clients (Nip, CompanyName, AddressP1, AddressP2, Alias) 
+            VALUES (?, ?, ?, ?, ?)
+        """, (nip, company_name, address_p1, address_p2, alias))
+        conn.commit()
+        conn.close()
+        
+        return True, "Klient został pomyślnie dodany do bazy"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas dodawania klienta: {e}"
