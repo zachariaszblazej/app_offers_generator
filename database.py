@@ -14,3 +14,16 @@ def get_clients_from_db():
     except sqlite3.Error as e:
         tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
         return []
+
+def get_suppliers_from_db():
+    """Fetch all suppliers from the database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers ORDER BY CompanyName")
+        suppliers = cursor.fetchall()
+        conn.close()
+        return suppliers
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return []

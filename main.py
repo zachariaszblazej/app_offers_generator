@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 import locale
-from ui_components import UIComponents, ClientSearchWindow
+from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow
 from offer_generator import generate_offer_document, convert_date
 from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE
 from table_manager import ProductTable
@@ -26,6 +26,7 @@ class OfferGeneratorApp:
         # Initialize UI components
         self.ui = UIComponents(self.window)
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
+        self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         self.product_table = ProductTable(self.window)
         
         # Create UI sections
@@ -56,6 +57,11 @@ class OfferGeneratorApp:
         search_client_button = Button(self.window, text="Szukaj klienta", 
                                     command=self.client_search.open_client_search)
         search_client_button.place(x=900, y=360)
+        
+        # Supplier search button
+        search_supplier_button = Button(self.window, text="Szukaj dostawcę", 
+                                      command=self.supplier_search.open_supplier_search)
+        search_supplier_button.place(x=300, y=360)
         
         # Generate offer button
         generate_offer_button = Button(self.window, text="Twórz ofertę", 

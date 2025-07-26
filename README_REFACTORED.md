@@ -26,6 +26,7 @@ This application has been refactored to improve code organization and maintainab
 3. **Better Organization**: UI, database, and business logic are separated
 4. **Maintainability**: Easier to modify and extend individual components
 5. **Reusability**: Components can be reused in other parts of the application
+6. **Database Integration**: Both client and supplier search with auto-fill functionality
 
 ## Running the Application
 
@@ -52,12 +53,15 @@ python appp.py
 ### `ui_components.py`
 - Form layout and widget creation
 - Client search window functionality
+- Supplier search window functionality
 - Data collection from UI elements
 - UI state management
+- Auto-fill functionality for both clients and suppliers
 
 ### `database.py`
 - SQLite database connections
 - Client data retrieval
+- Supplier data retrieval
 - Database error handling
 
 ### `offer_generator.py`
