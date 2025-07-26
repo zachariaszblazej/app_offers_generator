@@ -20,6 +20,7 @@ DEFAULT_COMPANY_DATA = {
 # File paths
 TEMPLATE_PATH = 'templates/offer_template.docx'
 OUTPUT_FOLDER = 'generated_docs'
+OFFERS_FOLDER = '../FakeHantechServer/Oferty'
 BACKGROUND_IMAGE = 'background_offer_1.png'
 
 # UI Configuration

@@ -107,8 +107,8 @@ class OfferGeneratorApp:
         # Get form data
         context_data = self.ui.get_context_data()
         
-        # Convert date to proper format
-        context_data['date'] = convert_date(context_data['date'])
+        # Keep date as datetime object for offer generation
+        # The conversion to string will be handled in generate_offer_document
         
         # Generate document
         generate_offer_document(context_data)

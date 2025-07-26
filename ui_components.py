@@ -136,6 +136,7 @@ class UIComponents:
         self.window = window
         self.entries = {}
         self.text_data = DEFAULT_COMPANY_DATA
+        self.selected_client_alias = None  # Store selected client alias
     
     def create_upper_section(self):
         """Create the upper section of the form"""
@@ -261,6 +262,9 @@ class UIComponents:
         """Fill client entry fields with selected client data"""
         nip, company_name, address1, address2, alias = client_data
         
+        # Store the alias for offer number generation
+        self.selected_client_alias = alias
+        
         # Clear existing data
         self.entries['client_name'].delete(0, END)
         self.entries['client_address_1'].delete(0, END)
@@ -310,5 +314,6 @@ class UIComponents:
             'client_name': self.entries['client_name'].get(),
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
-            'client_nip': self.entries['client_nip'].get()
+            'client_nip': self.entries['client_nip'].get(),
+            'client_alias': self.selected_client_alias  # Add client alias
         }
