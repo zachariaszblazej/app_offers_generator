@@ -80,19 +80,9 @@ class MainMenuFrame(Frame):
                                 cursor='hand2')
         view_offers_btn.pack(pady=10)
         
-        # Add client button
-        add_client_btn = Button(buttons_frame, 
-                               text="Dodaj klienta",
-                               font=("Arial", 14),
-                               bg='#9C27B0', fg='white',
-                               padx=30, pady=10,
-                               command=self.add_client,
-                               cursor='hand2')
-        add_client_btn.pack(pady=10)
-        
-        # Browse clients button
+        # Browse clients button (now includes adding new clients)
         browse_clients_btn = Button(buttons_frame, 
-                                   text="Przeglądaj klientów",
+                                   text="Zarządzaj klientami",
                                    font=("Arial", 14),
                                    bg='#3F51B5', fg='white',
                                    padx=30, pady=10,
@@ -144,10 +134,6 @@ class MainMenuFrame(Frame):
         """Placeholder for viewing offers functionality"""
         import tkinter.messagebox
         tkinter.messagebox.showinfo("Informacja", "Funkcja przeglądania ofert będzie dostępna wkrótce!")
-    
-    def add_client(self):
-        """Navigate to add client screen"""
-        self.nav_manager.show_frame('add_client')
     
     def browse_clients(self):
         """Navigate to browse clients screen"""
@@ -546,28 +532,41 @@ class BrowseClientsFrame(Frame):
         header_frame.pack(fill=X, padx=20, pady=20)
         
         # Title
-        title_label = Label(header_frame, text="Przeglądaj klientów", 
+        title_label = Label(header_frame, text="Zarządzanie klientami", 
                            font=("Arial", 18, "bold"), 
                            bg='#f0f0f0', fg='#333333')
         title_label.pack(side=LEFT)
         
-        # Return button
-        return_btn = Button(header_frame, text="Powrót do menu głównego",
-                           font=("Arial", 12),
-                           bg='#6c757d', fg='white',
-                           padx=15, pady=8,
-                           command=self.return_to_main_menu,
-                           cursor='hand2')
-        return_btn.pack(side=RIGHT)
+        # Buttons on the right side of header
+        header_buttons_frame = Frame(header_frame, bg='#f0f0f0')
+        header_buttons_frame.pack(side=RIGHT)
+        
+        # Add new client button
+        add_client_btn = Button(header_buttons_frame, text="Dodaj nowego klienta",
+                               font=("Arial", 12),
+                               bg='#28a745', fg='white',
+                               padx=15, pady=8,
+                               command=self.show_add_client_form,
+                               cursor='hand2')
+        add_client_btn.pack(side=LEFT, padx=10)
         
         # Refresh button
-        refresh_btn = Button(header_frame, text="Odśwież",
+        refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
                             bg='#17a2b8', fg='white',
                             padx=15, pady=8,
                             command=self.refresh_clients_list,
                             cursor='hand2')
-        refresh_btn.pack(side=RIGHT, padx=10)
+        refresh_btn.pack(side=LEFT, padx=5)
+        
+        # Return button
+        return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
+                           font=("Arial", 12),
+                           bg='#6c757d', fg='white',
+                           padx=15, pady=8,
+                           command=self.return_to_main_menu,
+                           cursor='hand2')
+        return_btn.pack(side=LEFT, padx=5)
         
         # Main content frame
         content_frame = Frame(self, bg='#f0f0f0')
@@ -632,34 +631,45 @@ class BrowseClientsFrame(Frame):
                            cursor='hand2')
         delete_btn.pack(side=LEFT)
         
-        # Edit form frame
-        self.edit_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
-        self.edit_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+        # Form frame (for both editing and adding)
+        self.form_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
         
-        # Initially hide edit frame
-        self.edit_frame.pack_forget()
+        # Initially hide form frame
+        self.form_frame.pack_forget()
+        
+        # Track current mode
+        self.form_mode = None  # 'edit' or 'add'
         
         # Load clients
         self.refresh_clients_list()
     
-    def create_edit_form(self):
-        """Create the edit form"""
+    def show_add_client_form(self):
+        """Show form for adding a new client"""
+        self.form_mode = 'add'
+        self.current_editing_nip = None
+        self.create_client_form()
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+    
+    def create_client_form(self):
+        """Create form for adding or editing a client"""
         # Clear existing widgets
-        for widget in self.edit_frame.winfo_children():
+        for widget in self.form_frame.winfo_children():
             widget.destroy()
         
-        # Edit form title
-        edit_title = Label(self.edit_frame, text="Edytuj klienta", 
+        # Form title
+        title_text = "Dodaj nowego klienta" if self.form_mode == 'add' else "Edytuj klienta"
+        form_title = Label(self.form_frame, text=title_text, 
                           font=("Arial", 16, "bold"), 
                           bg='#f0f0f0', fg='#333333')
-        edit_title.pack(pady=20)
+        form_title.pack(pady=20)
         
         # Form fields
-        self.edit_entries = {}
-        self.edit_validation_labels = {}
+        self.form_entries = {}
+        self.form_validation_labels = {}
         
         fields = [
-            ('nip', 'NIP:', True),  # True means read-only
+            ('nip', 'NIP (10 cyfr):', self.form_mode == 'edit'),  # NIP read-only only when editing
             ('company_name', 'Nazwa firmy:', False),
             ('address_p1', 'Adres (linia 1):', False),
             ('address_p2', 'Adres (linia 2):', False),
@@ -668,47 +678,53 @@ class BrowseClientsFrame(Frame):
         
         for field_name, label_text, is_readonly in fields:
             # Label
-            label = Label(self.edit_frame, text=label_text, 
+            label = Label(self.form_frame, text=label_text, 
                          font=("Arial", 12), bg='#f0f0f0')
             label.pack(anchor=W, padx=20, pady=(10, 0))
             
             # Entry
-            entry = Entry(self.edit_frame, font=("Arial", 12), width=30)
+            entry = Entry(self.form_frame, font=("Arial", 12), width=30)
             if is_readonly:
                 entry.config(state='readonly', bg='#e9ecef')
             entry.pack(anchor=W, padx=20, pady=(0, 5))
             
-            self.edit_entries[field_name] = entry
+            self.form_entries[field_name] = entry
             
-            # Validation label (only for alias)
-            if field_name == 'alias':
-                validation_label = Label(self.edit_frame, text="", 
-                                       font=("Arial", 10), bg='#f0f0f0')
-                validation_label.pack(anchor=W, padx=20)
-                self.edit_validation_labels[field_name] = validation_label
-                
-                # Bind validation
+            # Validation labels
+            validation_label = Label(self.form_frame, text="", 
+                                   font=("Arial", 10), bg='#f0f0f0')
+            validation_label.pack(anchor=W, padx=20)
+            self.form_validation_labels[field_name] = validation_label
+            
+            # Bind validation events
+            if field_name == 'nip' and not is_readonly:
+                entry.bind('<KeyRelease>', self.validate_nip_input)
+            elif field_name == 'alias':
                 entry.bind('<KeyRelease>', self.validate_alias_input)
         
         # Buttons frame
-        edit_buttons_frame = Frame(self.edit_frame, bg='#f0f0f0')
-        edit_buttons_frame.pack(pady=20)
+        form_buttons_frame = Frame(self.form_frame, bg='#f0f0f0')
+        form_buttons_frame.pack(pady=20)
         
-        save_btn = Button(edit_buttons_frame, text="Zapisz zmiany",
+        # Save button
+        save_text = "Zapisz klienta" if self.form_mode == 'add' else "Zapisz zmiany"
+        save_btn = Button(form_buttons_frame, text=save_text,
                          font=("Arial", 12, "bold"),
                          bg='#007bff', fg='white',
                          padx=20, pady=10,
-                         command=self.save_client_changes,
+                         command=self.save_client,
                          cursor='hand2')
         save_btn.pack(side=LEFT, padx=10)
         
-        cancel_btn = Button(edit_buttons_frame, text="Anuluj",
-                           font=("Arial", 12),
-                           bg='#6c757d', fg='white',
-                           padx=20, pady=10,
-                           command=self.cancel_edit,
-                           cursor='hand2')
-        cancel_btn.pack(side=LEFT, padx=10)
+        # Clear/Cancel button
+        clear_text = "Wyczyść formularz" if self.form_mode == 'add' else "Anuluj"
+        clear_btn = Button(form_buttons_frame, text=clear_text,
+                          font=("Arial", 12),
+                          bg='#6c757d', fg='white',
+                          padx=20, pady=10,
+                          command=self.clear_or_cancel_form,
+                          cursor='hand2')
+        clear_btn.pack(side=LEFT, padx=10)
     
     def refresh_clients_list(self):
         """Refresh the clients list"""
@@ -744,32 +760,33 @@ class BrowseClientsFrame(Frame):
         item = self.clients_tree.item(selection[0])
         values = item['values']
         
-        # Store current editing NIP
+        # Set form mode and current editing NIP
+        self.form_mode = 'edit'
         self.current_editing_nip = values[0]
         
-        # Create edit form
-        self.create_edit_form()
+        # Create form
+        self.create_client_form()
         
         # Fill form with current data
-        self.edit_entries['nip'].config(state='normal')
-        self.edit_entries['nip'].delete(0, END)
-        self.edit_entries['nip'].insert(0, values[0])
-        self.edit_entries['nip'].config(state='readonly')
+        self.form_entries['nip'].config(state='normal')
+        self.form_entries['nip'].delete(0, END)
+        self.form_entries['nip'].insert(0, values[0])
+        self.form_entries['nip'].config(state='readonly')
         
-        self.edit_entries['company_name'].delete(0, END)
-        self.edit_entries['company_name'].insert(0, values[1])
+        self.form_entries['company_name'].delete(0, END)
+        self.form_entries['company_name'].insert(0, values[1])
         
-        self.edit_entries['address_p1'].delete(0, END)
-        self.edit_entries['address_p1'].insert(0, values[2])
+        self.form_entries['address_p1'].delete(0, END)
+        self.form_entries['address_p1'].insert(0, values[2])
         
-        self.edit_entries['address_p2'].delete(0, END)
-        self.edit_entries['address_p2'].insert(0, values[3])
+        self.form_entries['address_p2'].delete(0, END)
+        self.form_entries['address_p2'].insert(0, values[3])
         
-        self.edit_entries['alias'].delete(0, END)
-        self.edit_entries['alias'].insert(0, values[4])
+        self.form_entries['alias'].delete(0, END)
+        self.form_entries['alias'].insert(0, values[4])
         
-        # Show edit frame
-        self.edit_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+        # Show form frame
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
     
     def delete_selected_client(self):
         """Delete the selected client"""
@@ -795,60 +812,99 @@ class BrowseClientsFrame(Frame):
             if success:
                 tkinter.messagebox.showinfo("Sukces", message)
                 self.refresh_clients_list()
-                # Hide edit frame if it was showing this client
-                if self.current_editing_nip == client_nip:
-                    self.cancel_edit()
+                # Hide form frame if it was showing this client
+                if hasattr(self, 'current_editing_nip') and self.current_editing_nip == client_nip:
+                    self.hide_form()
             else:
                 tkinter.messagebox.showerror("Błąd", message)
+    
+    def validate_nip_input(self, event=None):
+        """Real-time NIP validation for adding new clients"""
+        from database import validate_nip
+        nip = self.form_entries['nip'].get()
+        
+        if not nip:
+            self.form_validation_labels['nip'].config(text="", fg='black')
+            return
+        
+        is_valid, message = validate_nip(nip)
+        if is_valid:
+            self.form_validation_labels['nip'].config(text="✓ " + message, fg='green')
+        else:
+            self.form_validation_labels['nip'].config(text="✗ " + message, fg='red')
     
     def validate_alias_input(self, event=None):
         """Real-time alias validation"""
         from database import validate_alias
-        alias = self.edit_entries['alias'].get()
+        alias = self.form_entries['alias'].get()
         
         if not alias:
-            self.edit_validation_labels['alias'].config(text="", fg='black')
+            self.form_validation_labels['alias'].config(text="", fg='black')
             return
         
         is_valid, message = validate_alias(alias)
         if is_valid:
-            self.edit_validation_labels['alias'].config(text="✓ " + message, fg='green')
+            self.form_validation_labels['alias'].config(text="✓ " + message, fg='green')
         else:
-            self.edit_validation_labels['alias'].config(text="✗ " + message, fg='red')
+            self.form_validation_labels['alias'].config(text="✗ " + message, fg='red')
     
-    def save_client_changes(self):
-        """Save the edited client data"""
+    def save_client(self):
+        """Save client data (both add and edit modes)"""
         import tkinter.messagebox
-        from database import update_client_in_db
         
         # Get form data
-        company_name = self.edit_entries['company_name'].get().strip()
-        address_p1 = self.edit_entries['address_p1'].get().strip()
-        address_p2 = self.edit_entries['address_p2'].get().strip()
-        alias = self.edit_entries['alias'].get().strip()
+        company_name = self.form_entries['company_name'].get().strip()
+        address_p1 = self.form_entries['address_p1'].get().strip()
+        address_p2 = self.form_entries['address_p2'].get().strip()
+        alias = self.form_entries['alias'].get().strip()
+        nip = self.form_entries['nip'].get().strip()
         
         # Basic validation
-        if not all([company_name, address_p1, address_p2, alias]):
+        if not all([company_name, address_p1, address_p2, alias, nip]):
             tkinter.messagebox.showerror("Błąd", "Wszystkie pola muszą być wypełnione!")
             return
         
-        # Try to update
-        success, message = update_client_in_db(self.current_editing_nip, company_name, address_p1, address_p2, alias)
+        if self.form_mode == 'add':
+            # Add new client
+            from database import add_client_to_db
+            success, message = add_client_to_db(nip, company_name, address_p1, address_p2, alias)
+        else:
+            # Update existing client
+            from database import update_client_in_db
+            success, message = update_client_in_db(self.current_editing_nip, company_name, address_p1, address_p2, alias)
         
         if success:
             tkinter.messagebox.showinfo("Sukces", message)
             self.refresh_clients_list()
-            self.cancel_edit()
+            self.hide_form()
         else:
             tkinter.messagebox.showerror("Błąd", message)
     
-    def cancel_edit(self):
-        """Cancel editing"""
-        self.edit_frame.pack_forget()
+    def clear_or_cancel_form(self):
+        """Clear form or cancel operation"""
+        if self.form_mode == 'add':
+            # Clear all fields
+            for entry in self.form_entries.values():
+                if entry['state'] != 'readonly':
+                    entry.delete(0, END)
+            
+            # Clear validation labels
+            for label in self.form_validation_labels.values():
+                label.config(text="")
+        else:
+            # Cancel edit - hide form
+            self.hide_form()
+    
+    def hide_form(self):
+        """Hide the form frame"""
+        self.form_frame.pack_forget()
+        self.form_mode = None
         self.current_editing_nip = None
     
     def return_to_main_menu(self):
         """Return to the main menu"""
+        self.hide_form()  # Hide form if visible
+        self.nav_manager.show_frame('main_menu')
         self.cancel_edit()  # Hide edit frame if visible
         self.nav_manager.show_frame('main_menu')
     
