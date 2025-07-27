@@ -1,7 +1,5 @@
 from tkinter import *
 from tkinter import ttk
-from config import COLOR_THEME
-from database import get_suppliers_from_db, add_supplier_to_db, delete_supplier_from_db, update_supplier_in_db
 
 class BrowseSuppliersFrame(Frame):
     """Frame for browsing, editing and deleting suppliers"""
@@ -14,26 +12,26 @@ class BrowseSuppliersFrame(Frame):
         
     def create_ui(self):
         """Create the browse suppliers UI"""
-        self.configure(bg=COLOR_THEME['bg_primary'])
+        self.configure(bg='#f0f0f0')
         
         # Header frame
-        header_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
+        header_frame = Frame(self, bg='#f0f0f0')
         header_frame.pack(fill=X, padx=20, pady=20)
         
         # Title
         title_label = Label(header_frame, text="Zarządzanie dostawcami", 
                            font=("Arial", 18, "bold"), 
-                           bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
+                           bg='#f0f0f0', fg='#333333')
         title_label.pack(side=LEFT)
         
         # Buttons on the right side of header
-        header_buttons_frame = Frame(header_frame, bg=COLOR_THEME['bg_primary'])
+        header_buttons_frame = Frame(header_frame, bg='#f0f0f0')
         header_buttons_frame.pack(side=RIGHT)
         
         # Add new supplier button
         add_supplier_btn = Button(header_buttons_frame, text="Dodaj nowego dostawcę",
                                  font=("Arial", 12),
-                                 bg=COLOR_THEME['btn_success'], fg=COLOR_THEME['btn_text'],
+                                 bg='#28a745', fg='white',
                                  padx=15, pady=8,
                                  command=self.show_add_supplier_form,
                                  cursor='hand2')
@@ -42,33 +40,33 @@ class BrowseSuppliersFrame(Frame):
         # Refresh button
         refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
-                            bg=COLOR_THEME['btn_info'], fg=COLOR_THEME['btn_text'],
+                            bg='#17a2b8', fg='white',
                             padx=15, pady=8,
                             command=self.refresh_suppliers_list,
                             cursor='hand2')
         refresh_btn.pack(side=LEFT, padx=5)
         
-        # Return to main menu button
+        # Return button
         return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
+                           bg='#6c757d', fg='white',
                            padx=15, pady=8,
-                           command=lambda: self.nav_manager.show_frame('main_menu'),
+                           command=self.return_to_main_menu,
                            cursor='hand2')
         return_btn.pack(side=LEFT, padx=5)
         
         # Main content frame
-        content_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
+        content_frame = Frame(self, bg='#f0f0f0')
         content_frame.pack(fill=BOTH, expand=True, padx=20)
         
         # Suppliers list frame
-        list_frame = Frame(content_frame, bg=COLOR_THEME['bg_primary'])
+        list_frame = Frame(content_frame, bg='#f0f0f0')
         list_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 20))
         
         # Suppliers list label
         list_label = Label(list_frame, text="Lista dostawców:", 
                           font=("Arial", 14, "bold"), 
-                          bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
+                          bg='#f0f0f0', fg='#333333')
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for suppliers list
@@ -99,12 +97,12 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.bind('<<TreeviewSelect>>', self.on_supplier_select)
         
         # Edit/Delete buttons frame
-        buttons_frame = Frame(list_frame, bg=COLOR_THEME['bg_primary'])
+        buttons_frame = Frame(list_frame, bg='#f0f0f0')
         buttons_frame.pack(fill=X, pady=10)
         
         edit_btn = Button(buttons_frame, text="Edytuj wybranego dostawcę",
                          font=("Arial", 12),
-                         bg=COLOR_THEME['btn_warning'], fg=COLOR_THEME['btn_text'],
+                         bg='#28a745', fg='white',
                          padx=15, pady=8,
                          command=self.edit_selected_supplier,
                          cursor='hand2')
@@ -112,15 +110,15 @@ class BrowseSuppliersFrame(Frame):
         
         delete_btn = Button(buttons_frame, text="Usuń wybranego dostawcę",
                            font=("Arial", 12),
-                           bg=COLOR_THEME['btn_danger'], fg=COLOR_THEME['btn_text'],
+                           bg='#dc3545', fg='white',
                            padx=15, pady=8,
                            command=self.delete_selected_supplier,
                            cursor='hand2')
         delete_btn.pack(side=LEFT)
         
-        # Form frame for editing suppliers (initially hidden)
-        self.form_frame = Frame(content_frame, bg=COLOR_THEME['bg_secondary'], relief=RIDGE, bd=2)
-        # Note: form_frame is packed later when showing forms
+        # Form frame (for both editing and adding)
+        self.form_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
         
         # Initially hide form frame
         self.form_frame.pack_forget()
@@ -148,7 +146,7 @@ class BrowseSuppliersFrame(Frame):
         title_text = "Dodaj nowego dostawcę" if self.form_mode == 'add' else "Edytuj dostawcę"
         form_title = Label(self.form_frame, text=title_text, 
                           font=("Arial", 16, "bold"), 
-                          bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary'])
+                          bg='#f0f0f0', fg='#333333')
         form_title.pack(pady=20)
         
         # Form fields
@@ -165,20 +163,20 @@ class BrowseSuppliersFrame(Frame):
         for field_name, label_text, is_readonly in fields:
             # Label
             label = Label(self.form_frame, text=label_text, 
-                         font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary'])
+                         font=("Arial", 12), bg='#f0f0f0')
             label.pack(anchor=W, padx=20, pady=(10, 0))
             
             # Entry
-            entry = Entry(self.form_frame, font=("Arial", 12), width=40)
+            entry = Entry(self.form_frame, font=("Arial", 12), width=30)
             if is_readonly:
-                entry.config(state='readonly', bg=COLOR_THEME['input_disabled'])
+                entry.config(state='readonly', bg='#e9ecef')
             entry.pack(anchor=W, padx=20, pady=(0, 5))
             
             self.form_entries[field_name] = entry
             
             # Validation labels
             validation_label = Label(self.form_frame, text="", 
-                                   font=("Arial", 10), bg=COLOR_THEME['bg_secondary'])
+                                   font=("Arial", 10), bg='#f0f0f0')
             validation_label.pack(anchor=W, padx=20)
             self.form_validation_labels[field_name] = validation_label
             
@@ -186,18 +184,15 @@ class BrowseSuppliersFrame(Frame):
             if field_name == 'nip' and not is_readonly:
                 entry.bind('<KeyRelease>', self.validate_nip_input)
         
-        # Configure grid layout for responsive design
-        self.form_frame.columnconfigure(0, weight=1)
-        
         # Buttons frame
-        form_buttons_frame = Frame(self.form_frame, bg=COLOR_THEME['bg_secondary'])
+        form_buttons_frame = Frame(self.form_frame, bg='#f0f0f0')
         form_buttons_frame.pack(pady=20)
         
         # Save button
         save_text = "Zapisz dostawcę" if self.form_mode == 'add' else "Zapisz zmiany"
         save_btn = Button(form_buttons_frame, text=save_text,
                          font=("Arial", 12, "bold"),
-                         bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
+                         bg='#007bff', fg='white',
                          padx=20, pady=10,
                          command=self.save_supplier,
                          cursor='hand2')
@@ -207,7 +202,7 @@ class BrowseSuppliersFrame(Frame):
         clear_text = "Wyczyść formularz" if self.form_mode == 'add' else "Anuluj"
         clear_btn = Button(form_buttons_frame, text=clear_text,
                           font=("Arial", 12),
-                          bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
+                          bg='#6c757d', fg='white',
                           padx=20, pady=10,
                           command=self.clear_or_cancel_form,
                           cursor='hand2')
@@ -215,6 +210,7 @@ class BrowseSuppliersFrame(Frame):
     
     def refresh_suppliers_list(self):
         """Refresh the suppliers list"""
+        from database import get_suppliers_from_db
         
         # Clear existing items
         for item in self.suppliers_tree.get_children():

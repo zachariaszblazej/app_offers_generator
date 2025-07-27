@@ -4,7 +4,7 @@ import locale
 from navigation import NavigationManager, MainMenuFrame, OfferCreationFrame, BrowseClientsFrame, BrowseSuppliersFrame
 from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow
 from offer_generator import generate_offer_document, convert_date
-from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE, COLOR_THEME
+from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 from table_manager import ProductTable
 
 class OfferGeneratorMainApp:
@@ -79,8 +79,8 @@ class OfferGeneratorApp:
             label_BG.image = bg  # Keep a reference
         except Exception as e:
             print(f"Could not load background image: {e}")
-            # If background image fails, use a clean professional color
-            self.window.configure(bg=COLOR_THEME['bg_primary'])
+            # If background image fails, use a solid color
+            self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
         self.ui = UIComponents(self.window)
@@ -99,34 +99,24 @@ class OfferGeneratorApp:
     
     def create_buttons(self, input_frame):
         """Create all buttons"""
-        # Product input buttons with improved styling
-        Button(input_frame, text="INSERT PRODUCT", 
-               bg=COLOR_THEME['btn_success'], fg=COLOR_THEME['btn_text'],
-               command=self.insert_product).grid(row=2, column=2)
-        Button(input_frame, text="REMOVE PRODUCT", 
-               bg=COLOR_THEME['btn_danger'], fg=COLOR_THEME['btn_text'],
-               command=self.remove_product).grid(row=2, column=1)
-        Button(input_frame, text="TOTAL", 
-               bg=COLOR_THEME['btn_info'], fg=COLOR_THEME['btn_text'],
-               command=self.calc_total).grid(row=2, column=0)
-        Button(input_frame, text="SAVE", 
-               bg=COLOR_THEME['btn_secondary'], fg=COLOR_THEME['btn_text']).grid(row=2, column=3)
+        # Product input buttons
+        Button(input_frame, text="INSERT PRODUCT", command=self.insert_product).grid(row=2, column=2)
+        Button(input_frame, text="REMOVE PRODUCT", command=self.remove_product).grid(row=2, column=1)
+        Button(input_frame, text="TOTAL", command=self.calc_total).grid(row=2, column=0)
+        Button(input_frame, text="SAVE").grid(row=2, column=3)
         
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
-                                    bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
                                     command=self.client_search.open_client_search)
         search_client_button.place(x=900, y=360)
         
         # Supplier search button
         search_supplier_button = Button(self.window, text="Szukaj dostawcę", 
-                                      bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
                                       command=self.supplier_search.open_supplier_search)
         search_supplier_button.place(x=300, y=360)
         
         # Generate offer button
         generate_offer_button = Button(self.window, text="Twórz ofertę", 
-                                     bg=COLOR_THEME['btn_accent'], fg=COLOR_THEME['btn_text'],
                                      command=self.generate_offer)
         generate_offer_button.place(x=700, y=800)
     
