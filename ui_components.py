@@ -5,6 +5,7 @@ from datetime import datetime
 from tkcalendar import DateEntry, Calendar
 from database import get_clients_from_db, get_suppliers_from_db
 from config import DEFAULT_COMPANY_DATA, TAX_RATE
+from settings import settings_manager
 
 class ClientSearchWindow:
     """Handles client search and selection functionality"""
@@ -136,10 +137,25 @@ class UIComponents:
     def __init__(self, window, product_table=None):
         self.window = window
         self.entries = {}
-        self.text_data = DEFAULT_COMPANY_DATA
+        # Load company data from settings instead of config
+        self.text_data = settings_manager.get_all_company_data_settings()
         self.selected_client_alias = None  # Store selected client alias
         self.date_var = StringVar(value=datetime.now().strftime("%d %m %Y"))
         self.product_table = product_table  # Reference to product table
+    
+    def refresh_company_data(self):
+        """Refresh company data from settings"""
+        self.text_data = settings_manager.get_all_company_data_settings()
+        # Update existing fields if they exist
+        if hasattr(self, 'entries'):
+            company_fields = ['town', 'address1', 'address2', 'nip', 'regon', 'email', 'phone', 'bank_name', 'account_number']
+            for field in company_fields:
+                if field in self.entries:
+                    self.entries[field].delete(0, END)
+                    # Map field names to data keys
+                    data_key = 'address_1' if field == 'address1' else 'address_2' if field == 'address2' else 'phone_number' if field == 'phone' else field
+                    value = self.text_data.get(data_key, '')
+                    self.entries[field].insert(0, value)
     
     def create_upper_section(self):
         """Create the upper section of the form"""

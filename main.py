@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 import locale
-from navigation import NavigationManager, MainMenuFrame, OfferCreationFrame, BrowseClientsFrame, BrowseSuppliersFrame
+from navigation import NavigationManager, MainMenuFrame, OfferCreationFrame, BrowseClientsFrame, BrowseSuppliersFrame, SettingsFrame
 from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow
 from offer_generator import generate_offer_document, convert_date
 from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
@@ -44,6 +44,9 @@ class OfferGeneratorMainApp:
         
         # Browse suppliers frame (now includes adding new suppliers)
         self.nav_manager.add_frame('browse_suppliers', BrowseSuppliersFrame)
+        
+        # Settings frame
+        self.nav_manager.add_frame('settings', SettingsFrame)
     
     def setup_offer_components(self):
         """Setup offer creation components"""

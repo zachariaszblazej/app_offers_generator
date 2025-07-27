@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import Text, Canvas, Scrollbar
 from config import WINDOW_SIZE, BACKGROUND_IMAGE, APP_VERSION
 from suppliers_frame import BrowseSuppliersFrame
 
@@ -145,9 +146,8 @@ class MainMenuFrame(Frame):
         self.nav_manager.show_frame('browse_suppliers')
     
     def open_settings(self):
-        """Placeholder for settings functionality"""
-        import tkinter.messagebox
-        tkinter.messagebox.showinfo("Informacja", "Funkcja ustawień będzie dostępna wkrótce!")
+        """Open settings window"""
+        self.nav_manager.show_frame('settings')
     
     def exit_application(self):
         """Exit the application"""
@@ -774,6 +774,231 @@ class BrowseClientsFrame(Frame):
         # Clear validation labels
         for label in self.validation_labels.values():
             label.config(text="")
+    
+    def return_to_main_menu(self):
+        """Return to main menu"""
+        self.nav_manager.show_frame('main_menu')
+
+
+class SettingsFrame(Frame):
+    """Settings frame for configuring application defaults"""
+    
+    def __init__(self, parent, nav_manager):
+        super().__init__(parent)
+        self.nav_manager = nav_manager
+        self.entries = {}
+        self.create_ui()
+    
+    def create_ui(self):
+        """Create the settings UI"""
+        from settings import settings_manager
+        self.settings_manager = settings_manager
+        
+        # Set background color
+        self.configure(bg='#f0f0f0')
+        
+        # Main title
+        title_label = Label(self, text="Ustawienia aplikacji", 
+                           font=("Arial", 20, "bold"), 
+                           bg='#f0f0f0', fg='#333333')
+        title_label.pack(pady=(30, 20))
+        
+        # Create main container (bez scroll na razie)
+        main_container = Frame(self, bg='#f0f0f0')
+        main_container.pack(fill=BOTH, expand=True, padx=50, pady=20)
+        
+        # Company data settings
+        self.create_company_data_settings(main_container)
+        
+        # Buttons frame (outside scrollable area)
+        buttons_frame = Frame(self, bg='#f0f0f0')
+        buttons_frame.pack(side=BOTTOM, pady=30)
+        
+        # Save button
+        save_btn = Button(buttons_frame, 
+                         text="Zapisz ustawienia",
+                         font=("Arial", 12, "bold"),
+                         bg='#4CAF50', fg='white',
+                         padx=20, pady=10,
+                         command=self.save_settings,
+                         cursor='hand2')
+        save_btn.pack(side=LEFT, padx=10)
+        
+        # Reset button
+        reset_btn = Button(buttons_frame, 
+                          text="Przywróć domyślne",
+                          font=("Arial", 12),
+                          bg='#FF9800', fg='white',
+                          padx=20, pady=10,
+                          command=self.reset_to_defaults,
+                          cursor='hand2')
+        reset_btn.pack(side=LEFT, padx=10)
+        
+        # Back button
+        back_btn = Button(buttons_frame, 
+                         text="Powrót do menu",
+                         font=("Arial", 12),
+                         bg='#6c757d', fg='white',
+                         padx=20, pady=10,
+                         command=self.return_to_main_menu,
+                         cursor='hand2')
+        back_btn.pack(side=LEFT, padx=10)
+        
+        # Load current settings
+        self.load_current_settings()
+    
+    def create_company_data_settings(self, parent):
+        """Create company data settings section"""
+        # Section title
+        section_title = Label(parent, 
+                             text="Domyślne dane firmy", 
+                             font=("Arial", 16, "bold"), 
+                             bg='#f0f0f0', fg='#333333')
+        section_title.pack(anchor=W, pady=(10, 15))
+        
+        # Create a frame for company settings
+        company_frame = Frame(parent, bg='#ffffff', relief=RIDGE, bd=1)
+        company_frame.pack(fill=X, pady=10)
+        
+        # Inner frame with padding
+        inner_frame = Frame(company_frame, bg='#ffffff')
+        inner_frame.pack(fill=X, padx=20, pady=20)
+        
+        # Two-column layout
+        left_column = Frame(inner_frame, bg='#ffffff')
+        left_column.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 10))
+        
+        right_column = Frame(inner_frame, bg='#ffffff')
+        right_column.pack(side=RIGHT, fill=BOTH, expand=True, padx=(10, 0))
+        
+        # Left column fields
+        # Town
+        town_frame = Frame(left_column, bg='#ffffff')
+        town_frame.pack(fill=X, pady=5)
+        Label(town_frame, text="Miejscowość:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['town'] = Entry(town_frame, width=30, font=("Arial", 11))
+        self.entries['town'].pack(fill=X, pady=(5, 0))
+        
+        # Address 1
+        addr1_frame = Frame(left_column, bg='#ffffff')
+        addr1_frame.pack(fill=X, pady=5)
+        Label(addr1_frame, text="Adres (linia 1):", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['address_1'] = Entry(addr1_frame, width=30, font=("Arial", 11))
+        self.entries['address_1'].pack(fill=X, pady=(5, 0))
+        
+        # Address 2
+        addr2_frame = Frame(left_column, bg='#ffffff')
+        addr2_frame.pack(fill=X, pady=5)
+        Label(addr2_frame, text="Adres (linia 2):", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['address_2'] = Entry(addr2_frame, width=30, font=("Arial", 11))
+        self.entries['address_2'].pack(fill=X, pady=(5, 0))
+        
+        # NIP
+        nip_frame = Frame(left_column, bg='#ffffff')
+        nip_frame.pack(fill=X, pady=5)
+        Label(nip_frame, text="NIP:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['nip'] = Entry(nip_frame, width=30, font=("Arial", 11))
+        self.entries['nip'].pack(fill=X, pady=(5, 0))
+        
+        # Right column fields
+        # REGON
+        regon_frame = Frame(right_column, bg='#ffffff')
+        regon_frame.pack(fill=X, pady=5)
+        Label(regon_frame, text="REGON:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['regon'] = Entry(regon_frame, width=30, font=("Arial", 11))
+        self.entries['regon'].pack(fill=X, pady=(5, 0))
+        
+        # Email
+        email_frame = Frame(right_column, bg='#ffffff')
+        email_frame.pack(fill=X, pady=5)
+        Label(email_frame, text="Email:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['email'] = Entry(email_frame, width=30, font=("Arial", 11))
+        self.entries['email'].pack(fill=X, pady=(5, 0))
+        
+        # Phone
+        phone_frame = Frame(right_column, bg='#ffffff')
+        phone_frame.pack(fill=X, pady=5)
+        Label(phone_frame, text="Telefon:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['phone_number'] = Entry(phone_frame, width=30, font=("Arial", 11))
+        self.entries['phone_number'].pack(fill=X, pady=(5, 0))
+        
+        # Bank name
+        bank_frame = Frame(right_column, bg='#ffffff')
+        bank_frame.pack(fill=X, pady=5)
+        Label(bank_frame, text="Nazwa banku:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['bank_name'] = Entry(bank_frame, width=30, font=("Arial", 11))
+        self.entries['bank_name'].pack(fill=X, pady=(5, 0))
+        
+        # Account number - full width
+        account_frame = Frame(inner_frame, bg='#ffffff')
+        account_frame.pack(fill=X, pady=10)
+        Label(account_frame, text="Numer konta:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['account_number'] = Entry(account_frame, width=60, font=("Arial", 11))
+        self.entries['account_number'].pack(fill=X, pady=(5, 0))
+    
+    def load_current_settings(self):
+        """Load current settings into the form"""
+        # Load company data
+        company_settings = self.settings_manager.get_all_company_data_settings()
+        company_fields = ['town', 'address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
+        
+        for field in company_fields:
+            if field in self.entries:
+                value = company_settings.get(field, '')
+                self.entries[field].delete(0, END)
+                self.entries[field].insert(0, value)
+    
+    def save_settings(self):
+        """Save settings to file"""
+        import tkinter.messagebox
+        
+        # Collect company data settings
+        company_fields = ['town', 'address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
+        company_settings = {}
+        for field in company_fields:
+            if field in self.entries:
+                company_settings[field] = self.entries[field].get().strip()
+        
+        # Update settings
+        self.settings_manager.update_company_data_settings(company_settings)
+        
+        # Save to file
+        if self.settings_manager.save_settings():
+            # Refresh company data in any existing offer creation windows
+            self.refresh_offer_creation_data()
+            tkinter.messagebox.showinfo("Sukces", "Ustawienia zostały zapisane pomyślnie!")
+        else:
+            tkinter.messagebox.showerror("Błąd", "Nie udało się zapisać ustawień.")
+    
+    def refresh_offer_creation_data(self):
+        """Refresh company data in offer creation window if it exists"""
+        try:
+            if hasattr(self.nav_manager, 'frames') and 'offer_creation' in self.nav_manager.frames:
+                offer_frame = self.nav_manager.frames['offer_creation']
+                if hasattr(offer_frame, 'offer_app') and hasattr(offer_frame.offer_app, 'ui'):
+                    offer_frame.offer_app.ui.refresh_company_data()
+        except Exception as e:
+            print(f"Could not refresh offer creation data: {e}")
+    
+    def reset_to_defaults(self):
+        """Reset settings to defaults"""
+        import tkinter.messagebox
+        
+        result = tkinter.messagebox.askyesno("Potwierdzenie", 
+                                           "Czy na pewno chcesz przywrócić domyślne ustawienia?")
+        if result:
+            self.settings_manager.reset_company_data_to_defaults()
+            self.load_current_settings()
+            tkinter.messagebox.showinfo("Sukces", "Przywrócono domyślne ustawienia!")
     
     def return_to_main_menu(self):
         """Return to main menu"""
