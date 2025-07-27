@@ -242,3 +242,63 @@ def delete_client_from_db(nip):
         return True, "Klient został usunięty z bazy"
     except sqlite3.Error as e:
         return False, f"Błąd podczas usuwania klienta: {e}"
+
+def get_supplier_by_nip(nip):
+    """Get supplier data by NIP"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers WHERE Nip = ?", (nip,))
+        supplier = cursor.fetchone()
+        conn.close()
+        return supplier
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return None
+
+def update_supplier_in_db(nip, company_name, address_p1, address_p2):
+    """Update supplier data (NIP cannot be changed)"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Update supplier
+        cursor.execute("""
+            UPDATE Suppliers 
+            SET CompanyName = ?, AddressP1 = ?, AddressP2 = ?
+            WHERE Nip = ?
+        """, (company_name, address_p1, address_p2, nip))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "Dostawca nie został znaleziony"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "Dane dostawcy zostały zaktualizowane"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas aktualizacji dostawcy: {e}"
+
+def delete_supplier_from_db(nip):
+    """Delete supplier from database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # For suppliers, we could check if they have any related data
+        # For now, we'll allow deletion (suppliers don't appear in offer file names)
+        
+        # Delete supplier
+        cursor.execute("DELETE FROM Suppliers WHERE Nip = ?", (nip,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "Dostawca nie został znaleziony"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "Dostawca został usunięty z bazy"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas usuwania dostawcy: {e}"

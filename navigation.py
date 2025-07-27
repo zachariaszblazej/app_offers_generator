@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from config import WINDOW_SIZE, BACKGROUND_IMAGE, APP_VERSION
+from suppliers_frame import BrowseSuppliersFrame
 
 class NavigationManager:
     """Manages navigation between different screens/frames"""
@@ -90,15 +91,15 @@ class MainMenuFrame(Frame):
                                    cursor='hand2')
         browse_clients_btn.pack(pady=10)
         
-        # Add supplier button
-        add_supplier_btn = Button(buttons_frame, 
-                                 text="Dodaj dostawcę",
-                                 font=("Arial", 14),
-                                 bg='#FF5722', fg='white',
-                                 padx=30, pady=10,
-                                 command=self.add_supplier,
-                                 cursor='hand2')
-        add_supplier_btn.pack(pady=10)
+        # Browse suppliers button (now includes adding new suppliers)
+        browse_suppliers_btn = Button(buttons_frame, 
+                                     text="Zarządzaj dostawcami",
+                                     font=("Arial", 14),
+                                     bg='#FF5722', fg='white',
+                                     padx=30, pady=10,
+                                     command=self.browse_suppliers,
+                                     cursor='hand2')
+        browse_suppliers_btn.pack(pady=10)
         
         # Settings button (placeholder for future functionality)
         settings_btn = Button(buttons_frame, 
@@ -139,9 +140,9 @@ class MainMenuFrame(Frame):
         """Navigate to browse clients screen"""
         self.nav_manager.show_frame('browse_clients')
     
-    def add_supplier(self):
-        """Navigate to add supplier screen"""
-        self.nav_manager.show_frame('add_supplier')
+    def browse_suppliers(self):
+        """Show browse suppliers interface"""
+        self.nav_manager.show_frame('browse_suppliers')
     
     def open_settings(self):
         """Placeholder for settings functionality"""
@@ -360,149 +361,6 @@ class AddClientFrame(Frame):
     
     def clear_form(self):
         """Clear all form fields"""
-        for entry in self.entries.values():
-            entry.delete(0, END)
-        
-        # Clear validation labels
-        for label in self.validation_labels.values():
-            label.config(text="")
-    
-    def return_to_main_menu(self):
-        """Return to main menu"""
-        self.nav_manager.show_frame('main_menu')
-
-class AddSupplierFrame(Frame):
-    """Frame for adding new suppliers"""
-    
-    def __init__(self, parent, nav_manager):
-        super().__init__(parent)
-        self.nav_manager = nav_manager
-        self.entries = {}
-        self.create_ui()
-    
-    def create_ui(self):
-        """Create the add supplier UI"""
-        # Set background color
-        self.configure(bg='#f0f0f0')
-        
-        # Header with back button
-        header_frame = Frame(self, bg='#f0f0f0')
-        header_frame.pack(fill=X, padx=20, pady=10)
-        
-        back_btn = Button(header_frame, 
-                         text="← Powrót do menu głównego",
-                         font=("Arial", 12),
-                         bg='#6c757d', fg='white',
-                         command=self.return_to_main_menu,
-                         cursor='hand2')
-        back_btn.pack(side=LEFT)
-        
-        # Title
-        title_label = Label(self, text="Dodaj nowego dostawcę", 
-                           font=("Arial", 20, "bold"), 
-                           bg='#f0f0f0', fg='#333333')
-        title_label.pack(pady=(20, 30))
-        
-        # Form frame
-        form_frame = Frame(self, bg='#f0f0f0')
-        form_frame.pack(pady=20, padx=50)
-        
-        # Company name
-        Label(form_frame, text="Nazwa firmy:", font=("Arial", 12), bg='#f0f0f0').grid(row=0, column=0, sticky=W, pady=5)
-        self.entries['company_name'] = Entry(form_frame, font=("Arial", 12), width=40)
-        self.entries['company_name'].grid(row=0, column=1, padx=10, pady=5)
-        
-        # Address part 1
-        Label(form_frame, text="Adres (część 1):", font=("Arial", 12), bg='#f0f0f0').grid(row=1, column=0, sticky=W, pady=5)
-        self.entries['address_p1'] = Entry(form_frame, font=("Arial", 12), width=40)
-        self.entries['address_p1'].grid(row=1, column=1, padx=10, pady=5)
-        
-        # Address part 2
-        Label(form_frame, text="Adres (część 2):", font=("Arial", 12), bg='#f0f0f0').grid(row=2, column=0, sticky=W, pady=5)
-        self.entries['address_p2'] = Entry(form_frame, font=("Arial", 12), width=40)
-        self.entries['address_p2'].grid(row=2, column=1, padx=10, pady=5)
-        
-        # NIP
-        Label(form_frame, text="NIP (10 cyfr):", font=("Arial", 12), bg='#f0f0f0').grid(row=3, column=0, sticky=W, pady=5)
-        self.entries['nip'] = Entry(form_frame, font=("Arial", 12), width=40)
-        self.entries['nip'].grid(row=3, column=1, padx=10, pady=5)
-        self.entries['nip'].bind('<KeyRelease>', self.validate_nip_input)
-        
-        # Validation labels
-        self.validation_labels = {}
-        for i, field in enumerate(['company_name', 'address_p1', 'address_p2', 'nip']):
-            self.validation_labels[field] = Label(form_frame, text="", font=("Arial", 10), bg='#f0f0f0')
-            self.validation_labels[field].grid(row=i, column=2, padx=10, pady=5, sticky=W)
-        
-        # Buttons frame
-        buttons_frame = Frame(self, bg='#f0f0f0')
-        buttons_frame.pack(pady=30)
-        
-        # Save button
-        save_btn = Button(buttons_frame, 
-                         text="Zapisz dostawcę",
-                         font=("Arial", 14, "bold"),
-                         bg='#28a745', fg='white',
-                         padx=30, pady=15,
-                         command=self.save_supplier,
-                         cursor='hand2')
-        save_btn.pack(side=LEFT, padx=10)
-        
-        # Clear button
-        clear_btn = Button(buttons_frame, 
-                          text="Wyczyść formularz",
-                          font=("Arial", 12),
-                          bg='#6c757d', fg='white',
-                          padx=20, pady=10,
-                          command=self.clear_form,
-                          cursor='hand2')
-        clear_btn.pack(side=LEFT, padx=10)
-    
-    def validate_nip_input(self, event=None):
-        """Real-time NIP validation"""
-        from database import validate_supplier_nip
-        nip = self.entries['nip'].get()
-        
-        if not nip:
-            self.validation_labels['nip'].config(text="", fg='black')
-            return
-        
-        is_valid, message = validate_supplier_nip(nip)
-        if is_valid:
-            self.validation_labels['nip'].config(text="✓ " + message, fg='green')
-        else:
-            self.validation_labels['nip'].config(text="✗ " + message, fg='red')
-    
-    def save_supplier(self):
-        """Save the new supplier to database"""
-        from database import add_supplier_to_db
-        import tkinter.messagebox
-        
-        # Get form data
-        company_name = self.entries['company_name'].get().strip()
-        address_p1 = self.entries['address_p1'].get().strip()
-        address_p2 = self.entries['address_p2'].get().strip()
-        nip = self.entries['nip'].get().strip()
-        
-        # Basic validation
-        if not all([company_name, address_p1, address_p2, nip]):
-            tkinter.messagebox.showerror("Błąd", "Wszystkie pola muszą być wypełnione!")
-            return
-        
-        # Try to save
-        success, message = add_supplier_to_db(nip, company_name, address_p1, address_p2)
-        
-        if success:
-            tkinter.messagebox.showinfo("Sukces", message)
-            self.clear_form()
-            # Optionally return to main menu
-            if tkinter.messagebox.askyesno("Pytanie", "Czy chcesz wrócić do menu głównego?"):
-                self.return_to_main_menu()
-        else:
-            tkinter.messagebox.showerror("Błąd", message)
-    
-    def clear_form(self):
-        """Clear all form entries"""
         for entry in self.entries.values():
             entry.delete(0, END)
         
