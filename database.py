@@ -157,3 +157,88 @@ def add_supplier_to_db(nip, company_name, address_p1, address_p2):
         return True, "Dostawca został pomyślnie dodany do bazy"
     except sqlite3.Error as e:
         return False, f"Błąd podczas dodawania dostawcy: {e}"
+
+def get_client_by_nip(nip):
+    """Get client data by NIP"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients WHERE Nip = ?", (nip,))
+        client = cursor.fetchone()
+        conn.close()
+        return client
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return None
+
+def update_client_in_db(nip, company_name, address_p1, address_p2, alias):
+    """Update client data (NIP cannot be changed)"""
+    try:
+        # Validate alias (but allow current alias to remain the same)
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Check if alias is used by another client
+        cursor.execute("SELECT COUNT(*) FROM Clients WHERE Alias = ? AND Nip != ?", (alias, nip))
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            conn.close()
+            return False, "Alias już istnieje dla innego klienta"
+        
+        # Validate alias format
+        alias_valid, alias_message = validate_alias(alias)
+        if not alias_valid:
+            conn.close()
+            return False, alias_message
+        
+        # Update client
+        cursor.execute("""
+            UPDATE Clients 
+            SET CompanyName = ?, AddressP1 = ?, AddressP2 = ?, Alias = ?
+            WHERE Nip = ?
+        """, (company_name, address_p1, address_p2, alias, nip))
+        conn.commit()
+        conn.close()
+        
+        return True, "Dane klienta zostały zaktualizowane"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas aktualizacji klienta: {e}"
+
+def delete_client_from_db(nip):
+    """Delete client from database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # First get client's alias
+        cursor.execute("SELECT Alias FROM Clients WHERE Nip = ?", (nip,))
+        result = cursor.fetchone()
+        
+        if not result:
+            conn.close()
+            return False, "Klient nie został znaleziony"
+        
+        client_alias = result[0]
+        
+        # Check if client has any offers by looking for alias in file path
+        cursor.execute("SELECT COUNT(*) FROM Offers WHERE OfferFilePath LIKE ?", (f"%_{client_alias}.docx",))
+        offer_count = cursor.fetchone()[0]
+        
+        if offer_count > 0:
+            conn.close()
+            return False, f"Nie można usunąć klienta - istnieją {offer_count} ofert(y) dla tego klienta"
+        
+        # Delete client
+        cursor.execute("DELETE FROM Clients WHERE Nip = ?", (nip,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "Klient nie został znaleziony"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "Klient został usunięty z bazy"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas usuwania klienta: {e}"

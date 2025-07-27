@@ -90,6 +90,16 @@ class MainMenuFrame(Frame):
                                cursor='hand2')
         add_client_btn.pack(pady=10)
         
+        # Browse clients button
+        browse_clients_btn = Button(buttons_frame, 
+                                   text="Przeglądaj klientów",
+                                   font=("Arial", 14),
+                                   bg='#3F51B5', fg='white',
+                                   padx=30, pady=10,
+                                   command=self.browse_clients,
+                                   cursor='hand2')
+        browse_clients_btn.pack(pady=10)
+        
         # Add supplier button
         add_supplier_btn = Button(buttons_frame, 
                                  text="Dodaj dostawcę",
@@ -138,6 +148,10 @@ class MainMenuFrame(Frame):
     def add_client(self):
         """Navigate to add client screen"""
         self.nav_manager.show_frame('add_client')
+    
+    def browse_clients(self):
+        """Navigate to browse clients screen"""
+        self.nav_manager.show_frame('browse_clients')
     
     def add_supplier(self):
         """Navigate to add supplier screen"""
@@ -500,6 +514,343 @@ class AddSupplierFrame(Frame):
                 self.return_to_main_menu()
         else:
             tkinter.messagebox.showerror("Błąd", message)
+    
+    def clear_form(self):
+        """Clear all form entries"""
+        for entry in self.entries.values():
+            entry.delete(0, END)
+        
+        # Clear validation labels
+        for label in self.validation_labels.values():
+            label.config(text="")
+    
+    def return_to_main_menu(self):
+        """Return to main menu"""
+        self.nav_manager.show_frame('main_menu')
+
+class BrowseClientsFrame(Frame):
+    """Frame for browsing, editing and deleting clients"""
+    
+    def __init__(self, parent, nav_manager):
+        super().__init__(parent)
+        self.nav_manager = nav_manager
+        self.current_editing_nip = None
+        self.create_ui()
+        
+    def create_ui(self):
+        """Create the browse clients UI"""
+        self.configure(bg='#f0f0f0')
+        
+        # Header frame
+        header_frame = Frame(self, bg='#f0f0f0')
+        header_frame.pack(fill=X, padx=20, pady=20)
+        
+        # Title
+        title_label = Label(header_frame, text="Przeglądaj klientów", 
+                           font=("Arial", 18, "bold"), 
+                           bg='#f0f0f0', fg='#333333')
+        title_label.pack(side=LEFT)
+        
+        # Return button
+        return_btn = Button(header_frame, text="Powrót do menu głównego",
+                           font=("Arial", 12),
+                           bg='#6c757d', fg='white',
+                           padx=15, pady=8,
+                           command=self.return_to_main_menu,
+                           cursor='hand2')
+        return_btn.pack(side=RIGHT)
+        
+        # Refresh button
+        refresh_btn = Button(header_frame, text="Odśwież",
+                            font=("Arial", 12),
+                            bg='#17a2b8', fg='white',
+                            padx=15, pady=8,
+                            command=self.refresh_clients_list,
+                            cursor='hand2')
+        refresh_btn.pack(side=RIGHT, padx=10)
+        
+        # Main content frame
+        content_frame = Frame(self, bg='#f0f0f0')
+        content_frame.pack(fill=BOTH, expand=True, padx=20)
+        
+        # Clients list frame
+        list_frame = Frame(content_frame, bg='#f0f0f0')
+        list_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 20))
+        
+        # Clients list label
+        list_label = Label(list_frame, text="Lista klientów:", 
+                          font=("Arial", 14, "bold"), 
+                          bg='#f0f0f0', fg='#333333')
+        list_label.pack(anchor=W, pady=(0, 10))
+        
+        # Treeview for clients list
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias')
+        self.clients_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+        
+        # Define headings
+        self.clients_tree.heading('NIP', text='NIP')
+        self.clients_tree.heading('Nazwa firmy', text='Nazwa firmy')
+        self.clients_tree.heading('Adres 1', text='Adres 1')
+        self.clients_tree.heading('Adres 2', text='Adres 2')
+        self.clients_tree.heading('Alias', text='Alias')
+        
+        # Configure column widths
+        self.clients_tree.column('NIP', width=100)
+        self.clients_tree.column('Nazwa firmy', width=200)
+        self.clients_tree.column('Adres 1', width=150)
+        self.clients_tree.column('Adres 2', width=150)
+        self.clients_tree.column('Alias', width=80)
+        
+        # Scrollbar for treeview
+        scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.clients_tree.yview)
+        self.clients_tree.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack treeview and scrollbar
+        self.clients_tree.pack(side=LEFT, fill=BOTH, expand=True)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        
+        # Bind selection event
+        self.clients_tree.bind('<<TreeviewSelect>>', self.on_client_select)
+        
+        # Edit/Delete buttons frame
+        buttons_frame = Frame(list_frame, bg='#f0f0f0')
+        buttons_frame.pack(fill=X, pady=10)
+        
+        edit_btn = Button(buttons_frame, text="Edytuj wybranego klienta",
+                         font=("Arial", 12),
+                         bg='#28a745', fg='white',
+                         padx=15, pady=8,
+                         command=self.edit_selected_client,
+                         cursor='hand2')
+        edit_btn.pack(side=LEFT, padx=(0, 10))
+        
+        delete_btn = Button(buttons_frame, text="Usuń wybranego klienta",
+                           font=("Arial", 12),
+                           bg='#dc3545', fg='white',
+                           padx=15, pady=8,
+                           command=self.delete_selected_client,
+                           cursor='hand2')
+        delete_btn.pack(side=LEFT)
+        
+        # Edit form frame
+        self.edit_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
+        self.edit_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+        
+        # Initially hide edit frame
+        self.edit_frame.pack_forget()
+        
+        # Load clients
+        self.refresh_clients_list()
+    
+    def create_edit_form(self):
+        """Create the edit form"""
+        # Clear existing widgets
+        for widget in self.edit_frame.winfo_children():
+            widget.destroy()
+        
+        # Edit form title
+        edit_title = Label(self.edit_frame, text="Edytuj klienta", 
+                          font=("Arial", 16, "bold"), 
+                          bg='#f0f0f0', fg='#333333')
+        edit_title.pack(pady=20)
+        
+        # Form fields
+        self.edit_entries = {}
+        self.edit_validation_labels = {}
+        
+        fields = [
+            ('nip', 'NIP:', True),  # True means read-only
+            ('company_name', 'Nazwa firmy:', False),
+            ('address_p1', 'Adres (linia 1):', False),
+            ('address_p2', 'Adres (linia 2):', False),
+            ('alias', 'Alias:', False)
+        ]
+        
+        for field_name, label_text, is_readonly in fields:
+            # Label
+            label = Label(self.edit_frame, text=label_text, 
+                         font=("Arial", 12), bg='#f0f0f0')
+            label.pack(anchor=W, padx=20, pady=(10, 0))
+            
+            # Entry
+            entry = Entry(self.edit_frame, font=("Arial", 12), width=30)
+            if is_readonly:
+                entry.config(state='readonly', bg='#e9ecef')
+            entry.pack(anchor=W, padx=20, pady=(0, 5))
+            
+            self.edit_entries[field_name] = entry
+            
+            # Validation label (only for alias)
+            if field_name == 'alias':
+                validation_label = Label(self.edit_frame, text="", 
+                                       font=("Arial", 10), bg='#f0f0f0')
+                validation_label.pack(anchor=W, padx=20)
+                self.edit_validation_labels[field_name] = validation_label
+                
+                # Bind validation
+                entry.bind('<KeyRelease>', self.validate_alias_input)
+        
+        # Buttons frame
+        edit_buttons_frame = Frame(self.edit_frame, bg='#f0f0f0')
+        edit_buttons_frame.pack(pady=20)
+        
+        save_btn = Button(edit_buttons_frame, text="Zapisz zmiany",
+                         font=("Arial", 12, "bold"),
+                         bg='#007bff', fg='white',
+                         padx=20, pady=10,
+                         command=self.save_client_changes,
+                         cursor='hand2')
+        save_btn.pack(side=LEFT, padx=10)
+        
+        cancel_btn = Button(edit_buttons_frame, text="Anuluj",
+                           font=("Arial", 12),
+                           bg='#6c757d', fg='white',
+                           padx=20, pady=10,
+                           command=self.cancel_edit,
+                           cursor='hand2')
+        cancel_btn.pack(side=LEFT, padx=10)
+    
+    def refresh_clients_list(self):
+        """Refresh the clients list"""
+        from database import get_clients_from_db
+        
+        # Clear existing items
+        for item in self.clients_tree.get_children():
+            self.clients_tree.delete(item)
+        
+        # Load clients
+        clients = get_clients_from_db()
+        for client in clients:
+            self.clients_tree.insert('', 'end', values=client)
+    
+    def on_client_select(self, event):
+        """Handle client selection"""
+        selection = self.clients_tree.selection()
+        if selection:
+            # Get selected client data
+            item = self.clients_tree.item(selection[0])
+            values = item['values']
+            print(f"Selected client: {values}")
+    
+    def edit_selected_client(self):
+        """Edit the selected client"""
+        selection = self.clients_tree.selection()
+        if not selection:
+            import tkinter.messagebox
+            tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać klienta do edycji!")
+            return
+        
+        # Get selected client data
+        item = self.clients_tree.item(selection[0])
+        values = item['values']
+        
+        # Store current editing NIP
+        self.current_editing_nip = values[0]
+        
+        # Create edit form
+        self.create_edit_form()
+        
+        # Fill form with current data
+        self.edit_entries['nip'].config(state='normal')
+        self.edit_entries['nip'].delete(0, END)
+        self.edit_entries['nip'].insert(0, values[0])
+        self.edit_entries['nip'].config(state='readonly')
+        
+        self.edit_entries['company_name'].delete(0, END)
+        self.edit_entries['company_name'].insert(0, values[1])
+        
+        self.edit_entries['address_p1'].delete(0, END)
+        self.edit_entries['address_p1'].insert(0, values[2])
+        
+        self.edit_entries['address_p2'].delete(0, END)
+        self.edit_entries['address_p2'].insert(0, values[3])
+        
+        self.edit_entries['alias'].delete(0, END)
+        self.edit_entries['alias'].insert(0, values[4])
+        
+        # Show edit frame
+        self.edit_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+    
+    def delete_selected_client(self):
+        """Delete the selected client"""
+        selection = self.clients_tree.selection()
+        if not selection:
+            import tkinter.messagebox
+            tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać klienta do usunięcia!")
+            return
+        
+        # Get selected client data
+        item = self.clients_tree.item(selection[0])
+        values = item['values']
+        client_name = values[1]
+        client_nip = values[0]
+        
+        # Confirm deletion
+        import tkinter.messagebox
+        if tkinter.messagebox.askyesno("Potwierdzenie", 
+                                      f"Czy na pewno chcesz usunąć klienta:\n{client_name} (NIP: {client_nip})?"):
+            from database import delete_client_from_db
+            success, message = delete_client_from_db(client_nip)
+            
+            if success:
+                tkinter.messagebox.showinfo("Sukces", message)
+                self.refresh_clients_list()
+                # Hide edit frame if it was showing this client
+                if self.current_editing_nip == client_nip:
+                    self.cancel_edit()
+            else:
+                tkinter.messagebox.showerror("Błąd", message)
+    
+    def validate_alias_input(self, event=None):
+        """Real-time alias validation"""
+        from database import validate_alias
+        alias = self.edit_entries['alias'].get()
+        
+        if not alias:
+            self.edit_validation_labels['alias'].config(text="", fg='black')
+            return
+        
+        is_valid, message = validate_alias(alias)
+        if is_valid:
+            self.edit_validation_labels['alias'].config(text="✓ " + message, fg='green')
+        else:
+            self.edit_validation_labels['alias'].config(text="✗ " + message, fg='red')
+    
+    def save_client_changes(self):
+        """Save the edited client data"""
+        import tkinter.messagebox
+        from database import update_client_in_db
+        
+        # Get form data
+        company_name = self.edit_entries['company_name'].get().strip()
+        address_p1 = self.edit_entries['address_p1'].get().strip()
+        address_p2 = self.edit_entries['address_p2'].get().strip()
+        alias = self.edit_entries['alias'].get().strip()
+        
+        # Basic validation
+        if not all([company_name, address_p1, address_p2, alias]):
+            tkinter.messagebox.showerror("Błąd", "Wszystkie pola muszą być wypełnione!")
+            return
+        
+        # Try to update
+        success, message = update_client_in_db(self.current_editing_nip, company_name, address_p1, address_p2, alias)
+        
+        if success:
+            tkinter.messagebox.showinfo("Sukces", message)
+            self.refresh_clients_list()
+            self.cancel_edit()
+        else:
+            tkinter.messagebox.showerror("Błąd", message)
+    
+    def cancel_edit(self):
+        """Cancel editing"""
+        self.edit_frame.pack_forget()
+        self.current_editing_nip = None
+    
+    def return_to_main_menu(self):
+        """Return to the main menu"""
+        self.cancel_edit()  # Hide edit frame if visible
+        self.nav_manager.show_frame('main_menu')
     
     def clear_form(self):
         """Clear all form fields"""
