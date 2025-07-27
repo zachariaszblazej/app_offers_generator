@@ -31,7 +31,7 @@ class BrowseSuppliersFrame(Frame):
         # Add new supplier button
         add_supplier_btn = Button(header_buttons_frame, text="Dodaj nowego dostawcę",
                                  font=("Arial", 12),
-                                 bg='#28a745', fg='white',
+                                 bg='#28a745', fg='black',
                                  padx=15, pady=8,
                                  command=self.show_add_supplier_form,
                                  cursor='hand2')
@@ -40,7 +40,7 @@ class BrowseSuppliersFrame(Frame):
         # Refresh button
         refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
-                            bg='#17a2b8', fg='white',
+                            bg='#17a2b8', fg='black',
                             padx=15, pady=8,
                             command=self.refresh_suppliers_list,
                             cursor='hand2')
@@ -49,7 +49,7 @@ class BrowseSuppliersFrame(Frame):
         # Return button
         return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='white',
+                           bg='#6c757d', fg='black',
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
@@ -102,7 +102,7 @@ class BrowseSuppliersFrame(Frame):
         
         edit_btn = Button(buttons_frame, text="Edytuj wybranego dostawcę",
                          font=("Arial", 12),
-                         bg='#28a745', fg='white',
+                         bg='#28a745', fg='black',
                          padx=15, pady=8,
                          command=self.edit_selected_supplier,
                          cursor='hand2')
@@ -110,7 +110,7 @@ class BrowseSuppliersFrame(Frame):
         
         delete_btn = Button(buttons_frame, text="Usuń wybranego dostawcę",
                            font=("Arial", 12),
-                           bg='#dc3545', fg='white',
+                           bg='#dc3545', fg='black',
                            padx=15, pady=8,
                            command=self.delete_selected_supplier,
                            cursor='hand2')
@@ -192,7 +192,7 @@ class BrowseSuppliersFrame(Frame):
         save_text = "Zapisz dostawcę" if self.form_mode == 'add' else "Zapisz zmiany"
         save_btn = Button(form_buttons_frame, text=save_text,
                          font=("Arial", 12, "bold"),
-                         bg='#007bff', fg='white',
+                         bg='#007bff', fg='black',
                          padx=20, pady=10,
                          command=self.save_supplier,
                          cursor='hand2')
@@ -202,7 +202,7 @@ class BrowseSuppliersFrame(Frame):
         clear_text = "Wyczyść formularz" if self.form_mode == 'add' else "Anuluj"
         clear_btn = Button(form_buttons_frame, text=clear_text,
                           font=("Arial", 12),
-                          bg='#6c757d', fg='white',
+                          bg='#6c757d', fg='black',
                           padx=20, pady=10,
                           command=self.clear_or_cancel_form,
                           cursor='hand2')

@@ -47,16 +47,10 @@ class MainMenuFrame(Frame):
         self.configure(bg='#f0f0f0')
         
         # Main title
-        title_label = Label(self, text="Generator Ofert", 
+        title_label = Label(self, text="Ultra Pro 2137 Kreator dokumentów Hantech", 
                            font=("Arial", 24, "bold"), 
                            bg='#f0f0f0', fg='#333333')
         title_label.pack(pady=50)
-        
-        # Subtitle
-        subtitle_label = Label(self, text="System tworzenia ofert handlowych", 
-                              font=("Arial", 14), 
-                              bg='#f0f0f0', fg='#666666')
-        subtitle_label.pack(pady=10)
         
         # Main menu buttons frame
         buttons_frame = Frame(self, bg='#f0f0f0')
@@ -66,7 +60,7 @@ class MainMenuFrame(Frame):
         new_offer_btn = Button(buttons_frame, 
                               text="Stwórz nową ofertę",
                               font=("Arial", 16, "bold"),
-                              bg='#4CAF50', fg='white',
+                              bg='#4CAF50', fg='black',
                               padx=30, pady=15,
                               command=self.open_new_offer,
                               cursor='hand2')
@@ -76,7 +70,7 @@ class MainMenuFrame(Frame):
         view_offers_btn = Button(buttons_frame, 
                                 text="Przeglądaj oferty",
                                 font=("Arial", 14),
-                                bg='#2196F3', fg='white',
+                                bg='#2196F3', fg='black',
                                 padx=30, pady=10,
                                 command=self.view_offers,
                                 cursor='hand2')
@@ -86,7 +80,7 @@ class MainMenuFrame(Frame):
         browse_clients_btn = Button(buttons_frame, 
                                    text="Zarządzaj klientami",
                                    font=("Arial", 14),
-                                   bg='#3F51B5', fg='white',
+                                   bg='#3F51B5', fg='black',
                                    padx=30, pady=10,
                                    command=self.browse_clients,
                                    cursor='hand2')
@@ -96,7 +90,7 @@ class MainMenuFrame(Frame):
         browse_suppliers_btn = Button(buttons_frame, 
                                      text="Zarządzaj dostawcami",
                                      font=("Arial", 14),
-                                     bg='#FF5722', fg='white',
+                                     bg='#FF5722', fg='black',
                                      padx=30, pady=10,
                                      command=self.browse_suppliers,
                                      cursor='hand2')
@@ -106,7 +100,7 @@ class MainMenuFrame(Frame):
         settings_btn = Button(buttons_frame, 
                              text="Ustawienia",
                              font=("Arial", 14),
-                             bg='#FF9800', fg='white',
+                             bg='#FF9800', fg='black',
                              padx=30, pady=10,
                              command=self.open_settings,
                              cursor='hand2')
@@ -116,17 +110,11 @@ class MainMenuFrame(Frame):
         exit_btn = Button(buttons_frame, 
                          text="Zamknij aplikację",
                          font=("Arial", 12),
-                         bg='#f44336', fg='white',
+                         bg='#f44336', fg='black',
                          padx=20, pady=8,
                          command=self.exit_application,
                          cursor='hand2')
         exit_btn.pack(pady=(30, 10))
-        
-        # Version info
-        version_label = Label(self, text=f"Wersja {APP_VERSION} - Zrefaktorowana", 
-                             font=("Arial", 10), 
-                             bg='#f0f0f0', fg='#999999')
-        version_label.pack(side=BOTTOM, pady=20)
     
     def open_new_offer(self):
         """Navigate to offer creation screen"""
@@ -179,7 +167,7 @@ class OfferCreationFrame(Frame):
         back_btn = Button(back_frame, 
                          text="← Powrót do menu głównego",
                          font=("Arial", 12),
-                         bg='#9E9E9E', fg='white',
+                         bg='#9E9E9E', fg='black',
                          padx=15, pady=5,
                          command=self.return_to_main_menu,
                          cursor='hand2')
@@ -228,7 +216,7 @@ class AddClientFrame(Frame):
         back_btn = Button(header_frame, 
                          text="← Powrót do menu głównego",
                          font=("Arial", 12),
-                         bg='#6c757d', fg='white',
+                         bg='#6c757d', fg='black',
                          command=self.return_to_main_menu,
                          cursor='hand2')
         back_btn.pack(side=LEFT)
@@ -284,7 +272,7 @@ class AddClientFrame(Frame):
         save_btn = Button(buttons_frame, 
                          text="Zapisz klienta",
                          font=("Arial", 14, "bold"),
-                         bg='#28a745', fg='white',
+                         bg='#28a745', fg='black',
                          padx=30, pady=15,
                          command=self.save_client,
                          cursor='hand2')
@@ -294,7 +282,7 @@ class AddClientFrame(Frame):
         clear_btn = Button(buttons_frame, 
                           text="Wyczyść formularz",
                           font=("Arial", 12),
-                          bg='#6c757d', fg='white',
+                          bg='#6c757d', fg='black',
                           padx=20, pady=10,
                           command=self.clear_form,
                           cursor='hand2')
@@ -402,7 +390,7 @@ class BrowseClientsFrame(Frame):
         # Add new client button
         add_client_btn = Button(header_buttons_frame, text="Dodaj nowego klienta",
                                font=("Arial", 12),
-                               bg='#28a745', fg='white',
+                               bg='#28a745', fg='black',
                                padx=15, pady=8,
                                command=self.show_add_client_form,
                                cursor='hand2')
@@ -411,7 +399,7 @@ class BrowseClientsFrame(Frame):
         # Refresh button
         refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
-                            bg='#17a2b8', fg='white',
+                            bg='#17a2b8', fg='black',
                             padx=15, pady=8,
                             command=self.refresh_clients_list,
                             cursor='hand2')
@@ -420,7 +408,7 @@ class BrowseClientsFrame(Frame):
         # Return button
         return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='white',
+                           bg='#6c757d', fg='black',
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
@@ -475,7 +463,7 @@ class BrowseClientsFrame(Frame):
         
         edit_btn = Button(buttons_frame, text="Edytuj wybranego klienta",
                          font=("Arial", 12),
-                         bg='#28a745', fg='white',
+                         bg='#28a745', fg='black',
                          padx=15, pady=8,
                          command=self.edit_selected_client,
                          cursor='hand2')
@@ -483,7 +471,7 @@ class BrowseClientsFrame(Frame):
         
         delete_btn = Button(buttons_frame, text="Usuń wybranego klienta",
                            font=("Arial", 12),
-                           bg='#dc3545', fg='white',
+                           bg='#dc3545', fg='black',
                            padx=15, pady=8,
                            command=self.delete_selected_client,
                            cursor='hand2')
@@ -568,7 +556,7 @@ class BrowseClientsFrame(Frame):
         save_text = "Zapisz klienta" if self.form_mode == 'add' else "Zapisz zmiany"
         save_btn = Button(form_buttons_frame, text=save_text,
                          font=("Arial", 12, "bold"),
-                         bg='#007bff', fg='white',
+                         bg='#007bff', fg='black',
                          padx=20, pady=10,
                          command=self.save_client,
                          cursor='hand2')
@@ -578,7 +566,7 @@ class BrowseClientsFrame(Frame):
         clear_text = "Wyczyść formularz" if self.form_mode == 'add' else "Anuluj"
         clear_btn = Button(form_buttons_frame, text=clear_text,
                           font=("Arial", 12),
-                          bg='#6c757d', fg='white',
+                          bg='#6c757d', fg='black',
                           padx=20, pady=10,
                           command=self.clear_or_cancel_form,
                           cursor='hand2')
@@ -818,7 +806,7 @@ class SettingsFrame(Frame):
         save_btn = Button(buttons_frame, 
                          text="Zapisz ustawienia",
                          font=("Arial", 12, "bold"),
-                         bg='#4CAF50', fg='white',
+                         bg='#4CAF50', fg='black',
                          padx=20, pady=10,
                          command=self.save_settings,
                          cursor='hand2')
@@ -828,7 +816,7 @@ class SettingsFrame(Frame):
         reset_btn = Button(buttons_frame, 
                           text="Przywróć domyślne",
                           font=("Arial", 12),
-                          bg='#FF9800', fg='white',
+                          bg='#FF9800', fg='black',
                           padx=20, pady=10,
                           command=self.reset_to_defaults,
                           cursor='hand2')
@@ -838,7 +826,7 @@ class SettingsFrame(Frame):
         back_btn = Button(buttons_frame, 
                          text="Powrót do menu",
                          font=("Arial", 12),
-                         bg='#6c757d', fg='white',
+                         bg='#6c757d', fg='black',
                          padx=20, pady=10,
                          command=self.return_to_main_menu,
                          cursor='hand2')
@@ -851,7 +839,7 @@ class SettingsFrame(Frame):
         """Create company data settings section"""
         # Section title
         section_title = Label(parent, 
-                             text="Domyślne dane firmy", 
+                             text="Domyślne dane górnej sekcji oferty", 
                              font=("Arial", 16, "bold"), 
                              bg='#f0f0f0', fg='#333333')
         section_title.pack(anchor=W, pady=(10, 15))
