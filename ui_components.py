@@ -4,7 +4,7 @@ import tkinter.messagebox
 from datetime import datetime
 from tkcalendar import DateEntry, Calendar
 from database import get_clients_from_db, get_suppliers_from_db
-from config import DEFAULT_COMPANY_DATA, TAX_RATE
+from config import COLOR_THEME, DEFAULT_COMPANY_DATA
 
 class ClientSearchWindow:
     """Handles client search and selection functionality"""
@@ -24,13 +24,17 @@ class ClientSearchWindow:
         search_window = Toplevel(self.parent_window)
         search_window.title("Wybierz klienta")
         search_window.geometry("600x400")
+        search_window.configure(bg=COLOR_THEME['bg_primary'])
         search_window.grab_set()  # Make window modal
         
         # Search label
-        Label(search_window, text="Wybierz klienta z listy:", font=("Arial", 12)).pack(pady=10)
+        Label(search_window, text="Wybierz klienta z listy:", 
+              font=("Arial", 12), 
+              bg=COLOR_THEME['bg_primary'], 
+              fg=COLOR_THEME['text_primary']).pack(pady=10)
         
         # Create listbox with scrollbar
-        frame = Frame(search_window)
+        frame = Frame(search_window, bg=COLOR_THEME['bg_primary'])
         frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
         
         scrollbar = Scrollbar(frame)
@@ -50,14 +54,17 @@ class ClientSearchWindow:
         client_listbox.bind('<Double-1>', lambda event: self._on_client_select(event, search_window, client_listbox, clients))
         
         # Add select button
-        button_frame = Frame(search_window)
+        button_frame = Frame(search_window, bg=COLOR_THEME['bg_primary'])
         button_frame.pack(pady=10)
         
         select_button = Button(button_frame, text="Wybierz", 
+                              bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
                               command=lambda: self._on_client_select(None, search_window, client_listbox, clients))
         select_button.pack(side=LEFT, padx=5)
         
-        cancel_button = Button(button_frame, text="Anuluj", command=search_window.destroy)
+        cancel_button = Button(button_frame, text="Anuluj", 
+                              bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
+                              command=search_window.destroy)
         cancel_button.pack(side=LEFT, padx=5)
 
     def _on_client_select(self, event, search_window, client_listbox, clients):
@@ -86,13 +93,17 @@ class SupplierSearchWindow:
         search_window = Toplevel(self.parent_window)
         search_window.title("Wybierz dostawcę")
         search_window.geometry("600x400")
+        search_window.configure(bg=COLOR_THEME['bg_primary'])
         search_window.grab_set()  # Make window modal
         
         # Search label
-        Label(search_window, text="Wybierz dostawcę z listy:", font=("Arial", 12)).pack(pady=10)
+        Label(search_window, text="Wybierz dostawcę z listy:", 
+              font=("Arial", 12),
+              bg=COLOR_THEME['bg_primary'], 
+              fg=COLOR_THEME['text_primary']).pack(pady=10)
         
         # Create listbox with scrollbar
-        frame = Frame(search_window)
+        frame = Frame(search_window, bg=COLOR_THEME['bg_primary'])
         frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
         
         scrollbar = Scrollbar(frame)
@@ -112,14 +123,17 @@ class SupplierSearchWindow:
         supplier_listbox.bind('<Double-1>', lambda event: self._on_supplier_select(event, search_window, supplier_listbox, suppliers))
         
         # Add select button
-        button_frame = Frame(search_window)
+        button_frame = Frame(search_window, bg=COLOR_THEME['bg_primary'])
         button_frame.pack(pady=10)
         
         select_button = Button(button_frame, text="Wybierz", 
+                              bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
                               command=lambda: self._on_supplier_select(None, search_window, supplier_listbox, suppliers))
         select_button.pack(side=LEFT, padx=5)
         
-        cancel_button = Button(button_frame, text="Anuluj", command=search_window.destroy)
+        cancel_button = Button(button_frame, text="Anuluj", 
+                              bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
+                              command=search_window.destroy)
         cancel_button.pack(side=LEFT, padx=5)
 
     def _on_supplier_select(self, event, search_window, supplier_listbox, suppliers):

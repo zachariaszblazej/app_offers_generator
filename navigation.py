@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-from config import WINDOW_SIZE, BACKGROUND_IMAGE, APP_VERSION
+from config import WINDOW_SIZE, BACKGROUND_IMAGE, APP_VERSION, COLOR_THEME
 from suppliers_frame import BrowseSuppliersFrame
 
 class NavigationManager:
@@ -42,30 +42,30 @@ class MainMenuFrame(Frame):
     
     def create_ui(self):
         """Create the main menu UI"""
-        # Set background color to match the application theme
-        self.configure(bg='#f0f0f0')
+        # Configure main background
+        self.configure(bg=COLOR_THEME['bg_primary'])
         
         # Main title
         title_label = Label(self, text="Generator Ofert", 
                            font=("Arial", 24, "bold"), 
-                           bg='#f0f0f0', fg='#333333')
+                           bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
         title_label.pack(pady=50)
         
         # Subtitle
         subtitle_label = Label(self, text="System tworzenia ofert handlowych", 
                               font=("Arial", 14), 
-                              bg='#f0f0f0', fg='#666666')
+                              bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_secondary'])
         subtitle_label.pack(pady=10)
         
         # Main menu buttons frame
-        buttons_frame = Frame(self, bg='#f0f0f0')
+        buttons_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
         buttons_frame.pack(pady=50)
         
         # Create new offer button
         new_offer_btn = Button(buttons_frame, 
                               text="Stwórz nową ofertę",
                               font=("Arial", 16, "bold"),
-                              bg='#4CAF50', fg='white',
+                              bg=COLOR_THEME['btn_primary'], fg=COLOR_THEME['btn_text'],
                               padx=30, pady=15,
                               command=self.open_new_offer,
                               cursor='hand2')
@@ -75,7 +75,7 @@ class MainMenuFrame(Frame):
         view_offers_btn = Button(buttons_frame, 
                                 text="Przeglądaj oferty",
                                 font=("Arial", 14),
-                                bg='#2196F3', fg='white',
+                                bg=COLOR_THEME['btn_secondary'], fg=COLOR_THEME['btn_text'],
                                 padx=30, pady=10,
                                 command=self.view_offers,
                                 cursor='hand2')
@@ -85,7 +85,7 @@ class MainMenuFrame(Frame):
         browse_clients_btn = Button(buttons_frame, 
                                    text="Zarządzaj klientami",
                                    font=("Arial", 14),
-                                   bg='#3F51B5', fg='white',
+                                   bg=COLOR_THEME['btn_secondary'], fg=COLOR_THEME['btn_text'],
                                    padx=30, pady=10,
                                    command=self.browse_clients,
                                    cursor='hand2')
@@ -95,7 +95,7 @@ class MainMenuFrame(Frame):
         browse_suppliers_btn = Button(buttons_frame, 
                                      text="Zarządzaj dostawcami",
                                      font=("Arial", 14),
-                                     bg='#FF5722', fg='white',
+                                     bg=COLOR_THEME['btn_accent'], fg=COLOR_THEME['btn_text'],
                                      padx=30, pady=10,
                                      command=self.browse_suppliers,
                                      cursor='hand2')
@@ -105,7 +105,7 @@ class MainMenuFrame(Frame):
         settings_btn = Button(buttons_frame, 
                              text="Ustawienia",
                              font=("Arial", 14),
-                             bg='#FF9800', fg='white',
+                             bg=COLOR_THEME['btn_warning'], fg=COLOR_THEME['btn_text'],
                              padx=30, pady=10,
                              command=self.open_settings,
                              cursor='hand2')
@@ -168,25 +168,25 @@ class OfferCreationFrame(Frame):
     def create_ui(self):
         """Create the offer creation UI"""
         # Create a container for the offer app
-        self.offer_container = Frame(self, bg='white')
+        self.offer_container = Frame(self, bg=COLOR_THEME['bg_primary'])
         self.offer_container.pack(fill=BOTH, expand=True)
         
-        # Back button frame (top-left)
-        back_frame = Frame(self.offer_container, bg='white', height=40)
+        # Back button at the top
+        back_frame = Frame(self.offer_container, bg=COLOR_THEME['bg_primary'], height=40)
         back_frame.pack(fill=X, padx=10, pady=5)
         back_frame.pack_propagate(False)
         
         back_btn = Button(back_frame, 
                          text="← Powrót do menu głównego",
                          font=("Arial", 12),
-                         bg='#9E9E9E', fg='white',
+                         bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
                          padx=15, pady=5,
                          command=self.return_to_main_menu,
                          cursor='hand2')
         back_btn.pack(side=LEFT)
         
         # Create content container for the offer application
-        self.content_container = Frame(self.offer_container, bg='white')
+        self.content_container = Frame(self.offer_container, bg=COLOR_THEME['bg_primary'])
         self.content_container.pack(fill=BOTH, expand=True, padx=10, pady=5)
     
     def initialize_offer_app(self):
@@ -219,16 +219,16 @@ class AddClientFrame(Frame):
     def create_ui(self):
         """Create the add client UI"""
         # Set background color
-        self.configure(bg='#f0f0f0')
+        self.configure(bg=COLOR_THEME['bg_primary'])
         
         # Header with back button
-        header_frame = Frame(self, bg='#f0f0f0')
+        header_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
         header_frame.pack(fill=X, padx=20, pady=10)
         
         back_btn = Button(header_frame, 
                          text="← Powrót do menu głównego",
                          font=("Arial", 12),
-                         bg='#6c757d', fg='white',
+                         bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
                          command=self.return_to_main_menu,
                          cursor='hand2')
         back_btn.pack(side=LEFT)
@@ -236,36 +236,36 @@ class AddClientFrame(Frame):
         # Title
         title_label = Label(self, text="Dodaj nowego klienta", 
                            font=("Arial", 20, "bold"), 
-                           bg='#f0f0f0', fg='#333333')
+                           bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
         title_label.pack(pady=(20, 30))
         
         # Form frame
-        form_frame = Frame(self, bg='#f0f0f0')
+        form_frame = Frame(self, bg=COLOR_THEME['bg_secondary'])
         form_frame.pack(pady=20, padx=50)
         
         # Company name
-        Label(form_frame, text="Nazwa firmy:", font=("Arial", 12), bg='#f0f0f0').grid(row=0, column=0, sticky=W, pady=5)
+        Label(form_frame, text="Nazwa firmy:", font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary']).grid(row=0, column=0, sticky=W, pady=5)
         self.entries['company_name'] = Entry(form_frame, font=("Arial", 12), width=40)
         self.entries['company_name'].grid(row=0, column=1, padx=10, pady=5)
         
         # Address part 1
-        Label(form_frame, text="Adres (część 1):", font=("Arial", 12), bg='#f0f0f0').grid(row=1, column=0, sticky=W, pady=5)
+        Label(form_frame, text="Adres (część 1):", font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary']).grid(row=1, column=0, sticky=W, pady=5)
         self.entries['address_p1'] = Entry(form_frame, font=("Arial", 12), width=40)
         self.entries['address_p1'].grid(row=1, column=1, padx=10, pady=5)
         
         # Address part 2
-        Label(form_frame, text="Adres (część 2):", font=("Arial", 12), bg='#f0f0f0').grid(row=2, column=0, sticky=W, pady=5)
+        Label(form_frame, text="Adres (część 2):", font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary']).grid(row=2, column=0, sticky=W, pady=5)
         self.entries['address_p2'] = Entry(form_frame, font=("Arial", 12), width=40)
         self.entries['address_p2'].grid(row=2, column=1, padx=10, pady=5)
         
         # NIP
-        Label(form_frame, text="NIP (10 cyfr):", font=("Arial", 12), bg='#f0f0f0').grid(row=3, column=0, sticky=W, pady=5)
+        Label(form_frame, text="NIP (10 cyfr):", font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary']).grid(row=3, column=0, sticky=W, pady=5)
         self.entries['nip'] = Entry(form_frame, font=("Arial", 12), width=40)
         self.entries['nip'].grid(row=3, column=1, padx=10, pady=5)
         self.entries['nip'].bind('<KeyRelease>', self.validate_nip_input)
         
         # Alias
-        Label(form_frame, text="Alias:", font=("Arial", 12), bg='#f0f0f0').grid(row=4, column=0, sticky=W, pady=5)
+        Label(form_frame, text="Alias:", font=("Arial", 12), bg=COLOR_THEME['bg_secondary'], fg=COLOR_THEME['text_primary']).grid(row=4, column=0, sticky=W, pady=5)
         self.entries['alias'] = Entry(form_frame, font=("Arial", 12), width=40)
         self.entries['alias'].grid(row=4, column=1, padx=10, pady=5)
         self.entries['alias'].bind('<KeyRelease>', self.validate_alias_input)
@@ -273,11 +273,11 @@ class AddClientFrame(Frame):
         # Validation labels
         self.validation_labels = {}
         for i, field in enumerate(['company_name', 'address_p1', 'address_p2', 'nip', 'alias']):
-            self.validation_labels[field] = Label(form_frame, text="", font=("Arial", 10), bg='#f0f0f0')
+            self.validation_labels[field] = Label(form_frame, text="", font=("Arial", 10), bg=COLOR_THEME['bg_secondary'])
             self.validation_labels[field].grid(row=i, column=2, padx=10, pady=5, sticky=W)
         
         # Buttons frame
-        buttons_frame = Frame(self, bg='#f0f0f0')
+        buttons_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
         buttons_frame.pack(pady=30)
         
         # Save button
@@ -383,26 +383,26 @@ class BrowseClientsFrame(Frame):
         
     def create_ui(self):
         """Create the browse clients UI"""
-        self.configure(bg='#f0f0f0')
+        self.configure(bg=COLOR_THEME['bg_primary'])
         
         # Header frame
-        header_frame = Frame(self, bg='#f0f0f0')
+        header_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
         header_frame.pack(fill=X, padx=20, pady=20)
         
         # Title
         title_label = Label(header_frame, text="Zarządzanie klientami", 
                            font=("Arial", 18, "bold"), 
-                           bg='#f0f0f0', fg='#333333')
+                           bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
         title_label.pack(side=LEFT)
         
         # Buttons on the right side of header
-        header_buttons_frame = Frame(header_frame, bg='#f0f0f0')
+        header_buttons_frame = Frame(header_frame, bg=COLOR_THEME['bg_primary'])
         header_buttons_frame.pack(side=RIGHT)
         
         # Add new client button
         add_client_btn = Button(header_buttons_frame, text="Dodaj nowego klienta",
                                font=("Arial", 12),
-                               bg='#28a745', fg='white',
+                               bg=COLOR_THEME['btn_success'], fg=COLOR_THEME['btn_text'],
                                padx=15, pady=8,
                                command=self.show_add_client_form,
                                cursor='hand2')
@@ -411,7 +411,7 @@ class BrowseClientsFrame(Frame):
         # Refresh button
         refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
-                            bg='#17a2b8', fg='white',
+                            bg=COLOR_THEME['btn_info'], fg=COLOR_THEME['btn_text'],
                             padx=15, pady=8,
                             command=self.refresh_clients_list,
                             cursor='hand2')
@@ -420,24 +420,24 @@ class BrowseClientsFrame(Frame):
         # Return button
         return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='white',
+                           bg=COLOR_THEME['btn_neutral'], fg=COLOR_THEME['btn_text'],
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
         return_btn.pack(side=LEFT, padx=5)
         
         # Main content frame
-        content_frame = Frame(self, bg='#f0f0f0')
+        content_frame = Frame(self, bg=COLOR_THEME['bg_primary'])
         content_frame.pack(fill=BOTH, expand=True, padx=20)
         
         # Clients list frame
-        list_frame = Frame(content_frame, bg='#f0f0f0')
+        list_frame = Frame(content_frame, bg=COLOR_THEME['bg_primary'])
         list_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 20))
         
         # Clients list label
         list_label = Label(list_frame, text="Lista klientów:", 
                           font=("Arial", 14, "bold"), 
-                          bg='#f0f0f0', fg='#333333')
+                          bg=COLOR_THEME['bg_primary'], fg=COLOR_THEME['text_primary'])
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for clients list
