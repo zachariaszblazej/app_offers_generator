@@ -89,6 +89,12 @@ def generate_offer_document(context_data):
         # Convert date to string for template
         context_data['date'] = convert_date(date_obj)
         
+        # Debug: Print products to see if they're being passed
+        products = context_data.get('products', [])
+        print(f"Products to be included in offer: {len(products)} items")
+        for i, product in enumerate(products):
+            print(f"Product {i+1}: {product}")
+        
         # Generate document
         doc = DocxTemplate(TEMPLATE_PATH)
         doc.render(context_data)

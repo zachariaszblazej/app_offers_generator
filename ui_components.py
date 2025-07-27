@@ -133,12 +133,13 @@ class SupplierSearchWindow:
 class UIComponents:
     """Handles UI component creation and management"""
     
-    def __init__(self, window):
+    def __init__(self, window, product_table=None):
         self.window = window
         self.entries = {}
         self.text_data = DEFAULT_COMPANY_DATA
         self.selected_client_alias = None  # Store selected client alias
         self.date_var = StringVar(value=datetime.now().strftime("%d %m %Y"))
+        self.product_table = product_table  # Reference to product table
     
     def create_upper_section(self):
         """Create the upper section of the form"""
@@ -223,27 +224,36 @@ class UIComponents:
     
     def create_product_input_section(self):
         """Create the product input section"""
+        # Add title label for products table
+        products_title = Label(self.window, text="Produkty w ofercie:", 
+                              font=("Arial", 14, "bold"))
+        products_title.place(x=50, y=420)
+        
         input_frame = Frame(self.window)
         input_frame.place(x=875, y=825)
 
         # Labels
-        Label(input_frame, text="ProductID").grid(row=0, column=0)
-        Label(input_frame, text="ProductName").grid(row=0, column=1)
-        Label(input_frame, text="Quantity").grid(row=0, column=2)
-        Label(input_frame, text="UNIT PRICE").grid(row=0, column=3)
+        Label(input_frame, text="ID produktu").grid(row=0, column=0, padx=5, pady=2)
+        Label(input_frame, text="Nazwa produktu").grid(row=0, column=1, padx=5, pady=2)
+        Label(input_frame, text="j.m.").grid(row=0, column=2, padx=5, pady=2)
+        Label(input_frame, text="Ilość").grid(row=0, column=3, padx=5, pady=2)
+        Label(input_frame, text="Cena jedn.").grid(row=0, column=4, padx=5, pady=2)
 
         # Entries
-        self.entries['product_id'] = Entry(input_frame)
-        self.entries['product_id'].grid(row=1, column=0)
+        self.entries['product_id'] = Entry(input_frame, width=8)
+        self.entries['product_id'].grid(row=1, column=0, padx=5, pady=2)
 
-        self.entries['product_name'] = Entry(input_frame)
-        self.entries['product_name'].grid(row=1, column=1)
+        self.entries['product_name'] = Entry(input_frame, width=25)
+        self.entries['product_name'].grid(row=1, column=1, padx=5, pady=2)
 
-        self.entries['quantity'] = Entry(input_frame)
-        self.entries['quantity'].grid(row=1, column=2)
+        self.entries['unit'] = Entry(input_frame, width=6)
+        self.entries['unit'].grid(row=1, column=2, padx=5, pady=2)
 
-        self.entries['unit_price'] = Entry(input_frame)
-        self.entries['unit_price'].grid(row=1, column=3)
+        self.entries['quantity'] = Entry(input_frame, width=8)
+        self.entries['quantity'].grid(row=1, column=3, padx=5, pady=2)
+
+        self.entries['unit_price'] = Entry(input_frame, width=12)
+        self.entries['unit_price'].grid(row=1, column=4, padx=5, pady=2)
 
         return input_frame
     
@@ -301,7 +311,7 @@ class UIComponents:
     
     def get_context_data(self):
         """Get all form data as context for document generation"""
-        return {
+        context = {
             'town': self.entries['town'].get(),
             'address_1': self.entries['address1'].get(),
             'address_2': self.entries['address2'].get(),
@@ -321,8 +331,15 @@ class UIComponents:
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
             'client_nip': self.entries['client_nip'].get(),
-            'client_alias': self.selected_client_alias  # Add client alias
+            'client_alias': self.selected_client_alias,  # Add client alias
+            'products': []  # Initialize empty products list
         }
+        
+        # Add products from product table if available
+        if self.product_table and hasattr(self.product_table, 'get_all_products'):
+            context['products'] = self.product_table.get_all_products()
+            
+        return context
     
     def open_date_picker(self):
         """Open a calendar date picker dialog"""

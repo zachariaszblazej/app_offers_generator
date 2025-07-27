@@ -79,14 +79,14 @@ class OfferGeneratorApp:
             label_BG.image = bg  # Keep a reference
         except Exception as e:
             print(f"Could not load background image: {e}")
-            # If background image fails, use a solid color
+            # If background image fails, use a clean professional color
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.ui = UIComponents(self.window)
+        self.product_table = ProductTable(self.window)
+        self.ui = UIComponents(self.window, self.product_table)
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
-        self.product_table = ProductTable(self.window)
         
         # Create UI sections
         self.ui.create_upper_section()
@@ -100,23 +100,29 @@ class OfferGeneratorApp:
     def create_buttons(self, input_frame):
         """Create all buttons"""
         # Product input buttons
-        Button(input_frame, text="INSERT PRODUCT", command=self.insert_product).grid(row=2, column=2)
-        Button(input_frame, text="REMOVE PRODUCT", command=self.remove_product).grid(row=2, column=1)
-        Button(input_frame, text="TOTAL", command=self.calc_total).grid(row=2, column=0)
-        Button(input_frame, text="SAVE").grid(row=2, column=3)
+        Button(input_frame, text="DODAJ PRODUKT", 
+               command=self.insert_product).grid(row=2, column=2, padx=5, pady=5)
+        Button(input_frame, text="USUŃ PRODUKT", 
+               command=self.remove_product).grid(row=2, column=1, padx=5, pady=5)
+        Button(input_frame, text="OBLICZ SUMĘ", 
+               command=self.calc_total).grid(row=2, column=0, padx=5, pady=5)
+        Button(input_frame, text="ZAPISZ").grid(row=2, column=3, padx=5, pady=5)
         
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
+                                    font=("Arial", 10),
                                     command=self.client_search.open_client_search)
         search_client_button.place(x=900, y=360)
         
         # Supplier search button
         search_supplier_button = Button(self.window, text="Szukaj dostawcę", 
+                                      font=("Arial", 10),
                                       command=self.supplier_search.open_supplier_search)
         search_supplier_button.place(x=300, y=360)
         
         # Generate offer button
-        generate_offer_button = Button(self.window, text="Twórz ofertę", 
+        generate_offer_button = Button(self.window, text="Generuj ofertę", 
+                                     font=("Arial", 12, "bold"),
                                      command=self.generate_offer)
         generate_offer_button.place(x=700, y=800)
     
@@ -125,6 +131,7 @@ class OfferGeneratorApp:
         product_data = [
             self.ui.entries['product_id'].get(),
             self.ui.entries['product_name'].get(),
+            self.ui.entries['unit'].get(),
             self.ui.entries['quantity'].get(),
             self.ui.entries['unit_price'].get()
         ]
@@ -133,6 +140,7 @@ class OfferGeneratorApp:
             # Clear entries after successful insert
             self.ui.entries['product_id'].delete(0, END)
             self.ui.entries['product_name'].delete(0, END)
+            self.ui.entries['unit'].delete(0, END)
             self.ui.entries['quantity'].delete(0, END)
             self.ui.entries['unit_price'].delete(0, END)
     
