@@ -24,8 +24,8 @@ def generate_offer_number(date: datetime.datetime, client_alias: str, offer_numb
         order_number = get_next_offer_number()
         year = date.year
         
-        # Format: <order_number>/OF/<year>/<client_alias>
-        offer_number = f"{order_number}/OF/{year}/{client_alias}"
+        # Format: <order_number>/OF/<year>_<client_alias>
+        offer_number = f"{order_number}/OF/{year}_{client_alias}"
         
         # Create filename: <order_number>_OF_<year>_<client_alias>.docx
         filename = f"{order_number}_OF_{year}_{client_alias}.docx"
