@@ -108,21 +108,14 @@ class OfferGeneratorApp:
                bg='#28a745', fg='black',
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
-               cursor='hand2').place(x=50, y=800)
+               cursor='hand2').place(x=50, y=740)
                
         Button(self.window, text="USUŃ PRODUKT", 
                font=("Arial", 12, "bold"),
                bg='#dc3545', fg='black',
                padx=15, pady=8,
                command=self.remove_product,
-               cursor='hand2').place(x=200, y=800)
-               
-        Button(self.window, text="OBLICZ SUMĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#007bff', fg='black',
-               padx=15, pady=8,
-               command=self.calc_total,
-               cursor='hand2').place(x=350, y=800)
+               cursor='hand2').place(x=260, y=740)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
