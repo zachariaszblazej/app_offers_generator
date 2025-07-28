@@ -141,6 +141,7 @@ class UIComponents:
         self.text_data = settings_manager.get_all_company_data_settings()
         self.selected_client_alias = None  # Store selected client alias
         self.date_var = StringVar(value=datetime.now().strftime("%d %m %Y"))
+        self.suma_var = StringVar(value="0")  # Add StringVar for suma field
         self.product_table = product_table  # Reference to product table
     
     def refresh_company_data(self):
@@ -271,8 +272,16 @@ class UIComponents:
     def create_totals_section(self):
         """Create the totals section"""
         Label(self.window, text='SUMA', font="times 14").place(x=800, y=740)
-        self.entries['suma'] = Entry(self.window, width=10, font=('Arial', 16), state='readonly')
+        self.entries['suma'] = Entry(self.window, width=10, font=('Arial', 16), state='readonly', textvariable=self.suma_var)
         self.entries['suma'].place(x=900, y=740)
+    
+    def update_suma(self, value):
+        """Update the suma field value"""
+        self.suma_var.set(str(value))
+    
+    def clear_suma(self):
+        """Clear the suma field"""
+        self.suma_var.set("0")
 
     def fill_client_data(self, client_data):
         """Fill client entry fields with selected client data"""

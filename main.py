@@ -104,13 +104,10 @@ class OfferGeneratorApp:
         """Create all buttons"""
         # Product input buttons
         Button(input_frame, text="DODAJ PRODUKT", 
-               command=self.insert_product).grid(row=2, column=2, padx=5, pady=5)
+               command=self.insert_product).grid(row=2, column=1, padx=5, pady=5)
         Button(input_frame, text="USUŃ PRODUKT", 
-               command=self.remove_product).grid(row=2, column=1, padx=5, pady=5)
-        Button(input_frame, text="OBLICZ SUMĘ", 
-               command=self.calc_total).grid(row=2, column=0, padx=5, pady=5)
-        Button(input_frame, text="ZAPISZ").grid(row=2, column=3, padx=5, pady=5)
-        
+               command=self.remove_product).grid(row=2, column=2, padx=5, pady=5)
+                
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
                                     font=("Arial", 10),
@@ -146,20 +143,22 @@ class OfferGeneratorApp:
             self.ui.entries['unit'].delete(0, END)
             self.ui.entries['quantity'].delete(0, END)
             self.ui.entries['unit_price'].delete(0, END)
+            # Automatically recalculate total
+            self.calc_total()
     
     def remove_product(self):
         """Remove selected product from the table"""
         self.product_table.remove_record()
+        # Automatically recalculate total after removal
+        self.calc_total()
     
     def calc_total(self):
         """Calculate and display totals"""
-        # Clear existing totals
-        self.ui.entries['suma'].delete(0, END)
-
         # Calculate totals from product table
         total = self.product_table.calculate_totals()
         
-        self.ui.entries['suma'].insert(0, str(total))
+        # Update the suma field using the new method
+        self.ui.update_suma(total)
     
     def generate_offer(self):
         """Generate the offer document"""
