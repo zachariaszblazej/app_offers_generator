@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import locale
 from navigation import NavigationManager, MainMenuFrame, OfferCreationFrame, BrowseClientsFrame, BrowseSuppliersFrame, SettingsFrame
-from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow
+from ui_components import UIComponents, ClientSearchWindow, SupplierSearchWindow, ProductAddWindow
 from offer_generator import generate_offer_document, convert_date
 from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 from table_manager import ProductTable
@@ -90,23 +90,39 @@ class OfferGeneratorApp:
         self.ui = UIComponents(self.window, self.product_table)
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
+        self.product_add = ProductAddWindow(self.window, self.insert_product)
         
         # Create UI sections
         self.ui.create_upper_section()
         self.ui.create_offer_section()
-        input_frame = self.ui.create_product_input_section()
         self.ui.create_totals_section()
         
         # Create buttons
-        self.create_buttons(input_frame)
+        self.create_buttons()
     
-    def create_buttons(self, input_frame):
+    def create_buttons(self):
         """Create all buttons"""
-        # Product input buttons
-        Button(input_frame, text="DODAJ PRODUKT", 
-               command=self.insert_product).grid(row=2, column=1, padx=5, pady=5)
-        Button(input_frame, text="USUŃ PRODUKT", 
-               command=self.remove_product).grid(row=2, column=2, padx=5, pady=5)
+        # Product management buttons
+        Button(self.window, text="DODAJ PRODUKT", 
+               font=("Arial", 12, "bold"),
+               bg='#28a745', fg='black',
+               padx=15, pady=8,
+               command=self.product_add.open_product_add_window,
+               cursor='hand2').place(x=50, y=800)
+               
+        Button(self.window, text="USUŃ PRODUKT", 
+               font=("Arial", 12, "bold"),
+               bg='#dc3545', fg='black',
+               padx=15, pady=8,
+               command=self.remove_product,
+               cursor='hand2').place(x=200, y=800)
+               
+        Button(self.window, text="OBLICZ SUMĘ", 
+               font=("Arial", 12, "bold"),
+               bg='#007bff', fg='black',
+               padx=15, pady=8,
+               command=self.calc_total,
+               cursor='hand2').place(x=350, y=800)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
@@ -126,25 +142,13 @@ class OfferGeneratorApp:
                                      command=self.generate_offer)
         generate_offer_button.place(x=700, y=800)
     
-    def insert_product(self):
+    def insert_product(self, product_data):
         """Insert a new product into the table"""
-        product_data = [
-            self.ui.entries['product_id'].get(),
-            self.ui.entries['product_name'].get(),
-            self.ui.entries['unit'].get(),
-            self.ui.entries['quantity'].get(),
-            self.ui.entries['unit_price'].get()
-        ]
-        
         if self.product_table.input_record(product_data):
-            # Clear entries after successful insert
-            self.ui.entries['product_id'].delete(0, END)
-            self.ui.entries['product_name'].delete(0, END)
-            self.ui.entries['unit'].delete(0, END)
-            self.ui.entries['quantity'].delete(0, END)
-            self.ui.entries['unit_price'].delete(0, END)
             # Automatically recalculate total
             self.calc_total()
+            return True
+        return False
     
     def remove_product(self):
         """Remove selected product from the table"""

@@ -131,6 +131,156 @@ class SupplierSearchWindow:
             self.supplier_fill_callback(selected_supplier)
             search_window.destroy()
 
+class ProductAddWindow:
+    """Handles product addition in a separate window"""
+    
+    def __init__(self, parent_window, product_add_callback):
+        self.parent_window = parent_window
+        self.product_add_callback = product_add_callback
+        self.entries = {}
+    
+    def open_product_add_window(self):
+        """Open product addition window"""
+        print("DEBUG: Opening product add window")  # Debug
+        
+        # Create product add window
+        product_window = Toplevel(self.parent_window)
+        product_window.title("Dodaj produkt")
+        product_window.geometry("700x500")  # Increased size
+        product_window.resizable(False, False)
+        product_window.grab_set()  # Make window modal
+        product_window.transient(self.parent_window)
+        product_window.configure(bg='#f8f9fa')  # Light background
+        
+        print("DEBUG: Product window created")  # Debug
+        
+        # Center the window
+        product_window.geometry("+%d+%d" % (
+            self.parent_window.winfo_rootx() + 100,
+            self.parent_window.winfo_rooty() + 100
+        ))
+        
+        # Title
+        title_label = Label(product_window, text="🛒 Dodaj nowy produkt do oferty", 
+                           font=("Arial", 18, "bold"),
+                           bg='#f8f9fa', fg='#343a40')
+        title_label.pack(pady=(30, 20), fill=X)
+        
+        # Main form frame with border
+        form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
+        form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
+        
+        # Product ID
+        Label(form_frame, text="ID produktu:", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
+        self.entries['product_id'] = Entry(form_frame, width=15, font=("Arial", 11))
+        self.entries['product_id'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
+        
+        # Product name
+        Label(form_frame, text="Nazwa produktu:", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
+        self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
+        self.entries['product_name'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
+        
+        # Unit
+        Label(form_frame, text="Jednostka miary (j.m.):", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
+        self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
+        self.entries['unit'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
+        
+        # Quantity
+        Label(form_frame, text="Ilość:", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
+        self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
+        self.entries['quantity'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
+        
+        # Unit price
+        Label(form_frame, text="Cena jednostkowa:", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
+        self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
+        self.entries['unit_price'].grid(row=4, column=1, padx=5, pady=12, sticky=W)
+        
+        # Add separator line
+        separator = Frame(product_window, height=2, bg='#cccccc')
+        separator.pack(fill=X, padx=20, pady=(10, 20))
+        
+        # Buttons frame with explicit positioning
+        buttons_frame = Frame(product_window, bg='#f8f9fa', height=100)
+        buttons_frame.pack(fill=X, pady=(0, 20))
+        buttons_frame.pack_propagate(False)  # Maintain frame size
+        
+        # Center the buttons using place instead of pack
+        # Add button - make it very prominent and centered
+        add_btn = Button(buttons_frame, text="✓ ZATWIERDŹ I DODAJ", 
+                        font=("Arial", 16, "bold"),
+                        bg='#FF4500', fg='white',  # Orange color to make it very visible
+                        padx=40, pady=15,
+                        command=lambda: self._add_product(product_window),
+                        cursor='hand2',
+                        relief=RAISED,
+                        bd=4)
+        add_btn.place(relx=0.3, rely=0.5, anchor=CENTER)  # Center left
+        
+        # Cancel button
+        cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
+                           font=("Arial", 14),
+                           bg='#dc3545', fg='white',
+                           padx=25, pady=12,
+                           command=product_window.destroy,
+                           cursor='hand2')
+        cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)  # Center right
+        
+        # Bind Enter key to add product
+        product_window.bind('<Return>', lambda event: self._add_product(product_window))
+        product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))  # Numpad Enter
+        
+        # Set focus to first field
+        self.entries['product_id'].focus_set()
+        
+        # Add instruction label at the bottom - make it more visible
+        instruction_label = Label(product_window, 
+                                text="📝 Wypełnij wszystkie pola i kliknij pomarańczowy przycisk 'ZATWIERDŹ I DODAJ'",
+                                font=("Arial", 12, "bold"), 
+                                fg='#FF4500',  # Orange color
+                                bg='#f8f9fa')
+        instruction_label.pack(pady=(10, 20))
+        
+        print("DEBUG: Product add window setup complete")  # Debug
+    
+    def _add_product(self, product_window):
+        """Handle product addition"""
+        print("DEBUG: _add_product called")  # Debug
+        # Get product data
+        product_data = [
+            self.entries['product_id'].get(),
+            self.entries['product_name'].get(),
+            self.entries['unit'].get(),
+            self.entries['quantity'].get(),
+            self.entries['unit_price'].get()
+        ]
+        print(f"DEBUG: Product data: {product_data}")  # Debug
+        
+        # Validate data
+        if not all([field.strip() for field in product_data]):
+            tkinter.messagebox.showwarning("Błąd", "Proszę wypełnić wszystkie pola!")
+            return
+        
+        # Try to validate numeric fields
+        try:
+            int(product_data[0])  # product_id
+            int(product_data[3])  # quantity  
+            float(product_data[4])  # unit_price
+        except ValueError:
+            tkinter.messagebox.showerror("Błąd", "ID produktu i ilość muszą być liczbami całkowitymi, a cena liczbą!")
+            return
+        
+        # Call the callback function to add product
+        if self.product_add_callback(product_data):
+            # Show success message
+            tkinter.messagebox.showinfo("Sukces", "Produkt został pomyślnie dodany do tabeli!")
+            # Clear fields after successful addition
+            for entry in self.entries.values():
+                entry.delete(0, END)
+            # Close window
+            product_window.destroy()
+        else:
+            tkinter.messagebox.showerror("Błąd", "Nie udało się dodać produktu do tabeli!")
+
 class UIComponents:
     """Handles UI component creation and management"""
     
@@ -238,36 +388,6 @@ class UIComponents:
 
         self.entries['client_nip'] = Entry(self.window, width=25)
         self.entries['client_nip'].place(x=660, y=360)
-    
-    def create_product_input_section(self):
-        """Create the product input section"""
-        input_frame = Frame(self.window)
-        input_frame.place(x=875, y=825)
-
-        # Labels
-        Label(input_frame, text="ID produktu").grid(row=0, column=0, padx=5, pady=2)
-        Label(input_frame, text="Nazwa produktu").grid(row=0, column=1, padx=5, pady=2)
-        Label(input_frame, text="j.m.").grid(row=0, column=2, padx=5, pady=2)
-        Label(input_frame, text="Ilość").grid(row=0, column=3, padx=5, pady=2)
-        Label(input_frame, text="Cena jedn.").grid(row=0, column=4, padx=5, pady=2)
-
-        # Entries
-        self.entries['product_id'] = Entry(input_frame, width=8)
-        self.entries['product_id'].grid(row=1, column=0, padx=5, pady=2)
-
-        self.entries['product_name'] = Entry(input_frame, width=25)
-        self.entries['product_name'].grid(row=1, column=1, padx=5, pady=2)
-
-        self.entries['unit'] = Entry(input_frame, width=6)
-        self.entries['unit'].grid(row=1, column=2, padx=5, pady=2)
-
-        self.entries['quantity'] = Entry(input_frame, width=8)
-        self.entries['quantity'].grid(row=1, column=3, padx=5, pady=2)
-
-        self.entries['unit_price'] = Entry(input_frame, width=12)
-        self.entries['unit_price'].grid(row=1, column=4, padx=5, pady=2)
-
-        return input_frame
     
     def create_totals_section(self):
         """Create the totals section"""
