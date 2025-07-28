@@ -154,16 +154,12 @@ class OfferGeneratorApp:
     def calc_total(self):
         """Calculate and display totals"""
         # Clear existing totals
-        self.ui.entries['subtotal'].delete(0, END)
-        self.ui.entries['grandtotal'].delete(0, END)
-        self.ui.entries['tax'].delete(0, END)
+        self.ui.entries['suma'].delete(0, END)
 
         # Calculate totals from product table
         total = self.product_table.calculate_totals()
         
-        self.ui.entries['subtotal'].insert(0, str(total))
-        self.ui.entries['tax'].insert(0, str(total * TAX_RATE))
-        self.ui.entries['grandtotal'].insert(0, str(total * (1 + TAX_RATE)))
+        self.ui.entries['suma'].insert(0, str(total))
     
     def generate_offer(self):
         """Generate the offer document"""

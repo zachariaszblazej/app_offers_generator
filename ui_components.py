@@ -240,11 +240,6 @@ class UIComponents:
     
     def create_product_input_section(self):
         """Create the product input section"""
-        # Add title label for products table
-        products_title = Label(self.window, text="Produkty w ofercie:", 
-                              font=("Arial", 14, "bold"))
-        products_title.place(x=50, y=420)
-        
         input_frame = Frame(self.window)
         input_frame.place(x=875, y=825)
 
@@ -275,21 +270,10 @@ class UIComponents:
     
     def create_totals_section(self):
         """Create the totals section"""
-        # Labels
-        Label(self.window, text='SUBTOTAL :>>>', font="times 14").place(x=1000, y=915)
-        Label(self.window, text='18% GST:>>>', font="times 14").place(x=1000, y=950)
-        Label(self.window, text='TOTAL:>>>', font="times 14").place(x=1000, y=985)
+        Label(self.window, text='SUMA', font="times 14").place(x=800, y=740)
+        self.entries['suma'] = Entry(self.window, width=10, font=('Arial', 16), state='readonly')
+        self.entries['suma'].place(x=900, y=740)
 
-        # Entries
-        self.entries['subtotal'] = Entry(self.window, width=10, font=('Arial', 16))
-        self.entries['subtotal'].place(x=1150, y=915)
-
-        self.entries['tax'] = Entry(self.window, width=10, font=('Arial', 16))
-        self.entries['tax'].place(x=1150, y=950)
-
-        self.entries['grandtotal'] = Entry(self.window, width=10, font=('Arial', 16))
-        self.entries['grandtotal'].place(x=1150, y=985)
-    
     def fill_client_data(self, client_data):
         """Fill client entry fields with selected client data"""
         nip, company_name, address1, address2, alias = client_data
