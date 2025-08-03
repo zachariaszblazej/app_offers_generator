@@ -348,10 +348,6 @@ class UIComponents:
     
     def create_offer_section(self):
         """Create the offer/supplier/client section"""
-        # Offer number
-        offer_number_value = StringVar(self.window, value=self.text_data['offer_number'])
-        self.entries['offer_number'] = Entry(self.window, width=25, textvariable=offer_number_value)
-        self.entries['offer_number'].place(x=380, y=203)
 
         # Supplier entries
         self.entries['supplier_name'] = Entry(self.window, width=25)
@@ -440,7 +436,6 @@ class UIComponents:
             'phone_number': self.entries['phone'].get(),
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
-            'offer_number': self.entries['offer_number'].get(),
             'date': datetime.strptime(self.date_var.get(), "%d %m %Y").date(),
             'supplier_name': self.entries['supplier_name'].get(),
             'supplier_address_1': self.entries['supplier_address_1'].get(),

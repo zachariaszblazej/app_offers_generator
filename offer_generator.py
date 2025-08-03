@@ -9,16 +9,8 @@ def convert_date(date: datetime.datetime) -> str:
     """Convert datetime to formatted string"""
     return date.strftime("%d %B %Y")
 
-def generate_offer_number(date: datetime.datetime, client_alias: str, offer_number_entry: str = "") -> tuple:
+def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:
     """Generate offer number and file path"""
-    # If user provided offer number, use it
-    if offer_number_entry.strip():
-        offer_number = offer_number_entry.strip()
-        # Create filename by replacing / with _
-        filename = offer_number.replace("/", "_") + ".docx"
-        file_path = os.path.join(OFFERS_FOLDER, filename)
-        return offer_number, file_path, None
-    
     # Auto-generate offer number
     try:
         order_number = get_next_offer_number()
@@ -73,12 +65,10 @@ def generate_offer_document(context_data):
             date_obj = datetime.datetime.now()
         
         client_alias = extract_client_alias_from_context(context_data)
-        offer_number_from_form = context_data.get('offer_number', '')
         
         # Generate offer number and file path
         offer_number, file_path, order_number = generate_offer_number(
-            date_obj, client_alias, offer_number_from_form
-        )
+            date_obj, client_alias)
         
         if not offer_number or not file_path:
             return False
