@@ -55,6 +55,7 @@ class OfferGeneratorApp:
         # Create UI sections
         self.ui.create_upper_section()
         self.ui.create_offer_section()
+        self.ui.create_offer_details_section()
         self.ui.create_totals_section()
         
         # Create buttons
@@ -93,7 +94,7 @@ class OfferGeneratorApp:
         generate_offer_button = Button(self.window, text="Generuj ofertę", 
                                      font=("Arial", 12, "bold"),
                                      command=self.generate_offer)
-        generate_offer_button.place(x=700, y=800)
+        generate_offer_button.place(x=700, y=950)
     
     def insert_product(self, product_data):
         """Insert a new product into the table"""

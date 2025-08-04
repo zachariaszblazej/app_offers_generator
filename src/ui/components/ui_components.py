@@ -119,11 +119,36 @@ class UIComponents:
         self.entries['client_nip'] = Entry(self.window, width=25)
         self.entries['client_nip'].place(x=660, y=360)
     
+    def create_offer_details_section(self):
+        """Create additional offer details section under USUŃ PRODUKT button"""
+        # Entry fields for offer details (without labels) - positioned under USUŃ PRODUKT button
+        self.entries['termin_realizacji'] = Entry(self.window, width=20)
+        self.entries['termin_realizacji'].place(x=470, y=760)
+        
+        self.entries['termin_platnosci'] = Entry(self.window, width=20)
+        self.entries['termin_platnosci'].place(x=470, y=785)
+        
+        self.entries['warunki_dostawy'] = Entry(self.window, width=20)
+        self.entries['warunki_dostawy'].place(x=470, y=810)
+        
+        self.entries['waznosc_oferty'] = Entry(self.window, width=20)
+        self.entries['waznosc_oferty'].place(x=470, y=835)
+        
+        self.entries['gwarancja'] = Entry(self.window, width=20)
+        self.entries['gwarancja'].place(x=470, y=860)
+        
+        self.entries['cena'] = Entry(self.window, width=20)
+        self.entries['cena'].place(x=470, y=885)
+        
+        # Multi-line text field for notes
+        self.entries['uwagi'] = Text(self.window, width=25, height=3)
+        self.entries['uwagi'].place(x=470, y=910)
+    
     def create_totals_section(self):
         """Create the totals section"""
-        Label(self.window, text='SUMA', font="times 14").place(x=800, y=740)
+        Label(self.window, text='SUMA', font="times 14").place(x=800, y=760)
         self.entries['suma'] = Entry(self.window, width=10, font=('Arial', 16), state='readonly', textvariable=self.suma_var)
-        self.entries['suma'].place(x=900, y=740)
+        self.entries['suma'].place(x=900, y=760)
     
     def update_suma(self, value):
         """Update the suma field value with comma as decimal separator"""
@@ -191,6 +216,13 @@ class UIComponents:
             'client_address_2': self.entries['client_address_2'].get(),
             'client_nip': self.entries['client_nip'].get(),
             'client_alias': self.selected_client_alias,  # Add client alias
+            'termin_realizacji': self.entries['termin_realizacji'].get(),
+            'termin_platnosci': self.entries['termin_platnosci'].get(),
+            'warunki_dostawy': self.entries['warunki_dostawy'].get(),
+            'waznosc_oferty': self.entries['waznosc_oferty'].get(),
+            'gwarancja': self.entries['gwarancja'].get(),
+            'cena': self.entries['cena'].get(),
+            'uwagi': self.entries['uwagi'].get("1.0", "end-1c"),  # Get text from Text widget
             'products': []  # Initialize empty products list
         }
         
