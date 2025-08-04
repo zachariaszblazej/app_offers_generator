@@ -91,11 +91,34 @@ def generate_offer_document(context_data):
         # Convert date to string for template
         context_data['date'] = convert_date(date_obj)
         
-        # Debug: Print products to see if they're being passed
+        # Debug: Print products to see if they're being passed as list of lists
         products = context_data.get('products', [])
+        product_headers = context_data.get('product_headers', [])
+        
         print(f"Products to be included in offer: {len(products)} items")
+        print(f"Product format: {'List of lists' if products and isinstance(products[0], list) else 'Other format'}")
+        
+        if product_headers:
+            print(f"Product table headers: {product_headers}")
+        
         for i, product in enumerate(products):
-            print(f"Product {i+1}: {product}")
+            if isinstance(product, list):
+                print(f"Product row {i+1}: {product}")
+                # Each row contains: [pid, pname, unit, qty, unit_price, total]
+                if len(product) >= 6:
+                    print(f"  - Lp: {product[0]}")
+                    print(f"  - Nazwa: {product[1]}")
+                    print(f"  - Jednostka: {product[2]}")
+                    print(f"  - Ilość: {product[3]}")
+                    print(f"  - Cena jedn.: {product[4]}")
+                    print(f"  - Suma: {product[5]}")
+            else:
+                print(f"Product {i+1}: {product}")
+        
+        # Products are now in format expected by Word template
+        # Each product is a list: [pid, pname, unit, qty, unit_price, total]
+        # This can be directly used in Word template as table rows
+        # Headers are available in context['product_headers']
         
         # Generate document
         doc = DocxTemplate(TEMPLATE_PATH)

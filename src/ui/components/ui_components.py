@@ -197,6 +197,17 @@ class UIComponents:
         if self.product_table and hasattr(self.product_table, 'get_all_products'):
             context['products'] = self.product_table.get_all_products()
             
+        # Add product table headers for Word template
+        from src.utils.config import TABLE_COLUMN_HEADERS
+        context['product_headers'] = [
+            TABLE_COLUMN_HEADERS['PID'],      # 'Lp'
+            TABLE_COLUMN_HEADERS['PNAME'],    # 'ProductName'
+            TABLE_COLUMN_HEADERS['UNIT'],     # 'j.m.'
+            TABLE_COLUMN_HEADERS['QTY'],      # 'Quantity'
+            TABLE_COLUMN_HEADERS['U_PRICE'],  # 'UNIT PRICE'
+            TABLE_COLUMN_HEADERS['TOTAL']     # 'TOTAL'
+        ]
+            
         return context
     
     def open_date_picker(self):

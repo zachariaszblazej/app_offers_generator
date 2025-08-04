@@ -99,7 +99,35 @@ class ProductTable:
         return total
     
     def get_all_products(self):
-        """Get all products from the table as a list of dictionaries"""
+        """Get all products from the table as a list of lists (rows)"""
+        products = []
+        if self.tree:
+            print(f"Getting products from table with {len(self.tree.get_children())} items")
+            for child in self.tree.get_children():
+                item = self.tree.item(child)
+                if item['values']:
+                    # Extract values: pid, pname, unit, qty, unit_price, total
+                    pid, pname, unit, qty, unit_price, total = item['values']
+                    
+                    # Create a row as list with formatted values
+                    row = [
+                        str(pid),                    # Lp (pozycja)
+                        str(pname),                  # Nazwa produktu
+                        str(unit),                   # Jednostka miary
+                        str(qty),                    # Ilość
+                        f"{float(unit_price):.2f}",  # Cena jednostkowa
+                        f"{float(total):.2f}"        # Suma
+                    ]
+                    products.append(row)
+                    print(f"Retrieved product row: {row}")
+        else:
+            print("Error: Table not initialized when getting products!")
+        
+        print(f"Total product rows retrieved: {len(products)}")
+        return products
+    
+    def get_all_products_as_dicts(self):
+        """Get all products from the table as a list of dictionaries (legacy method)"""
         products = []
         if self.tree:
             print(f"Getting products from table with {len(self.tree.get_children())} items")
