@@ -12,7 +12,7 @@ import os
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from settings import settings_manager
+from src.utils.settings import settings_manager
 
 
 class UIComponents:

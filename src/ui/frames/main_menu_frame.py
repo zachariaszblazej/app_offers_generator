@@ -9,7 +9,7 @@ import os
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from config import APP_VERSION
+from src.utils.config import APP_VERSION
 
 
 class MainMenuFrame(Frame):

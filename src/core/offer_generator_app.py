@@ -14,7 +14,7 @@ from src.ui.windows.supplier_search_window import SupplierSearchWindow
 from src.ui.windows.product_add_window import ProductAddWindow
 from src.ui.components.product_table import ProductTable
 from src.services.offer_generator_service import generate_offer_document
-from config import BACKGROUND_IMAGE
+from src.utils.config import BACKGROUND_IMAGE
 
 
 class OfferGeneratorApp:

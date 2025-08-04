@@ -10,7 +10,7 @@ import os
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from config import TABLE_COLUMNS, TABLE_COLUMN_HEADERS
+from src.utils.config import TABLE_COLUMNS, TABLE_COLUMN_HEADERS
 
 
 class ProductTable:

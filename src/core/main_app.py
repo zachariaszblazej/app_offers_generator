@@ -17,7 +17,7 @@ from src.ui.frames.browse_clients_frame import BrowseClientsFrame
 from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
 from src.ui.frames.settings_frame import SettingsFrame
 from src.core.offer_generator_app import OfferGeneratorApp
-from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
+from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 
 
 class OfferGeneratorMainApp:

@@ -35,7 +35,9 @@ src/
 │       ├── product_add_window.py
 │       └── supplier_search_window.py
 └── utils/                   # Funkcje pomocnicze
-    └── __init__.py
+    ├── __init__.py
+    ├── config.py            # Konfiguracja aplikacji
+    └── settings.py          # Zarządzanie ustawieniami
 ```
 
 ## Opis komponentów
@@ -66,6 +68,10 @@ src/
 - **client_search_window.py**: Okno wyszukiwania klientów
 - **supplier_search_window.py**: Okno wyszukiwania dostawców
 - **product_add_window.py**: Okno dodawania produktów
+
+### Utils (`src/utils/`)
+- **config.py**: Stałe konfiguracyjne aplikacji (ścieżki, wymiary okna, itp.)
+- **settings.py**: Zarządzanie ustawieniami użytkownika (dane firmy, preferencje)
 
 ## Uruchamianie aplikacji
 
@@ -125,6 +131,8 @@ To run the original monolithic version:
 | `suppliers_frame.py` | `src/ui/frames/browse_suppliers_frame.py` |
 | `database.py` | `src/data/database_service.py` |
 | `offer_generator.py` | `src/services/offer_generator_service.py` |
+| `config.py` | `src/utils/config.py` |
+| `settings.py` | `src/utils/settings.py` |
 | `table_manager.py` → `ProductTable` | `src/ui/components/product_table.py` |
 | `ui_components.py` → `UIComponents` | `src/ui/components/ui_components.py` |
 | `ui_components.py` → `ClientSearchWindow` | `src/ui/windows/client_search_window.py` |

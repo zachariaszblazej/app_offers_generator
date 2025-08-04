@@ -10,7 +10,7 @@ import sys
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from config import TEMPLATE_PATH, OUTPUT_FOLDER, OFFERS_FOLDER
+from src.utils.config import TEMPLATE_PATH, OUTPUT_FOLDER, OFFERS_FOLDER
 from src.data.database_service import get_next_offer_number, save_offer_to_db
 
 
