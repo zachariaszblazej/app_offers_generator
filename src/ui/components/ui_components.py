@@ -126,12 +126,13 @@ class UIComponents:
         self.entries['suma'].place(x=900, y=740)
     
     def update_suma(self, value):
-        """Update the suma field value"""
-        self.suma_var.set(str(value))
+        """Update the suma field value with comma as decimal separator"""
+        formatted_value = f"{float(value):.2f}".replace('.', ',')
+        self.suma_var.set(formatted_value)
     
     def clear_suma(self):
         """Clear the suma field"""
-        self.suma_var.set("0")
+        self.suma_var.set("0,00")
 
     def fill_client_data(self, client_data):
         """Fill client entry fields with selected client data"""
@@ -196,9 +197,12 @@ class UIComponents:
         # Add products from product table if available
         if self.product_table and hasattr(self.product_table, 'get_all_products'):
             context['products'] = self.product_table.get_all_products()
-            # Calculate total sum of all products (netto)
+            # Calculate total sum of all products (netto) 
             products_total_netto = self.product_table.calculate_totals()
-            context['total_netto'] = products_total_netto
+            context['products_total_netto'] = products_total_netto
+            
+            # Format the netto total with comma as decimal separator
+            context['total_netto'] = f"{products_total_netto:.2f}".replace('.', ',')
             
             
         # Add product table headers for Word template

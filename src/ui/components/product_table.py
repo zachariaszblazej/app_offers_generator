@@ -13,6 +13,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from src.utils.config import TABLE_COLUMNS, TABLE_COLUMN_HEADERS
 
 
+def format_currency(value):
+    """Format currency value with comma as decimal separator"""
+    # Handle both string and numeric values, and values that might already have comma
+    if isinstance(value, str):
+        # If already has comma, convert back to dot for float conversion
+        value = value.replace(',', '.')
+    return f"{float(value):.2f}".replace('.', ',')
+
+
 class ProductTable:
     """Handles product table functionality"""
     
@@ -66,8 +75,12 @@ class ProductTable:
             print(f"Adding product: {product_id}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
             
             if self.tree:
+                # Format numbers with comma for display
+                unit_price_display = format_currency(unit_price)
+                total_display = format_currency(total)
+                
                 self.tree.insert('', index=END, iid=self.count,
-                               values=(product_id, product_name, unit, quantity, unit_price, total))
+                               values=(product_id, product_name, unit, quantity, unit_price_display, total_display))
                 self.count += 1
                 print(f"Product added to table. Total items: {self.count}")
                 return True
@@ -94,7 +107,9 @@ class ProductTable:
             if self.tree.exists(i):
                 item = self.tree.item(str(i))
                 if item['values']:
-                    total += float(item['values'][5])  # TOTAL column (now index 5)
+                    # Handle values that might have comma as decimal separator
+                    total_value = str(item['values'][5]).replace(',', '.')
+                    total += float(total_value)  # TOTAL column (now index 5)
         
         return total
     
@@ -109,14 +124,14 @@ class ProductTable:
                     # Extract values: pid, pname, unit, qty, unit_price, total
                     pid, pname, unit, qty, unit_price, total = item['values']
                     
-                    # Create a row as list with formatted values
+                    # Create a row as list with formatted values (comma as decimal separator)
                     row = [
-                        str(pid),                    # Lp (pozycja)
-                        str(pname),                  # Nazwa produktu
-                        str(unit),                   # Jednostka miary
-                        str(qty),                    # Ilość
-                        f"{float(unit_price):.2f}",  # Cena jednostkowa
-                        f"{float(total):.2f}"        # Suma
+                        str(pid),                           # Lp (pozycja)
+                        str(pname),                         # Nazwa produktu
+                        str(unit),                          # Jednostka miary
+                        str(qty),                           # Ilość
+                        format_currency(unit_price),        # Cena jednostkowa z przecinkiem
+                        format_currency(total)              # Suma z przecinkiem
                     ]
                     products.append(row)
                     print(f"Retrieved product row: {row}")
@@ -140,8 +155,8 @@ class ProductTable:
                         'pname': pname,
                         'unit': unit,
                         'qty': qty,
-                        'unit_price': f"{float(unit_price):.2f}",
-                        'total': f"{float(total):.2f}"
+                        'unit_price': format_currency(unit_price),
+                        'total': format_currency(total)
                     }
                     products.append(product)
                     print(f"Retrieved product: {product}")
