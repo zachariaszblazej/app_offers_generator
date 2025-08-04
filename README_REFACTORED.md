@@ -1,135 +1,148 @@
-# Offer Generator - Refactored
+# Zrefaktoryzowana struktura aplikacji Apka Oferty
 
-This application has been refactored to improve code organization and maintainability. The monolithic `appp.py` file has been split into several modules:
+## Nowa struktura folderów
 
-## File Structure
-
-### Core Modules
-
-- **`main.py`** - Main application with navigation menu and full functionality
-- **`navigation.py`** - Navigation system and menu components
-- **`ui_components.py`** - UI components and layout management
-- **`database.py`** - Database operations and client management
-- **`offer_generator.py`** - Document generation functionality
-- **`table_manager.py`** - Product table management
-- **`config.py`** - Configuration constants and settings
-
-### Legacy Files (For Reference)
-- **`main_old.py`** - Previous refactored version (direct offer creation)
-- **`appp.py`** - Original monolithic file
-
-### Original Files
-- **`appp.py`** - Original monolithic file (kept for reference)
-- **`templates/`** - Document templates
-- **`generated_docs/`** - Generated offer documents
-- **`background_offer_1.png`** - UI background image
-
-## Key Improvements
-
-1. **Separation of Concerns**: Each module has a specific responsibility
-2. **Configuration Management**: All constants centralized in `config.py`
-3. **Better Organization**: UI, database, and business logic are separated
-4. **Maintainability**: Easier to modify and extend individual components
-5. **Reusability**: Components can be reused in other parts of the application
-6. **Database Integration**: Both client and supplier search with auto-fill functionality
-7. **Automatic Offer Numbering**: Auto-generation of sequential offer numbers with proper file naming
-8. **Offer Tracking**: Database storage of offer information and file paths
-9. **Navigation System**: Multi-screen interface with main menu and navigation
-10. **Unified Interface**: Single, modern interface with all features integrated
-
-## Running the Application
-
-### Main Application
-Run the application directly:
-```bash
-python main.py
+```
+src/
+├── __init__.py
+├── core/                     # Główna logika aplikacji
+│   ├── __init__.py
+│   ├── main_app.py          # Główna klasa aplikacji
+│   ├── navigation_manager.py # Manager nawigacji między ramkami
+│   └── offer_generator_app.py # Główna logika generowania ofert
+├── data/                     # Warstwa dostępu do danych
+│   ├── __init__.py
+│   └── database_service.py  # Operacje na bazie danych
+├── services/                 # Logika biznesowa
+│   ├── __init__.py
+│   └── offer_generator_service.py # Serwis generowania ofert
+├── ui/                       # Interfejs użytkownika
+│   ├── __init__.py
+│   ├── components/          # Komponenty wielokrotnego użytku
+│   │   ├── __init__.py
+│   │   ├── product_table.py # Tabela produktów
+│   │   └── ui_components.py # Główne komponenty UI
+│   ├── frames/              # Ramki aplikacji (różne ekrany)
+│   │   ├── __init__.py
+│   │   ├── browse_clients_frame.py
+│   │   ├── browse_suppliers_frame.py
+│   │   ├── main_menu_frame.py
+│   │   ├── offer_creation_frame.py
+│   │   └── settings_frame.py
+│   └── windows/             # Okna modalne i dialogi
+│       ├── __init__.py
+│       ├── client_search_window.py
+│       ├── product_add_window.py
+│       └── supplier_search_window.py
+└── utils/                   # Funkcje pomocnicze
+    └── __init__.py
 ```
 
-### Legacy Versions (For Reference)
-To run the old refactored version:
+## Opis komponentów
+
+### Core (`src/core/`)
+- **main_app.py**: Główna klasa aplikacji `OfferGeneratorMainApp`
+- **navigation_manager.py**: Klasa `NavigationManager` zarządzająca nawigacją
+- **offer_generator_app.py**: Klasa `OfferGeneratorApp` z logiką tworzenia ofert
+
+### Data (`src/data/`)
+- **database_service.py**: Wszystkie funkcje operujące na bazie danych SQLite
+
+### Services (`src/services/`)
+- **offer_generator_service.py**: Logika generowania dokumentów ofert (Word)
+
+### UI Components (`src/ui/components/`)
+- **product_table.py**: Klasa `ProductTable` zarządzająca tabelą produktów
+- **ui_components.py**: Klasa `UIComponents` z głównymi elementami interfejsu
+
+### UI Frames (`src/ui/frames/`)
+- **main_menu_frame.py**: Główne menu aplikacji
+- **offer_creation_frame.py**: Ramka tworzenia ofert
+- **browse_clients_frame.py**: Zarządzanie klientami
+- **browse_suppliers_frame.py**: Zarządzanie dostawcami
+- **settings_frame.py**: Ustawienia aplikacji
+
+### UI Windows (`src/ui/windows/`)
+- **client_search_window.py**: Okno wyszukiwania klientów
+- **supplier_search_window.py**: Okno wyszukiwania dostawców
+- **product_add_window.py**: Okno dodawania produktów
+
+## Uruchamianie aplikacji
+
+### Zrefaktoryzowana wersja
 ```bash
+python main_refactored.py
+```
+
+### Oryginalna wersja (nadal dostępna)
+```bash
+python main.py
 python main_old.py
 ```
 
 To run the original monolithic version:
 ```bash
-python appp.py
 ```
 
-## Module Responsibilities
+## Korzyści z refaktoryzacji
 
-### `main.py`
-- Main application with navigation menu
-- Frame management and initialization
-- Integration of all components
-- Multi-screen coordination
-- Complete offer generation functionality
-- Direct entry point for users
+### 1. **Separacja odpowiedzialności**
+- Każda klasa ma jasno określoną odpowiedzialność
+- Logika biznesowa oddzielona od interfejsu użytkownika
+- Warstwa dostępu do danych wydzielona
 
-### `navigation.py`
-- Navigation manager for frame switching
-- Main menu interface
-- Offer creation frame wrapper
-- Back button functionality
-- Screen transition management
+### 2. **Lepsze zarządzanie zależnościami**
+- Importy są bardziej przejrzyste
+- Łatwiejsze testowanie poszczególnych komponentów
+- Unikanie cyklicznych zależności
 
-### `ui_components.py`
-- Form layout and widget creation
-- Client search window functionality
-- Supplier search window functionality
-- Data collection from UI elements
-- UI state management
-- Auto-fill functionality for both clients and suppliers
+### 3. **Łatwiejsza rozbudowa**
+- Nowe funkcjonalności można dodawać bez modyfikacji istniejącego kodu
+- Jasna struktura ułatwia orientację w projekcie
+- Komponenty można łatwo ponownie wykorzystywać
 
-### `database.py`
-- SQLite database connections
-- Client data retrieval
-- Supplier data retrieval
-- Offer number management
-- Offer tracking and storage
-- Database error handling
+### 4. **Lepsza czytelność kodu**
+- Każdy plik ma jasno określony cel
+- Krótsze, bardziej skupione klasy
+- Lepsze nazewnictwo
 
-### `offer_generator.py`
-- Document template processing
-- PDF/DOCX generation
-- Date formatting utilities
-- Automatic offer number generation
-- Offer file path management
-- Database integration for offer tracking
+### 5. **Łatwiejsze utrzymanie**
+- Błędy można łatwiej zlokalizować
+- Zmiany w jednym komponencie nie wpływają na inne
+- Łatwiejsze debugowanie
 
-### `table_manager.py`
-- Product table functionality
-- Calculation logic
-- Table data management
+## Mapowanie starych plików na nową strukturę
 
-### `config.py`
-- Application constants
-- Default values
-- File paths
-- UI configuration
+| Stary plik | Nowa lokalizacja |
+|------------|------------------|
+| `main.py` → `OfferGeneratorMainApp` | `src/core/main_app.py` |
+| `main.py` → `OfferGeneratorApp` | `src/core/offer_generator_app.py` |
+| `navigation.py` → `NavigationManager` | `src/core/navigation_manager.py` |
+| `navigation.py` → `MainMenuFrame` | `src/ui/frames/main_menu_frame.py` |
+| `navigation.py` → `OfferCreationFrame` | `src/ui/frames/offer_creation_frame.py` |
+| `navigation.py` → `BrowseClientsFrame` | `src/ui/frames/browse_clients_frame.py` |
+| `navigation.py` → `SettingsFrame` | `src/ui/frames/settings_frame.py` |
+| `suppliers_frame.py` | `src/ui/frames/browse_suppliers_frame.py` |
+| `database.py` | `src/data/database_service.py` |
+| `offer_generator.py` | `src/services/offer_generator_service.py` |
+| `table_manager.py` → `ProductTable` | `src/ui/components/product_table.py` |
+| `ui_components.py` → `UIComponents` | `src/ui/components/ui_components.py` |
+| `ui_components.py` → `ClientSearchWindow` | `src/ui/windows/client_search_window.py` |
+| `ui_components.py` → `SupplierSearchWindow` | `src/ui/windows/supplier_search_window.py` |
+| `ui_components.py` → `ProductAddWindow` | `src/ui/windows/product_add_window.py` |
 
-## New Features Added
+## Dalsze możliwości rozwoju
 
-### Automatic Offer Number Generation
+1. **Testy jednostkowe**: Łatwe dodanie testów dla każdej klasy
+2. **Wzorce projektowe**: Możliwość implementacji wzorców jak Factory, Observer
+3. **Konfiguracja**: Wydzielenie konfiguracji do osobnego modułu
+4. **Logowanie**: Dodanie systemu logowania
+5. **Walidacja**: Wydzielenie walidacji do osobnych klas
+6. **API**: Łatwe dodanie REST API lub innych interfejsów
 
-The application now supports automatic generation of offer numbers with the following format:
-`<order_number>/OF/<year>/<client_alias>`
+## Zachowanie kompatybilności
 
-**How it works:**
-1. If the "OFERTA NR:" field is left empty, the system automatically generates a new offer number
-2. If the field contains a value, that value is used as-is
-3. The order number is automatically incremented based on the highest number in the database
-4. Client alias is taken from the database (if client was selected) or auto-generated from client name
-5. Files are saved to `../FakeHantechServer/Oferty/` with format: `<order_number>_OF_<year>_<client_alias>.docx`
-6. Offer information is stored in the database `Offers` table
-
-**Example:**
-- Database has offers up to #218
-- User selects client "AFD3D JACEK CHUDZIŃSKI" (alias: AFD3D)
-- Date is set to 2025
-- Generated offer number: `219/OF/2025/AFD3D`
-- File saved as: `219_OF_2025_AFD3D.docx`
-- Database entry: OfferOrderNumber=219, OfferFilePath=../FakeHantechServer/Oferty/219_OF_2025_AFD3D.docx
+Stare pliki nadal działają, więc można stopniowo migrować do nowej struktury. Zrefaktoryzowana wersja używa tych samych plików konfiguracyjnych i bazy danych co oryginalna.
 
 ## Navigation System
 

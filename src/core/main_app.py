@@ -1,0 +1,139 @@
+"""
+Main application entry point and core application classes
+"""
+from tkinter import *
+from tkinter import ttk
+import locale
+import sys
+import os
+
+# Add project root to Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+from src.core.navigation_manager import NavigationManager
+from src.ui.frames.main_menu_frame import MainMenuFrame
+from src.ui.frames.offer_creation_frame import OfferCreationFrame
+from src.ui.frames.browse_clients_frame import BrowseClientsFrame
+from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
+from src.ui.frames.settings_frame import SettingsFrame
+from src.core.offer_generator_app import OfferGeneratorApp
+from config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
+
+
+class OfferGeneratorMainApp:
+    """Main application class with navigation support"""
+    
+    def __init__(self):
+        # Set locale
+        locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
+        
+        # Create main window
+        self.window = Tk()
+        self.window.title(APP_TITLE)
+        self.window.geometry(WINDOW_SIZE)
+        
+        # Initialize navigation manager
+        self.nav_manager = NavigationManager(self.window)
+        
+        # Create frames
+        self.setup_frames()
+        
+        # Start with main menu
+        self.nav_manager.show_frame('main_menu')
+        
+        # Initialize offer creation components (but don't show them yet)
+        self.setup_offer_components()
+    
+    def setup_frames(self):
+        """Setup navigation frames"""
+        # Main menu frame
+        self.nav_manager.add_frame('main_menu', MainMenuFrame)
+        
+        # Offer creation frame
+        self.nav_manager.add_frame('offer_creation', OfferCreationFrame, OfferGeneratorApp)
+        
+        # Browse clients frame (now includes adding new clients)
+        self.nav_manager.add_frame('browse_clients', BrowseClientsFrame)
+        
+        # Browse suppliers frame (now includes adding new suppliers)
+        self.nav_manager.add_frame('browse_suppliers', BrowseSuppliersFrame)
+        
+        # Settings frame
+        self.nav_manager.add_frame('settings', SettingsFrame)
+    
+    def setup_offer_components(self):
+        """Setup offer creation components"""
+        # These will be initialized when needed
+        self.offer_components_initialized = False
+    
+    def run(self):
+        """Start the application"""
+        self.window.mainloop()
+
+
+def main():
+    """Main entry point with navigation"""
+    app = OfferGeneratorMainApp()
+    app.run()
+
+
+class OfferGeneratorMainApp:
+    """Main application class with navigation support"""
+    
+    def __init__(self):
+        # Set locale
+        locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
+        
+        # Create main window
+        self.window = Tk()
+        self.window.title(APP_TITLE)
+        self.window.geometry(WINDOW_SIZE)
+        
+        # Initialize navigation manager
+        self.nav_manager = NavigationManager(self.window)
+        
+        # Create frames
+        self.setup_frames()
+        
+        # Start with main menu
+        self.nav_manager.show_frame('main_menu')
+        
+        # Initialize offer creation components (but don't show them yet)
+        self.setup_offer_components()
+    
+    def setup_frames(self):
+        """Setup navigation frames"""
+        # Main menu frame
+        self.nav_manager.add_frame('main_menu', MainMenuFrame)
+        
+        # Offer creation frame
+        from src.core.offer_generator_app import OfferGeneratorApp
+        self.nav_manager.add_frame('offer_creation', OfferCreationFrame, OfferGeneratorApp)
+        
+        # Browse clients frame (now includes adding new clients)
+        self.nav_manager.add_frame('browse_clients', BrowseClientsFrame)
+        
+        # Browse suppliers frame (now includes adding new suppliers)
+        self.nav_manager.add_frame('browse_suppliers', BrowseSuppliersFrame)
+        
+        # Settings frame
+        self.nav_manager.add_frame('settings', SettingsFrame)
+    
+    def setup_offer_components(self):
+        """Setup offer creation components"""
+        # These will be initialized when needed
+        self.offer_components_initialized = False
+    
+    def run(self):
+        """Start the application"""
+        self.window.mainloop()
+
+
+def main():
+    """Main entry point with navigation"""
+    app = OfferGeneratorMainApp()
+    app.run()
+
+
+if __name__ == "__main__":
+    main()

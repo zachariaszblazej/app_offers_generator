@@ -1,0 +1,3 @@
+"""
+Modal windows and dialogs
+"""
