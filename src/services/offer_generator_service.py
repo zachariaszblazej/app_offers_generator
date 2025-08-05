@@ -138,7 +138,13 @@ def generate_offer_document(context_data):
         
         # Save to database only if we auto-generated the number
         if order_number is not None:
-            if not save_offer_to_db(order_number, file_path):
+            # Make a copy of context data for storage (exclude template-specific conversions)
+            storage_context = context_data.copy()
+            # Convert date back to timestamp for storage
+            if isinstance(date_obj, datetime.datetime):
+                storage_context['date'] = date_obj.isoformat()
+            
+            if not save_offer_to_db(order_number, file_path, storage_context):
                 tkinter.messagebox.showwarning("Warning", "Offer generated but failed to save to database")
         
         tkinter.messagebox.showinfo("Success", 

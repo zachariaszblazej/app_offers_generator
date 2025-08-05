@@ -18,7 +18,7 @@ class NavigationManager:
         self.frames[name] = frame
         return frame
     
-    def show_frame(self, frame_name):
+    def show_frame(self, frame_name, **kwargs):
         """Show a specific frame and hide others"""
         if self.current_frame:
             self.current_frame.pack_forget()
@@ -30,5 +30,10 @@ class NavigationManager:
             # Initialize offer app if this is the offer creation frame
             if frame_name == 'offer_creation' and hasattr(self.current_frame, 'initialize_offer_app'):
                 self.current_frame.initialize_offer_app()
+            
+            # Initialize offer editor if this is the offer editor frame
+            elif frame_name == 'offer_editor' and hasattr(self.current_frame, 'initialize_offer_app'):
+                offer_path = kwargs.get('offer_path')
+                self.current_frame.initialize_offer_app(offer_path)
         else:
             raise ValueError(f"Frame '{frame_name}' not found")

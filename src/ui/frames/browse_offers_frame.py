@@ -114,6 +114,15 @@ class BrowseOffersFrame(Frame):
                          cursor='hand2')
         open_btn.pack(side=LEFT, padx=(0, 10))
         
+        # Edit button
+        edit_btn = Button(buttons_frame, text="✏️ Edytuj ofertę",
+                         font=("Arial", 12),
+                         bg='#ffc107', fg='black',
+                         padx=15, pady=8,
+                         command=self.edit_selected_offer,
+                         cursor='hand2')
+        edit_btn.pack(side=LEFT, padx=(0, 10))
+        
         # Delete button
         delete_btn = Button(buttons_frame, text="🗑️ Usuń ofertę",
                            font=("Arial", 12),
@@ -126,7 +135,7 @@ class BrowseOffersFrame(Frame):
         # Open folder button
         folder_btn = Button(buttons_frame, text="📁 Otwórz folder",
                            font=("Arial", 12),
-                           bg='#ffc107', fg='black',
+                           bg='#6c757d', fg='black',
                            padx=15, pady=8,
                            command=self.open_offers_folder,
                            cursor='hand2')
@@ -234,6 +243,16 @@ class BrowseOffersFrame(Frame):
                 
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć pliku: {e}")
+    
+    def edit_selected_offer(self):
+        """Edit the selected offer"""
+        offer_path = self.get_selected_offer_path()
+        if not offer_path:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz ofertę do edycji!")
+            return
+        
+        # Navigate to offer editor with the selected file
+        self.nav_manager.show_frame('offer_editor', offer_path=offer_path)
     
     def delete_selected_offer(self):
         """Delete the selected offer"""

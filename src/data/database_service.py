@@ -2,6 +2,7 @@
 Database service for managing data operations
 """
 import sqlite3
+import json
 import tkinter.messagebox
 import sys
 import os
@@ -56,18 +57,64 @@ def get_next_offer_number():
         return 1
 
 
-def save_offer_to_db(offer_order_number, offer_file_path):
+def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
     """Save offer information to the database"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO Offers (OfferOrderNumber, OfferFilePath) VALUES (?, ?)", 
-                      (offer_order_number, offer_file_path))
+        
+        # Convert context to JSON if provided
+        context_json = None
+        if offer_context:
+            context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
+        
+        cursor.execute("INSERT INTO Offers (OfferOrderNumber, OfferFilePath, OfferContext) VALUES (?, ?, ?)", 
+                      (offer_order_number, offer_file_path, context_json))
         conn.commit()
         conn.close()
         return True
     except sqlite3.Error as e:
         tkinter.messagebox.showerror("Database Error", f"Error saving offer to database: {e}")
+        return False
+
+
+def get_offer_context_from_db(offer_file_path):
+    """Get offer context from database by file path"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT OfferContext FROM Offers WHERE OfferFilePath = ?", (offer_file_path,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result and result[0]:
+            # Parse JSON context
+            return json.loads(result[0])
+        return None
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error retrieving offer context: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        tkinter.messagebox.showerror("Data Error", f"Error parsing offer context: {e}")
+        return None
+
+
+def update_offer_context_in_db(offer_file_path, offer_context):
+    """Update offer context in database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Convert context to JSON
+        context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
+        
+        cursor.execute("UPDATE Offers SET OfferContext = ? WHERE OfferFilePath = ?", 
+                      (context_json, offer_file_path))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error updating offer context: {e}")
         return False
 
 
