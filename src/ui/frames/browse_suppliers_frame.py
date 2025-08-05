@@ -23,6 +23,9 @@ class BrowseSuppliersFrame(Frame):
         super().__init__(parent)
         self.nav_manager = nav_manager
         self.current_editing_nip = None
+        self.suppliers_data = []  # Store current suppliers data for sorting
+        self.sort_column = None
+        self.sort_reverse = False
         self.create_ui()
         
     def create_ui(self):
@@ -88,11 +91,11 @@ class BrowseSuppliersFrame(Frame):
         columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2')
         self.suppliers_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
-        # Define headings
-        self.suppliers_tree.heading('NIP', text='NIP')
-        self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy')
-        self.suppliers_tree.heading('Adres 1', text='Adres 1')
-        self.suppliers_tree.heading('Adres 2', text='Adres 2')
+        # Define headings with sorting commands
+        self.suppliers_tree.heading('NIP', text='NIP', command=lambda: self.sort_by_column('NIP'))
+        self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
+        self.suppliers_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
+        self.suppliers_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
         
         # Configure column widths
         self.suppliers_tree.column('NIP', width=100)
@@ -232,17 +235,68 @@ class BrowseSuppliersFrame(Frame):
     
     def refresh_suppliers_list(self):
         """Refresh the suppliers list"""
+        # Load suppliers from database
+        suppliers = get_suppliers_from_db()
+        self.suppliers_data = []
+        
+        # Convert to list of dictionaries for easier sorting
+        for supplier in suppliers:
+            nip, company_name, address1, address2 = supplier
+            self.suppliers_data.append({
+                'NIP': nip,
+                'Nazwa firmy': company_name,
+                'Adres 1': address1,
+                'Adres 2': address2
+            })
+        
+        # Display the data
+        self.display_suppliers_data()
+    
+    def display_suppliers_data(self):
+        """Display suppliers data in the treeview"""
         # Clear existing items
         for item in self.suppliers_tree.get_children():
             self.suppliers_tree.delete(item)
         
-        # Load suppliers from database
-        suppliers = get_suppliers_from_db()
+        # Populate tree with current data
+        for supplier in self.suppliers_data:
+            self.suppliers_tree.insert('', 'end', values=(
+                supplier['NIP'], 
+                supplier['Nazwa firmy'], 
+                supplier['Adres 1'], 
+                supplier['Adres 2']
+            ))
+    
+    def sort_by_column(self, column):
+        """Sort suppliers data by the specified column"""
+        # Toggle sort direction if clicking the same column
+        if self.sort_column == column:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = column
+            self.sort_reverse = False
         
-        # Populate tree
-        for supplier in suppliers:
-            nip, company_name, address1, address2 = supplier
-            self.suppliers_tree.insert('', 'end', values=(nip, company_name, address1, address2))
+        # Sort the data
+        self.suppliers_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
+        
+        # Update column headers to show sort direction
+        self.update_column_headers()
+        
+        # Refresh display
+        self.display_suppliers_data()
+    
+    def update_column_headers(self):
+        """Update column headers to show current sort direction"""
+        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2']
+        
+        # Reset all headers
+        for col in columns:
+            self.suppliers_tree.heading(col, text=col)
+        
+        # Add sort indicator to current sort column
+        if self.sort_column:
+            arrow = " ↓" if self.sort_reverse else " ↑"
+            self.suppliers_tree.heading(self.sort_column, text=f'{self.sort_column}{arrow}')
     
     def on_supplier_select(self, event):
         """Handle supplier selection"""

@@ -23,6 +23,9 @@ class BrowseClientsFrame(Frame):
         super().__init__(parent)
         self.nav_manager = nav_manager
         self.current_editing_nip = None
+        self.clients_data = []  # Store current clients data for sorting
+        self.sort_column = None
+        self.sort_reverse = False
         self.create_ui()
         
     def create_ui(self):
@@ -88,12 +91,12 @@ class BrowseClientsFrame(Frame):
         columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias')
         self.clients_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
-        # Define headings
-        self.clients_tree.heading('NIP', text='NIP')
-        self.clients_tree.heading('Nazwa firmy', text='Nazwa firmy')
-        self.clients_tree.heading('Adres 1', text='Adres 1')
-        self.clients_tree.heading('Adres 2', text='Adres 2')
-        self.clients_tree.heading('Alias', text='Alias')
+        # Define headings with sorting commands
+        self.clients_tree.heading('NIP', text='NIP', command=lambda: self.sort_by_column('NIP'))
+        self.clients_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
+        self.clients_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
+        self.clients_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
+        self.clients_tree.heading('Alias', text='Alias', command=lambda: self.sort_by_column('Alias'))
         
         # Configure column widths
         self.clients_tree.column('NIP', width=100)
@@ -237,17 +240,70 @@ class BrowseClientsFrame(Frame):
     
     def refresh_clients_list(self):
         """Refresh the clients list"""
+        # Load clients from database
+        clients = get_clients_from_db()
+        self.clients_data = []
+        
+        # Convert to list of dictionaries for easier sorting
+        for client in clients:
+            nip, company_name, address1, address2, alias = client
+            self.clients_data.append({
+                'NIP': nip,
+                'Nazwa firmy': company_name,
+                'Adres 1': address1,
+                'Adres 2': address2,
+                'Alias': alias
+            })
+        
+        # Display the data
+        self.display_clients_data()
+    
+    def display_clients_data(self):
+        """Display clients data in the treeview"""
         # Clear existing items
         for item in self.clients_tree.get_children():
             self.clients_tree.delete(item)
         
-        # Load clients from database
-        clients = get_clients_from_db()
+        # Populate tree with current data
+        for client in self.clients_data:
+            self.clients_tree.insert('', 'end', values=(
+                client['NIP'], 
+                client['Nazwa firmy'], 
+                client['Adres 1'], 
+                client['Adres 2'], 
+                client['Alias']
+            ))
+    
+    def sort_by_column(self, column):
+        """Sort clients data by the specified column"""
+        # Toggle sort direction if clicking the same column
+        if self.sort_column == column:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = column
+            self.sort_reverse = False
         
-        # Populate tree
-        for client in clients:
-            nip, company_name, address1, address2, alias = client
-            self.clients_tree.insert('', 'end', values=(nip, company_name, address1, address2, alias))
+        # Sort the data
+        self.clients_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
+        
+        # Update column headers to show sort direction
+        self.update_column_headers()
+        
+        # Refresh display
+        self.display_clients_data()
+    
+    def update_column_headers(self):
+        """Update column headers to show current sort direction"""
+        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias']
+        
+        # Reset all headers
+        for col in columns:
+            self.clients_tree.heading(col, text=col)
+        
+        # Add sort indicator to current sort column
+        if self.sort_column:
+            arrow = " ↓" if self.sort_reverse else " ↑"
+            self.clients_tree.heading(self.sort_column, text=f'{self.sort_column}{arrow}')
     
     def on_client_select(self, event):
         """Handle client selection"""
