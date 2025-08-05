@@ -136,7 +136,7 @@ class UIComponents:
         self.entries['supplier_address_2'] = Entry(self.window, width=25)
         self.entries['supplier_address_2'].place(x=60, y=330)
 
-        self.entries['supplier_nip'] = Entry(self.window, width=25)
+        self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
         # Client entries
@@ -149,7 +149,7 @@ class UIComponents:
         self.entries['client_address_2'] = Entry(self.window, width=25)
         self.entries['client_address_2'].place(x=660, y=330)
 
-        self.entries['client_nip'] = Entry(self.window, width=25)
+        self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
     
     def create_offer_details_section(self):
@@ -209,6 +209,9 @@ class UIComponents:
         self.entries['client_name'].delete(0, END)
         self.entries['client_address_1'].delete(0, END)
         self.entries['client_address_2'].delete(0, END)
+        
+        # Clear NIP field (temporarily enable it)
+        self.entries['client_nip'].config(state='normal')
         self.entries['client_nip'].delete(0, END)
         
         # Fill with selected client data
@@ -216,6 +219,9 @@ class UIComponents:
         self.entries['client_address_1'].insert(0, address1)
         self.entries['client_address_2'].insert(0, address2)
         self.entries['client_nip'].insert(0, str(nip))
+        
+        # Set NIP field back to readonly
+        self.entries['client_nip'].config(state='readonly')
     
     def fill_supplier_data(self, supplier_data):
         """Fill supplier entry fields with selected supplier data"""
@@ -225,6 +231,9 @@ class UIComponents:
         self.entries['supplier_name'].delete(0, END)
         self.entries['supplier_address_1'].delete(0, END)
         self.entries['supplier_address_2'].delete(0, END)
+        
+        # Clear NIP field (temporarily enable it)
+        self.entries['supplier_nip'].config(state='normal')
         self.entries['supplier_nip'].delete(0, END)
         
         # Fill with selected supplier data
@@ -232,6 +241,9 @@ class UIComponents:
         self.entries['supplier_address_1'].insert(0, address1)
         self.entries['supplier_address_2'].insert(0, address2)
         self.entries['supplier_nip'].insert(0, str(nip))
+        
+        # Set NIP field back to readonly
+        self.entries['supplier_nip'].config(state='readonly')
     
     def get_context_data(self):
         """Get all form data as context for document generation"""
@@ -315,8 +327,15 @@ class UIComponents:
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
             for field in client_fields:
                 if field in context_data and field in self.entries:
-                    self.entries[field].delete(0, END)
-                    self.entries[field].insert(0, context_data.get(field, ''))
+                    # Handle readonly NIP field
+                    if field == 'client_nip':
+                        self.entries[field].config(state='normal')
+                        self.entries[field].delete(0, END)
+                        self.entries[field].insert(0, context_data.get(field, ''))
+                        self.entries[field].config(state='readonly')
+                    else:
+                        self.entries[field].delete(0, END)
+                        self.entries[field].insert(0, context_data.get(field, ''))
             
             # Store client alias for new offer generation
             if 'client_alias' in context_data:
@@ -343,8 +362,15 @@ class UIComponents:
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
             for field in supplier_fields:
                 if field in context_data and field in self.entries:
-                    self.entries[field].delete(0, END)
-                    self.entries[field].insert(0, context_data.get(field, ''))
+                    # Handle readonly NIP field
+                    if field == 'supplier_nip':
+                        self.entries[field].config(state='normal')
+                        self.entries[field].delete(0, END)
+                        self.entries[field].insert(0, context_data.get(field, ''))
+                        self.entries[field].config(state='readonly')
+                    else:
+                        self.entries[field].delete(0, END)
+                        self.entries[field].insert(0, context_data.get(field, ''))
             
             # Load offer details
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 

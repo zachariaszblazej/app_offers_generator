@@ -159,15 +159,29 @@ class OfferEditorApp:
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
             for field in client_fields:
                 if field in context_data and field in self.ui.entries:
-                    self.ui.entries[field].delete(0, END)
-                    self.ui.entries[field].insert(0, context_data.get(field, ''))
+                    # Handle readonly NIP field
+                    if field == 'client_nip':
+                        self.ui.entries[field].config(state='normal')
+                        self.ui.entries[field].delete(0, END)
+                        self.ui.entries[field].insert(0, context_data.get(field, ''))
+                        self.ui.entries[field].config(state='readonly')
+                    else:
+                        self.ui.entries[field].delete(0, END)
+                        self.ui.entries[field].insert(0, context_data.get(field, ''))
             
             # Load supplier data
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
             for field in supplier_fields:
                 if field in context_data and field in self.ui.entries:
-                    self.ui.entries[field].delete(0, END)
-                    self.ui.entries[field].insert(0, context_data.get(field, ''))
+                    # Handle readonly NIP field
+                    if field == 'supplier_nip':
+                        self.ui.entries[field].config(state='normal')
+                        self.ui.entries[field].delete(0, END)
+                        self.ui.entries[field].insert(0, context_data.get(field, ''))
+                        self.ui.entries[field].config(state='readonly')
+                    else:
+                        self.ui.entries[field].delete(0, END)
+                        self.ui.entries[field].insert(0, context_data.get(field, ''))
             
             # Load offer details
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 
