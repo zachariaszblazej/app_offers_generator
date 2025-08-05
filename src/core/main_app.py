@@ -19,6 +19,7 @@ from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
 from src.ui.frames.browse_offers_frame import BrowseOffersFrame
 from src.ui.frames.settings_frame import SettingsFrame
 from src.core.offer_generator_app import OfferGeneratorApp
+from src.services.sync_service import OfferSyncService
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 
 
@@ -45,6 +46,9 @@ class OfferGeneratorMainApp:
         
         # Create frames
         self.setup_frames()
+        
+        # Perform database synchronization with offers folder
+        self.perform_synchronization()
         
         # Start with main menu
         self.nav_manager.show_frame('main_menu')
@@ -83,6 +87,51 @@ class OfferGeneratorMainApp:
         """Setup offer creation components"""
         # These will be initialized when needed
         self.offer_components_initialized = False
+    
+    def perform_synchronization(self):
+        """Perform database synchronization with offers folder"""
+        try:
+            import tkinter.messagebox
+            
+            sync_service = OfferSyncService()
+            result = sync_service.synchronize()
+            
+            if result.success:
+                tkinter.messagebox.showinfo(
+                    "Synchronizacja", 
+                    f"Synchronizacja zakończona pomyślnie!\n\n"
+                    f"Sprawdzono {result.total_offers_db} ofert z bazy danych\n"
+                    f"Znaleziono {result.total_offers_folder} plików w folderze ofert\n"
+                    f"Wszystkie dane są spójne."
+                )
+            else:
+                # Generate detailed report
+                report = sync_service.generate_report(result)
+                
+                # Show error dialog with option to see full report
+                response = tkinter.messagebox.showerror(
+                    "Błędy synchronizacji",
+                    f"Wykryto problemy podczas synchronizacji!\n\n"
+                    f"Problemy:\n"
+                    f"- Brakujące pliki: {len(result.missing_files)}\n"
+                    f"- Pliki sieroty: {len(result.orphaned_files)}\n"
+                    f"- Nieprawidłowe numery ofert: {len(result.invalid_offer_numbers)}\n"
+                    f"- Nieprawidłowe aliasy klientów: {len(result.invalid_client_aliases)}\n\n"
+                    f"Sprawdź konsolę/terminal aby zobaczyć pełny raport."
+                )
+                
+                # Print full report to console
+                print("\n" + "="*60)
+                print(report)
+                print("="*60 + "\n")
+                
+        except Exception as e:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror(
+                "Błąd synchronizacji", 
+                f"Wystąpił błąd podczas synchronizacji:\n{str(e)}"
+            )
+            print(f"Synchronization error: {e}")
     
     def run(self):
         """Start the application"""
