@@ -305,8 +305,6 @@ class UIComponents:
             TABLE_COLUMN_HEADERS['U_PRICE'],  # 'Cena jednostkowa netto [PLN]'
             TABLE_COLUMN_HEADERS['TOTAL']     # 'Wartość Netto [PLN]'
         ]
-        
-        print(f"Debug: get_context_data - client_alias: {self.selected_client_alias}")
             
         return context
     
@@ -323,7 +321,6 @@ class UIComponents:
             # Store client alias for new offer generation
             if 'client_alias' in context_data:
                 self.selected_client_alias = context_data['client_alias']
-                print(f"Debug: Loaded client_alias from context: {self.selected_client_alias}")
                 
                 # If client_alias is None, try to find it in database by client NIP
                 if self.selected_client_alias is None:
@@ -339,13 +336,8 @@ class UIComponents:
                             if client_data:
                                 # client_data format: (nip, company_name, address1, address2, alias)
                                 self.selected_client_alias = client_data[4]  # alias is at index 4
-                                print(f"Debug: Found client alias in database: {self.selected_client_alias}")
-                            else:
-                                print(f"Debug: Client not found in database for NIP: {client_nip}")
                         except Exception as e:
                             print(f"Debug: Error looking up client in database: {e}")
-            else:
-                print("Debug: No client_alias in context_data")
             
             # Load supplier data
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']

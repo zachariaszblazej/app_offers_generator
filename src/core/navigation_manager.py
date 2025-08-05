@@ -41,8 +41,12 @@ class NavigationManager:
                 # Clear existing content
                 for widget in self.frames[frame_name].content_container.winfo_children():
                     widget.destroy()
-                # Create new generator app with template context
-                OfferGeneratorApp(self.frames[frame_name], self, template_context=kwargs['template_context'])
+                # Create new generator app with template context and mark it as initialized
+                self.frames[frame_name].offer_app_instance = OfferGeneratorApp(self.frames[frame_name], self, template_context=kwargs['template_context'])
+            elif frame_name == 'offer_generator':
+                # Regular generator without template - ensure it's initialized
+                if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
+                    self.frames[frame_name].initialize_offer_app()
             
             self.frames[frame_name].show()
             self.current_frame = frame_name

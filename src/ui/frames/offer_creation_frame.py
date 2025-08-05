@@ -63,5 +63,6 @@ class OfferCreationFrame(Frame):
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
-        # Initialize offer app when shown
-        self.initialize_offer_app()
+        # Initialize offer app when shown (only if not already initialized)
+        if not self.offer_app_instance:
+            self.initialize_offer_app()
