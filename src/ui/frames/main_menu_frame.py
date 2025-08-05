@@ -100,8 +100,8 @@ class MainMenuFrame(Frame):
         self.nav_manager.show_frame('offer_creation')
     
     def view_offers(self):
-        """Placeholder for viewing offers functionality"""
-        tkinter.messagebox.showinfo("Informacja", "Funkcja przeglądania ofert będzie dostępna wkrótce!")
+        """Navigate to browse offers screen"""
+        self.nav_manager.show_frame('browse_offers')
     
     def browse_clients(self):
         """Navigate to browse clients screen"""

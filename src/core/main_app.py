@@ -15,6 +15,7 @@ from src.ui.frames.main_menu_frame import MainMenuFrame
 from src.ui.frames.offer_creation_frame import OfferCreationFrame
 from src.ui.frames.browse_clients_frame import BrowseClientsFrame
 from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
+from src.ui.frames.browse_offers_frame import BrowseOffersFrame
 from src.ui.frames.settings_frame import SettingsFrame
 from src.core.offer_generator_app import OfferGeneratorApp
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
@@ -116,6 +117,9 @@ class OfferGeneratorMainApp:
         # Browse suppliers frame (now includes adding new suppliers)
         self.nav_manager.add_frame('browse_suppliers', BrowseSuppliersFrame)
         
+        # Browse offers frame
+        self.nav_manager.add_frame('browse_offers', BrowseOffersFrame)
+        
         # Settings frame
         self.nav_manager.add_frame('settings', SettingsFrame)
     
@@ -127,12 +131,6 @@ class OfferGeneratorMainApp:
     def run(self):
         """Start the application"""
         self.window.mainloop()
-
-
-def main():
-    """Main entry point with navigation"""
-    app = OfferGeneratorMainApp()
-    app.run()
 
 
 if __name__ == "__main__":
