@@ -10,7 +10,7 @@ import sys
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import TEMPLATE_PATH, OFFERS_FOLDER
+from src.utils.config import TEMPLATE_PATH, get_offers_folder
 from src.data.database_service import get_next_offer_number, save_offer_to_db
 
 
@@ -31,7 +31,7 @@ def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:
         
         # Create filename: <order_number>_OF_<year>_<client_alias>.docx
         filename = f"{order_number}_OF_{year}_{client_alias}.docx"
-        file_path = os.path.join(OFFERS_FOLDER, filename)
+        file_path = os.path.join(get_offers_folder(), filename)
         
         return offer_number, file_path, order_number
         

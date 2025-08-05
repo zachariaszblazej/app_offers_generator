@@ -3,6 +3,11 @@
 # Database configuration
 DATABASE_PATH = '../FakeHantechServer/DocumentsCreationData.db'
 
+# Default application settings
+DEFAULT_APP_SETTINGS = {
+    'offers_folder': '../FakeHantechServer/Oferty'
+}
+
 # Default company data
 DEFAULT_COMPANY_DATA = {
     'town': 'Wałbrzych',
@@ -29,8 +34,17 @@ DEFAULT_OFFER_DETAILS = {
 
 # File paths
 TEMPLATE_PATH = 'templates/offer_template.docx'
-OFFERS_FOLDER = '../FakeHantechServer/Oferty'
+OFFERS_FOLDER = '../FakeHantechServer/Oferty'  # Fallback default
 BACKGROUND_IMAGE = 'background_offer_1.png'
+
+def get_offers_folder():
+    """Get the current offers folder from settings or return default"""
+    try:
+        from src.utils.settings import settings_manager
+        return settings_manager.get_app_setting('offers_folder')
+    except ImportError:
+        # Fallback to default if settings not available
+        return OFFERS_FOLDER
 
 # UI Configuration
 WINDOW_SIZE = "1600x1200"

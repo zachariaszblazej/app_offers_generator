@@ -14,7 +14,7 @@ from datetime import datetime
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from src.utils.config import OFFERS_FOLDER
+from src.utils.config import get_offers_folder
 from src.data.database_service import delete_offer_from_db, find_offer_by_filename
 
 
@@ -185,19 +185,22 @@ class BrowseOffersFrame(Frame):
         
         self.offers_list = []
         
+        # Get current offers folder from settings
+        offers_folder = get_offers_folder()
+        
         # Check if output folder exists
-        if not os.path.exists(OFFERS_FOLDER):
-            os.makedirs(OFFERS_FOLDER)
+        if not os.path.exists(offers_folder):
+            os.makedirs(offers_folder)
             return
         
         # Get all .docx files from output folder
         try:
-            files = [f for f in os.listdir(OFFERS_FOLDER) if f.endswith('.docx')]
+            files = [f for f in os.listdir(offers_folder) if f.endswith('.docx')]
             
             # Create list of file info for sorting
             file_info_list = []
             for filename in files:
-                filepath = os.path.join(OFFERS_FOLDER, filename)
+                filepath = os.path.join(offers_folder, filename)
                 stat_info = os.stat(filepath)
                 file_info_list.append({
                     'filename': filename,
@@ -219,7 +222,7 @@ class BrowseOffersFrame(Frame):
                 self.tree.insert('', 'end', values=(file_info['filename'], file_date))
                 self.offers_list.append(file_info['filepath'])
             
-            print(f"Loaded {len(files)} offers from {OFFERS_FOLDER} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
+            print(f"Loaded {len(files)} offers from {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
             
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować listy ofert: {e}")
@@ -232,7 +235,7 @@ class BrowseOffersFrame(Frame):
         
         item = self.tree.item(selected[0])
         filename = item['values'][0]
-        return os.path.join(OFFERS_FOLDER, filename)
+        return os.path.join(get_offers_folder(), filename)
     
     def open_selected_offer(self):
         """Open the selected offer in default application"""
@@ -308,12 +311,13 @@ class BrowseOffersFrame(Frame):
     def open_offers_folder(self):
         """Open the offers folder in file explorer"""
         try:
+            offers_folder = get_offers_folder()
             if platform.system() == 'Darwin':  # macOS
-                subprocess.call(['open', OFFERS_FOLDER])
+                subprocess.call(['open', offers_folder])
             elif platform.system() == 'Windows':
-                os.startfile(OFFERS_FOLDER)
+                os.startfile(offers_folder)
             else:  # Linux
-                subprocess.call(['xdg-open', OFFERS_FOLDER])
+                subprocess.call(['xdg-open', offers_folder])
                 
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć folderu: {e}")
@@ -331,7 +335,7 @@ class BrowseOffersFrame(Frame):
             return
             
         filename = item_values[0]
-        offer_path = os.path.join(OFFERS_FOLDER, filename)
+        offer_path = os.path.join(get_offers_folder(), filename)
         
         # Load context from selected offer
         from src.data.database_service import get_offer_context_from_db

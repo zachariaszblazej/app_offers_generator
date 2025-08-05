@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from src.utils.config import DEFAULT_COMPANY_DATA, DEFAULT_OFFER_DETAILS
+from src.utils.config import DEFAULT_COMPANY_DATA, DEFAULT_OFFER_DETAILS, DEFAULT_APP_SETTINGS
 
 SETTINGS_FILE = 'app_settings.json'
 
@@ -26,6 +26,8 @@ class SettingsManager:
                         settings['company_data'] = DEFAULT_COMPANY_DATA.copy()
                     if 'offer_details' not in settings:
                         settings['offer_details'] = DEFAULT_OFFER_DETAILS.copy()
+                    if 'app_settings' not in settings:
+                        settings['app_settings'] = DEFAULT_APP_SETTINGS.copy()
                     return settings
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Error loading settings: {e}")
@@ -37,7 +39,8 @@ class SettingsManager:
         """Get default application settings"""
         return {
             'company_data': DEFAULT_COMPANY_DATA.copy(),
-            'offer_details': DEFAULT_OFFER_DETAILS.copy()
+            'offer_details': DEFAULT_OFFER_DETAILS.copy(),
+            'app_settings': DEFAULT_APP_SETTINGS.copy()
         }
     
     def save_settings(self):
@@ -91,6 +94,27 @@ class SettingsManager:
         if 'offer_details' not in self.settings:
             self.settings['offer_details'] = {}
         self.settings['offer_details'].update(new_settings)
+
+    # App settings methods
+    def get_app_setting(self, key):
+        """Get a specific app setting"""
+        return self.settings.get('app_settings', {}).get(key, DEFAULT_APP_SETTINGS.get(key, ''))
+    
+    def set_app_setting(self, key, value):
+        """Set a specific app setting"""
+        if 'app_settings' not in self.settings:
+            self.settings['app_settings'] = {}
+        self.settings['app_settings'][key] = value
+    
+    def get_all_app_settings(self):
+        """Get all app settings"""
+        return self.settings.get('app_settings', DEFAULT_APP_SETTINGS.copy())
+    
+    def update_app_settings(self, new_settings):
+        """Update multiple app settings"""
+        if 'app_settings' not in self.settings:
+            self.settings['app_settings'] = {}
+        self.settings['app_settings'].update(new_settings)
 
 # Global settings manager instance
 settings_manager = SettingsManager()

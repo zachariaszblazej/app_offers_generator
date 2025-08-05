@@ -75,6 +75,9 @@ class SettingsFrame(Frame):
         # Offer details section
         self.create_offer_details_section(content_container)
         
+        # App settings section
+        self.create_app_settings_section(content_container)
+        
         # Buttons section
         self.create_buttons_section(scrollable_frame)
     
@@ -252,6 +255,66 @@ class SettingsFrame(Frame):
         self.entries['cena'] = Entry(cena_frame, width=30, font=("Arial", 11))
         self.entries['cena'].pack(fill=X, pady=(5, 0))
     
+    def create_app_settings_section(self, parent):
+        """Create app settings section"""
+        # Section title
+        app_title = Label(parent, text="Ustawienia aplikacji", 
+                         font=("Arial", 16, "bold"), 
+                         bg='#f0f0f0', fg='#333333')
+        app_title.pack(anchor=W, pady=(20, 20))
+        
+        # Main form frame with border
+        form_frame = Frame(parent, bg='#ffffff', relief=RIDGE, bd=2)
+        form_frame.pack(fill=X, pady=(0, 30))
+        
+        # Inner frame with padding
+        inner_frame = Frame(form_frame, bg='#ffffff')
+        inner_frame.pack(fill=X, padx=20, pady=20)
+        
+        # Offers folder
+        offers_folder_frame = Frame(inner_frame, bg='#ffffff')
+        offers_folder_frame.pack(fill=X, pady=5)
+        
+        # Label and description
+        label_frame = Frame(offers_folder_frame, bg='#ffffff')
+        label_frame.pack(fill=X, pady=(0, 5))
+        Label(label_frame, text="Folder z ofertami:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane wygenerowane oferty", 
+              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+        
+        # Entry and browse button
+        entry_frame = Frame(offers_folder_frame, bg='#ffffff')
+        entry_frame.pack(fill=X, pady=(5, 0))
+        
+        self.entries['offers_folder'] = Entry(entry_frame, width=50, font=("Arial", 11))
+        self.entries['offers_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+        
+        browse_btn = Button(entry_frame, text="Przeglądaj...",
+                           font=("Arial", 10),
+                           bg='#007bff', fg='white',
+                           padx=15, pady=5,
+                           command=self.browse_offers_folder,
+                           cursor='hand2')
+        browse_btn.pack(side=RIGHT)
+
+    def browse_offers_folder(self):
+        """Open folder browser for offers folder"""
+        from tkinter import filedialog
+        
+        current_folder = self.entries['offers_folder'].get()
+        if not current_folder:
+            current_folder = self.settings_manager.get_app_setting('offers_folder')
+        
+        folder_path = filedialog.askdirectory(
+            title="Wybierz folder dla ofert",
+            initialdir=current_folder if os.path.exists(current_folder) else os.path.expanduser("~")
+        )
+        
+        if folder_path:
+            self.entries['offers_folder'].delete(0, END)
+            self.entries['offers_folder'].insert(0, folder_path)
+    
     def create_buttons_section(self, parent):
         """Create buttons section"""
         buttons_frame = Frame(parent, bg='#f0f0f0')
@@ -287,6 +350,16 @@ class SettingsFrame(Frame):
                 value = offer_details_settings.get(field, '')
                 self.entries[field].delete(0, END)
                 self.entries[field].insert(0, value)
+        
+        # Load app settings data
+        app_settings = self.settings_manager.get_all_app_settings()
+        app_fields = ['offers_folder']
+        
+        for field in app_fields:
+            if field in self.entries:
+                value = app_settings.get(field, '')
+                self.entries[field].delete(0, END)
+                self.entries[field].insert(0, value)
     
     def save_settings(self):
         """Save settings to file"""
@@ -310,13 +383,72 @@ class SettingsFrame(Frame):
         # Update offer details settings
         self.settings_manager.update_offer_details_settings(offer_details_settings)
         
+        # Collect app settings and check if offers folder changed
+        app_fields = ['offers_folder']
+        app_settings = {}
+        offers_folder_changed = False
+        
+        for field in app_fields:
+            if field in self.entries:
+                new_value = self.entries[field].get().strip()
+                old_value = self.settings_manager.get_app_setting(field)
+                app_settings[field] = new_value
+                
+                if field == 'offers_folder' and new_value != old_value:
+                    offers_folder_changed = True
+        
+        # Update app settings
+        self.settings_manager.update_app_settings(app_settings)
+        
         # Save to file
         if self.settings_manager.save_settings():
-            # Refresh company data in any existing offer creation windows
-            self.refresh_offer_creation_data()
-            tkinter.messagebox.showinfo("Sukces", "Ustawienia zostały zapisane pomyślnie!")
+            # Check if app restart is needed
+            if offers_folder_changed:
+                self.show_restart_prompt()
+            else:
+                # Refresh company data in any existing offer creation windows
+                self.refresh_offer_creation_data()
+                tkinter.messagebox.showinfo("Sukces", "Ustawienia zostały zapisane pomyślnie!")
         else:
             tkinter.messagebox.showerror("Błąd", "Nie udało się zapisać ustawień.")
+    
+    def show_restart_prompt(self):
+        """Show restart prompt when offers folder has changed"""
+        import tkinter.messagebox
+        result = tkinter.messagebox.showinfo("Restart wymagany", 
+                                           "Ścieżka do folderu z ofertami została zmieniona.\n"
+                                           "Aplikacja zostanie uruchomiona ponownie.\n\n"
+                                           "Kliknij OK aby kontynuować.",
+                                           type='ok')
+        if result == 'ok':
+            self.restart_application()
+    
+    def restart_application(self):
+        """Restart the application"""
+        import sys
+        import os
+        import subprocess
+        
+        try:
+            # Get the current script path
+            script_path = os.path.abspath(sys.argv[0])
+            
+            # Close current application
+            self.nav_manager.root.quit()
+            self.nav_manager.root.destroy()
+            
+            # Start new instance
+            if sys.platform.startswith('win'):
+                subprocess.Popen([sys.executable, script_path])
+            else:
+                subprocess.Popen([sys.executable, script_path])
+                
+            # Exit current process
+            sys.exit(0)
+            
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się uruchomić aplikacji ponownie: {e}")
+            print(f"Restart error: {e}")
     
     def refresh_offer_creation_data(self):
         """Refresh company data in offer creation window if it exists"""
