@@ -2,6 +2,7 @@
 Core offer generator application logic
 """
 from tkinter import *
+import tkinter.messagebox
 import sys
 import os
 
@@ -12,6 +13,7 @@ from src.ui.components.ui_components import UIComponents
 from src.ui.windows.client_search_window import ClientSearchWindow
 from src.ui.windows.supplier_search_window import SupplierSearchWindow
 from src.ui.windows.product_add_window import ProductAddWindow
+from src.ui.windows.product_edit_window import ProductEditWindow
 from src.ui.components.product_table import ProductTable
 from src.services.offer_generator_service import generate_offer_document
 from src.utils.config import BACKGROUND_IMAGE
@@ -51,6 +53,7 @@ class OfferGeneratorApp:
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         self.product_add = ProductAddWindow(self.window, self.insert_product)
+        self.product_edit = ProductEditWindow(self.window, self.update_product)
         
         # Create UI sections
         self.ui.create_upper_section()
@@ -77,6 +80,13 @@ class OfferGeneratorApp:
                padx=15, pady=8,
                command=self.remove_product,
                cursor='hand2').place(x=260, y=740)
+               
+        Button(self.window, text="EDYTUJ PRODUKT", 
+               font=("Arial", 12, "bold"),
+               bg='#ffc107', fg='black',
+               padx=15, pady=8,
+               command=self.edit_product,
+               cursor='hand2').place(x=50, y=780)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
@@ -94,7 +104,7 @@ class OfferGeneratorApp:
         generate_offer_button = Button(self.window, text="Generuj ofertę", 
                                      font=("Arial", 12, "bold"),
                                      command=self.generate_offer)
-        generate_offer_button.place(x=700, y=950)
+        generate_offer_button.place(x=700, y=980)
     
     def insert_product(self, product_data):
         """Insert a new product into the table"""
@@ -109,6 +119,22 @@ class OfferGeneratorApp:
         self.product_table.remove_record()
         # Automatically recalculate total after removal
         self.calc_total()
+    
+    def edit_product(self):
+        """Edit selected product from the table"""
+        selected_product = self.product_table.get_selected_product()
+        if selected_product:
+            self.product_edit.open_product_edit_window(selected_product)
+        else:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
+    
+    def update_product(self, item_id, product_data):
+        """Update existing product in the table"""
+        if self.product_table.update_record(item_id, product_data):
+            # Automatically recalculate total after update
+            self.calc_total()
+            return True
+        return False
     
     def calc_total(self):
         """Calculate and display totals"""

@@ -97,6 +97,58 @@ class ProductTable:
             for selected_item in self.tree.selection():
                 self.tree.delete(selected_item)
     
+    def get_selected_product(self):
+        """Get data of the selected product for editing"""
+        if self.tree and self.tree.selection():
+            selected_item = self.tree.selection()[0]
+            values = self.tree.item(selected_item)['values']
+            if values:
+                # Convert values back to original format (remove commas from prices)
+                product_id, product_name, unit, quantity, unit_price_display, total_display = values
+                
+                # Convert prices back to dot format for editing
+                unit_price = unit_price_display.replace(',', '.')
+                
+                return {
+                    'item_id': selected_item,
+                    'product_id': str(product_id),
+                    'product_name': str(product_name),
+                    'unit': str(unit),
+                    'quantity': str(quantity),
+                    'unit_price': str(unit_price)
+                }
+        return None
+    
+    def update_record(self, item_id, product_data):
+        """Update existing product record"""
+        product_id, product_name, unit, quantity, unit_price = product_data
+        
+        if not all([product_id, product_name, unit, quantity, unit_price]):
+            tkinter.messagebox.showinfo("WARNING", "Enter all the fields!")
+            return False
+        
+        try:
+            product_id = int(product_id)
+            quantity = int(quantity)
+            unit_price = float(unit_price)
+            total = quantity * unit_price
+            
+            if self.tree:
+                # Format numbers with comma for display
+                unit_price_display = format_currency(unit_price)
+                total_display = format_currency(total)
+                
+                # Update the record
+                self.tree.item(item_id, values=(product_id, product_name, unit, quantity, unit_price_display, total_display))
+                print(f"Product updated: {product_id}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
+                return True
+            else:
+                print("Error: Table not initialized!")
+                
+        except ValueError:
+            tkinter.messagebox.showinfo("WARNING", "Enter valid numeric values!")
+            return False
+    
     def calculate_totals(self):
         """Calculate totals from all products in the table"""
         if not self.tree:

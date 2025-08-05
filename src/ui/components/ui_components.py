@@ -131,34 +131,34 @@ class UIComponents:
     
     def create_offer_details_section(self):
         """Create additional offer details section under USUŃ PRODUKT button"""
-        # Entry fields for offer details (without labels) - positioned under USUŃ PRODUKT button
+        # Entry fields for offer details (without labels) - positioned under EDYTUJ PRODUKT button
         self.entries['termin_realizacji'] = Entry(self.window, width=20)
-        self.entries['termin_realizacji'].place(x=470, y=760)
+        self.entries['termin_realizacji'].place(x=470, y=780)
         self.entries['termin_realizacji'].insert(0, self.offer_details_data.get('termin_realizacji', 'p1'))
         
         self.entries['termin_platnosci'] = Entry(self.window, width=20)
-        self.entries['termin_platnosci'].place(x=470, y=785)
+        self.entries['termin_platnosci'].place(x=470, y=805)
         self.entries['termin_platnosci'].insert(0, self.offer_details_data.get('termin_platnosci', 'p1'))
         
         self.entries['warunki_dostawy'] = Entry(self.window, width=20)
-        self.entries['warunki_dostawy'].place(x=470, y=810)
+        self.entries['warunki_dostawy'].place(x=470, y=830)
         self.entries['warunki_dostawy'].insert(0, self.offer_details_data.get('warunki_dostawy', 'p1'))
         
         self.entries['waznosc_oferty'] = Entry(self.window, width=20)
-        self.entries['waznosc_oferty'].place(x=470, y=835)
+        self.entries['waznosc_oferty'].place(x=470, y=855)
         self.entries['waznosc_oferty'].insert(0, self.offer_details_data.get('waznosc_oferty', 'p1'))
         
         self.entries['gwarancja'] = Entry(self.window, width=20)
-        self.entries['gwarancja'].place(x=470, y=860)
+        self.entries['gwarancja'].place(x=470, y=880)
         self.entries['gwarancja'].insert(0, self.offer_details_data.get('gwarancja', 'p1'))
         
         self.entries['cena'] = Entry(self.window, width=20)
-        self.entries['cena'].place(x=470, y=885)
+        self.entries['cena'].place(x=470, y=905)
         self.entries['cena'].insert(0, self.offer_details_data.get('cena', 'p1'))
         
         # Multi-line text field for notes (no default value)
         self.entries['uwagi'] = Text(self.window, width=25, height=3)
-        self.entries['uwagi'].place(x=470, y=910)
+        self.entries['uwagi'].place(x=470, y=930)
     
     def create_totals_section(self):
         """Create the totals section"""

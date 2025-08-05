@@ -1,35 +1,39 @@
 """
-Product add window for adding new products to the offer
+Product edit window for editing existing products in the offer
 """
 from tkinter import *
 import tkinter.messagebox
 
 
-class ProductAddWindow:
-    """Handles product addition in a separate window"""
+class ProductEditWindow:
+    """Handles product editing in a separate window"""
     
-    def __init__(self, parent_window, product_add_callback):
+    def __init__(self, parent_window, product_update_callback):
         self.parent_window = parent_window
-        self.product_add_callback = product_add_callback
+        self.product_update_callback = product_update_callback
         self.entries = {}
+        self.item_id = None
     
-    def open_product_add_window(self):
-        """Open product addition window"""
-        print("DEBUG: Opening product add window")  # Debug
+    def open_product_edit_window(self, product_data):
+        """Open product edit window with pre-filled data"""
+        if not product_data:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
+            return
+            
+        self.item_id = product_data['item_id']
         
-        # Create product add window
+        print("DEBUG: Opening product edit window")  # Debug
+        
+        # Create product edit window
         product_window = Toplevel(self.parent_window)
-        product_window.title("Dodaj produkt")
-        product_window.geometry("700x500")  # Increased size
+        product_window.title("Edytuj produkt")
+        product_window.geometry("700x500")  # Same size as add window
         product_window.resizable(False, False)
         product_window.grab_set()  # Make window modal
         product_window.transient(self.parent_window)
         product_window.configure(bg='#f8f9fa')  # Light background
         
-        # Bind Enter key to the window for global shortcut
-        product_window.bind('<Return>', lambda event: self._add_product(product_window))
-        
-        print("DEBUG: Product window created")  # Debug
+        print("DEBUG: Product edit window created")  # Debug
         
         # Center the window
         product_window.geometry("+%d+%d" % (
@@ -38,7 +42,7 @@ class ProductAddWindow:
         ))
         
         # Title
-        title_label = Label(product_window, text="🛒 Dodaj nowy produkt do oferty", 
+        title_label = Label(product_window, text="✏️ Edytuj produkt w ofercie", 
                            font=("Arial", 18, "bold"),
                            bg='#f8f9fa', fg='#343a40')
         title_label.pack(pady=(30, 20), fill=X)
@@ -51,30 +55,39 @@ class ProductAddWindow:
         Label(form_frame, text="ID produktu:", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_id'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['product_id'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
+        self.entries['product_id'].insert(0, product_data['product_id'])
         
         # Product name
         Label(form_frame, text="Nazwa produktu:", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
         self.entries['product_name'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
+        self.entries['product_name'].insert(0, product_data['product_name'])
         
         # Unit
         Label(form_frame, text="Jednostka miary (j.m.):", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
         self.entries['unit'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit'].insert(0, product_data['unit'])
         
         # Quantity
         Label(form_frame, text="Ilość:", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
         self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['quantity'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
+        self.entries['quantity'].insert(0, product_data['quantity'])
         
         # Unit price
         Label(form_frame, text="Cena jednostkowa:", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['unit_price'].grid(row=4, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit_price'].insert(0, product_data['unit_price'])
         
         # Bind Enter key to all entry fields
         for entry in self.entries.values():
-            entry.bind('<Return>', lambda event: self._add_product(product_window))
+            entry.bind('<Return>', lambda event: self._update_product(product_window))
+        
+        # Bind Enter key to update product
+        product_window.bind('<Return>', lambda event: self._update_product(product_window))
+        product_window.bind('<KP_Enter>', lambda event: self._update_product(product_window))  # Numpad Enter
         
         # Add separator line
         separator = Frame(product_window, height=2, bg='#cccccc')
@@ -86,16 +99,16 @@ class ProductAddWindow:
         buttons_frame.pack_propagate(False)  # Maintain frame size
         
         # Center the buttons using place instead of pack
-        # Add button - make it very prominent and centered
-        add_btn = Button(buttons_frame, text="✓ ZATWIERDŹ I DODAJ", 
-                        font=("Arial", 16, "bold"),
-                        bg='#FF4500', fg='black',  # Orange color to make it very visible
-                        padx=40, pady=15,
-                        command=lambda: self._add_product(product_window),
-                        cursor='hand2',
-                        relief=RAISED,
-                        bd=4)
-        add_btn.place(relx=0.3, rely=0.5, anchor=CENTER)  # Center left
+        # Update button - make it very prominent and centered
+        update_btn = Button(buttons_frame, text="✓ ZATWIERDŹ ZMIANY", 
+                           font=("Arial", 16, "bold"),
+                           bg='#FF8C00', fg='black',  # Orange color to make it very visible
+                           padx=40, pady=15,
+                           command=lambda: self._update_product(product_window),
+                           cursor='hand2',
+                           relief=RAISED,
+                           bd=4)
+        update_btn.place(relx=0.3, rely=0.5, anchor=CENTER)  # Center left
         
         # Cancel button
         cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
@@ -106,48 +119,29 @@ class ProductAddWindow:
                            cursor='hand2')
         cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)  # Center right
         
-        # Bind Enter key to add product
-        product_window.bind('<Return>', lambda event: self._add_product(product_window))
-        product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))  # Numpad Enter
-        
-        # Set focus to first field
-        self.entries['product_id'].focus_set()
+        print("DEBUG: Product edit window UI created")  # Debug
     
-    def _add_product(self, product_window):
-        """Handle product addition"""
-        print("DEBUG: _add_product called")  # Debug
-        # Get product data
-        product_data = [
-            self.entries['product_id'].get(),
-            self.entries['product_name'].get(),
-            self.entries['unit'].get(),
-            self.entries['quantity'].get(),
-            self.entries['unit_price'].get()
-        ]
-        print(f"DEBUG: Product data: {product_data}")  # Debug
-        
-        # Validate data
-        if not all([field.strip() for field in product_data]):
-            tkinter.messagebox.showwarning("Błąd", "Proszę wypełnić wszystkie pola!")
-            return
-        
-        # Try to validate numeric fields
+    def _update_product(self, window):
+        """Update product and close window"""
         try:
-            int(product_data[0])  # product_id
-            int(product_data[3])  # quantity  
-            float(product_data[4])  # unit_price
-        except ValueError:
-            tkinter.messagebox.showerror("Błąd", "ID produktu i ilość muszą być liczbami całkowitymi, a cena liczbą!")
-            return
-        
-        # Call the callback function to add product
-        if self.product_add_callback(product_data):
-            # Show success message
-            tkinter.messagebox.showinfo("Sukces", "Produkt został pomyślnie dodany do tabeli!")
-            # Clear fields after successful addition
-            for entry in self.entries.values():
-                entry.delete(0, END)
-            # Close window
-            product_window.destroy()
-        else:
-            tkinter.messagebox.showerror("Błąd", "Nie udało się dodać produktu do tabeli!")
+            # Get values from entries
+            product_data = (
+                self.entries['product_id'].get().strip(),
+                self.entries['product_name'].get().strip(),
+                self.entries['unit'].get().strip(),
+                self.entries['quantity'].get().strip(),
+                self.entries['unit_price'].get().strip()
+            )
+            
+            print(f"DEBUG: Updating product with data: {product_data}")  # Debug
+            
+            # Call the update callback with item_id and product data
+            if self.product_update_callback(self.item_id, product_data):
+                print("DEBUG: Product updated successfully")  # Debug
+                window.destroy()
+                tkinter.messagebox.showinfo("Sukces", "Produkt został zaktualizowany!")
+            else:
+                print("DEBUG: Product update failed")  # Debug
+        except Exception as e:
+            print(f"DEBUG: Error updating product: {e}")  # Debug
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się zaktualizować produktu: {e}")
