@@ -228,6 +228,24 @@ class UIComponents:
     
     def get_context_data(self):
         """Get all form data as context for document generation"""
+        # Parse date with multiple format support
+        date_str = self.date_var.get()
+        try:
+            # Try parsing with the expected format first
+            parsed_date = datetime.strptime(date_str, "%d %m %Y").date()
+        except ValueError:
+            try:
+                # Try parsing with month name format (Polish)
+                parsed_date = datetime.strptime(date_str, "%d %B %Y").date()
+            except ValueError:
+                try:
+                    # Try parsing with month name format (English)
+                    parsed_date = datetime.strptime(date_str, "%d %B %Y").date()
+                except ValueError:
+                    # If all parsing fails, use current date
+                    print(f"Warning: Could not parse date '{date_str}', using current date")
+                    parsed_date = datetime.now().date()
+        
         context = {
             'town': self.entries['town'].get(),
             'address_1': self.entries['address1'].get(),
@@ -238,7 +256,7 @@ class UIComponents:
             'phone_number': self.entries['phone'].get(),
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
-            'date': datetime.strptime(self.date_var.get(), "%d %m %Y").date(),
+            'date': parsed_date,
             'supplier_name': self.entries['supplier_name'].get(),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),

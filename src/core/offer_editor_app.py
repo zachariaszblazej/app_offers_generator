@@ -179,8 +179,28 @@ class OfferEditorApp:
                 try:
                     date_value = context_data['date']
                     if isinstance(date_value, str):
-                        # Set date using the StringVar
-                        self.ui.date_var.set(date_value)
+                        # Try to parse the date and convert to expected format
+                        try:
+                            # Try parsing date with full month name format (from database)
+                            parsed_date = datetime.strptime(date_value, "%d %B %Y")
+                            # Convert to the format expected by the application
+                            formatted_date = parsed_date.strftime("%d %m %Y")
+                            self.ui.date_var.set(formatted_date)
+                            print(f"Date converted from '{date_value}' to '{formatted_date}'")
+                        except ValueError:
+                            # If parsing fails, try with numeric format
+                            try:
+                                parsed_date = datetime.strptime(date_value, "%d %m %Y")
+                                self.ui.date_var.set(date_value)
+                                print(f"Date kept as '{date_value}'")
+                            except ValueError:
+                                print(f"Could not parse date '{date_value}', keeping as is")
+                                self.ui.date_var.set(date_value)
+                    else:
+                        # If date is not string, convert to string
+                        if hasattr(date_value, 'strftime'):
+                            formatted_date = date_value.strftime("%d %m %Y")
+                            self.ui.date_var.set(formatted_date)
                 except Exception as e:
                     print(f"Error setting date: {e}")
             
@@ -262,21 +282,36 @@ class OfferEditorApp:
     
     def update_offer(self):
         """Update the existing offer document"""
-        # Get form data
-        context_data = self.ui.get_context_data()
-        
-        # Confirm update
-        result = tkinter.messagebox.askyesno(
-            "Potwierdzenie", 
-            f"Czy na pewno chcesz nadpisać istniejącą ofertę?\\n\\n" +
-            f"Plik: {os.path.basename(self.offer_path)}\\n\\n" +
-            "Ta operacja nie może być cofnięta!"
-        )
-        
-        if result:
-            # Update document using specialized service
-            update_offer_document(context_data, self.offer_path)
+        try:
+            # Get form data
+            context_data = self.ui.get_context_data()
+            print(f"Context data collected: {list(context_data.keys())}")  # Debug
             
-            # Return to browse offers
-            tkinter.messagebox.showinfo("Sukces", "Oferta została zaktualizowana!")
-            self.nav_manager.show_frame('browse_offers')
+            # Confirm update
+            result = tkinter.messagebox.askyesno(
+                "Potwierdzenie", 
+                f"Czy na pewno chcesz nadpisać istniejącą ofertę?\\n\\n" +
+                f"Plik: {os.path.basename(self.offer_path)}\\n\\n" +
+                "Ta operacja nie może być cofnięta!"
+            )
+            
+            if result:
+                print(f"Updating offer: {self.offer_path}")  # Debug
+                
+                # Update document using specialized service
+                success = update_offer_document(context_data, self.offer_path)
+                
+                if success:
+                    # Return to browse offers
+                    tkinter.messagebox.showinfo("Sukces", 
+                        "Oferta została pomyślnie zaktualizowana!\\n\\n" +
+                        "Dokument Word oraz kontekst w bazie danych zostały nadpisane.")
+                    self.nav_manager.show_frame('browse_offers')
+                else:
+                    tkinter.messagebox.showerror("Błąd", 
+                        "Nie udało się zaktualizować oferty. Sprawdź logi w konsoli.")
+                        
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", 
+                f"Wystąpił błąd podczas aktualizacji oferty:\\n{e}")
+            print(f"Error in update_offer: {e}")  # Debug

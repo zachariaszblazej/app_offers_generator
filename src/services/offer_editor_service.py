@@ -13,10 +13,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import TEMPLATE_PATH
 from src.services.offer_generator_service import convert_date
+from src.data.database_service import update_offer_context_in_db
 
 
 def update_offer_document(context_data, existing_file_path):
-    """Update an existing offer document"""
+    """Update an existing offer document and database context"""
     try:
         # Create backup of original file
         backup_path = existing_file_path + ".backup"
@@ -34,6 +35,9 @@ def update_offer_document(context_data, existing_file_path):
         # Save to the same location (overwrite)
         doc.save(existing_file_path)
         
+        # Update context in database
+        update_offer_context_in_db(existing_file_path, context_data)
+        
         # Remove backup if successful
         if os.path.exists(backup_path):
             os.remove(backup_path)
@@ -49,4 +53,5 @@ def update_offer_document(context_data, existing_file_path):
         
         tkinter.messagebox.showerror("Błąd", 
             f"Nie udało się zaktualizować oferty:\\n{e}")
+        print(f"Error updating offer: {e}")  # Debug info
         return False
