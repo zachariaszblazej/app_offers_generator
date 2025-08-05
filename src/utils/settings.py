@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from src.utils.config import DEFAULT_COMPANY_DATA
+from src.utils.config import DEFAULT_COMPANY_DATA, DEFAULT_OFFER_DETAILS
 
 SETTINGS_FILE = 'app_settings.json'
 
@@ -24,6 +24,8 @@ class SettingsManager:
                     # Ensure all required keys exist
                     if 'company_data' not in settings:
                         settings['company_data'] = DEFAULT_COMPANY_DATA.copy()
+                    if 'offer_details' not in settings:
+                        settings['offer_details'] = DEFAULT_OFFER_DETAILS.copy()
                     return settings
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Error loading settings: {e}")
@@ -34,7 +36,8 @@ class SettingsManager:
     def get_default_settings(self):
         """Get default application settings"""
         return {
-            'company_data': DEFAULT_COMPANY_DATA.copy()
+            'company_data': DEFAULT_COMPANY_DATA.copy(),
+            'offer_details': DEFAULT_OFFER_DETAILS.copy()
         }
     
     def save_settings(self):
@@ -71,6 +74,31 @@ class SettingsManager:
     def reset_company_data_to_defaults(self):
         """Reset company data settings to defaults"""
         self.settings['company_data'] = DEFAULT_COMPANY_DATA.copy()
+
+    # Offer details methods
+    def get_offer_details_setting(self, key):
+        """Get a specific offer details setting"""
+        return self.settings.get('offer_details', {}).get(key, DEFAULT_OFFER_DETAILS.get(key, ''))
+    
+    def set_offer_details_setting(self, key, value):
+        """Set a specific offer details setting"""
+        if 'offer_details' not in self.settings:
+            self.settings['offer_details'] = {}
+        self.settings['offer_details'][key] = value
+    
+    def get_all_offer_details_settings(self):
+        """Get all offer details settings"""
+        return self.settings.get('offer_details', DEFAULT_OFFER_DETAILS.copy())
+    
+    def update_offer_details_settings(self, new_settings):
+        """Update multiple offer details settings"""
+        if 'offer_details' not in self.settings:
+            self.settings['offer_details'] = {}
+        self.settings['offer_details'].update(new_settings)
+    
+    def reset_offer_details_to_defaults(self):
+        """Reset offer details settings to defaults"""
+        self.settings['offer_details'] = DEFAULT_OFFER_DETAILS.copy()
 
 # Global settings manager instance
 settings_manager = SettingsManager()

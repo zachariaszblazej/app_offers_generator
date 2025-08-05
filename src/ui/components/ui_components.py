@@ -23,6 +23,7 @@ class UIComponents:
         self.entries = {}
         # Load company data from settings instead of config
         self.text_data = settings_manager.get_all_company_data_settings()
+        self.offer_details_data = settings_manager.get_all_offer_details_settings()
         self.selected_client_alias = None  # Store selected client alias
         self.date_var = StringVar(value=datetime.now().strftime("%d %m %Y"))
         self.suma_var = StringVar(value="0")  # Add StringVar for suma field
@@ -31,6 +32,7 @@ class UIComponents:
     def refresh_company_data(self):
         """Refresh company data from settings"""
         self.text_data = settings_manager.get_all_company_data_settings()
+        self.offer_details_data = settings_manager.get_all_offer_details_settings()
         # Update existing fields if they exist
         if hasattr(self, 'entries'):
             company_fields = ['town', 'address1', 'address2', 'nip', 'regon', 'email', 'phone', 'bank_name', 'account_number']
@@ -40,6 +42,14 @@ class UIComponents:
                     # Map field names to data keys
                     data_key = 'address_1' if field == 'address1' else 'address_2' if field == 'address2' else 'phone_number' if field == 'phone' else field
                     value = self.text_data.get(data_key, '')
+                    self.entries[field].insert(0, value)
+            
+            # Update offer details fields
+            offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
+            for field in offer_fields:
+                if field in self.entries:
+                    self.entries[field].delete(0, END)
+                    value = self.offer_details_data.get(field, '')
                     self.entries[field].insert(0, value)
     
     def create_upper_section(self):
@@ -124,23 +134,29 @@ class UIComponents:
         # Entry fields for offer details (without labels) - positioned under USUŃ PRODUKT button
         self.entries['termin_realizacji'] = Entry(self.window, width=20)
         self.entries['termin_realizacji'].place(x=470, y=760)
+        self.entries['termin_realizacji'].insert(0, self.offer_details_data.get('termin_realizacji', 'p1'))
         
         self.entries['termin_platnosci'] = Entry(self.window, width=20)
         self.entries['termin_platnosci'].place(x=470, y=785)
+        self.entries['termin_platnosci'].insert(0, self.offer_details_data.get('termin_platnosci', 'p1'))
         
         self.entries['warunki_dostawy'] = Entry(self.window, width=20)
         self.entries['warunki_dostawy'].place(x=470, y=810)
+        self.entries['warunki_dostawy'].insert(0, self.offer_details_data.get('warunki_dostawy', 'p1'))
         
         self.entries['waznosc_oferty'] = Entry(self.window, width=20)
         self.entries['waznosc_oferty'].place(x=470, y=835)
+        self.entries['waznosc_oferty'].insert(0, self.offer_details_data.get('waznosc_oferty', 'p1'))
         
         self.entries['gwarancja'] = Entry(self.window, width=20)
         self.entries['gwarancja'].place(x=470, y=860)
+        self.entries['gwarancja'].insert(0, self.offer_details_data.get('gwarancja', 'p1'))
         
         self.entries['cena'] = Entry(self.window, width=20)
         self.entries['cena'].place(x=470, y=885)
+        self.entries['cena'].insert(0, self.offer_details_data.get('cena', 'p1'))
         
-        # Multi-line text field for notes
+        # Multi-line text field for notes (no default value)
         self.entries['uwagi'] = Text(self.window, width=25, height=3)
         self.entries['uwagi'].place(x=470, y=910)
     

@@ -90,6 +90,70 @@ To run the original monolithic version:
 ```bash
 ```
 
+## Nowe funkcjonalności w zrefaktoryzowanej wersji
+
+### � Polskie formatowanie liczb (przecinek jako separator dziesiętny)
+Wszystkie wartości finansowe w aplikacji używają polskiego formatowania z **przecinkiem jako separatorem dziesiętnym**:
+
+```python
+# Przykłady formatowania:
+"220.99" → "220,99"
+"1500.50" → "1500,50" 
+"3299.00" → "3299,00"
+```
+
+**Gdzie stosowane:**
+- ✅ Ceny jednostkowe w tabeli produktów
+- ✅ Wartości netto poszczególnych pozycji
+- ✅ Suma netto wszystkich produktów
+- ✅ Kwota VAT
+- ✅ Suma brutto
+- ✅ Pole sumy w interfejsie użytkownika
+
+### �📋 Format produktów jako lista list
+Produkty w ofercie są teraz zapisywane i przekazywane do generatora dokumentów jako **lista list**, gdzie każda lista reprezentuje jeden wiersz tabeli produktów:
+
+```python
+# Format produktów w kontekście:
+context = {
+    'products': [
+        ['1', 'Komputer Dell', 'szt', '2', '2500,00', '5000,00'],
+        ['2', 'Monitor Samsung', 'szt', '3', '800,50', '2401,50'],
+        ['3', 'Kabel HDMI', 'm', '5', '25,75', '128,75']
+    ],
+    'product_headers': ['Lp.', 'Nazwa', 'j.m.', 'ilość', 'Cena\n jednostkowa\n netto [PLN]', 'Wartość\n Netto\n [PLN]'],
+    
+    # Automatycznie obliczone wartości finansowe (z polskim formatowaniem):
+    'products_total_netto': 7529.25,              # Suma netto jako liczba
+    'products_total_netto_formatted': '7529,25',   # Suma netto z przecinkiem
+    'products_vat_amount': '1355,27',              # Kwota VAT z przecinkiem
+    'products_total_brutto': '8884,52',           # Suma brutto z przecinkiem
+    'tax_rate_percent': '18%'                      # Stawka VAT
+}
+
+# Każdy wiersz zawiera wartości z polskim formatowaniem:
+# [Lp, Nazwa produktu, Jednostka, Ilość, Cena jednostkowa, Suma]
+```
+
+**Użycie w szablonie Word:**
+- `{{product_headers}}` - nagłówki kolumn tabeli
+- `{{products}}` - wiersze tabeli z polskim formatowaniem liczb
+- `{{products_total_netto_formatted}}` - suma netto: "7529,25"
+- `{{products_vat_amount}}` - kwota VAT: "1355,27"
+- `{{products_total_brutto}}` - suma brutto: "8884,52"
+- `{{tax_rate_percent}}` - stawka VAT: "18%"
+
+**Korzyści tego podejścia:**
+- ✅ Łatwiejsze użycie w szablonach Word (bezpośrednie wstawienie jako tabela)
+- ✅ Prostszy format danych (lista wartości zamiast słowników)
+- ✅ **Polskie formatowanie liczb z przecinkiem**
+- ✅ Automatyczne obliczanie sum finansowych (netto, VAT, brutto)
+- ✅ Kompatybilność z polskimi standardami dokumentów
+- ✅ Dostępne nagłówki kolumn dla pełnej kontroli nad tabelą
+
+### 🔄 Zachowanie kompatybilności
+Dostępna jest również metoda `get_all_products_as_dicts()` zwracająca produkty w starym formacie (słowniki) dla kompatybilności z istniejącym kodem.
+
 ## Korzyści z refaktoryzacji
 
 ### 1. **Separacja odpowiedzialności**

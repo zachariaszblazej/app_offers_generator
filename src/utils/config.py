@@ -17,6 +17,16 @@ DEFAULT_COMPANY_DATA = {
     'offer_number': ''
 }
 
+# Default offer details data
+DEFAULT_OFFER_DETAILS = {
+    'termin_realizacji': 'p1',
+    'termin_platnosci': 'p1',
+    'warunki_dostawy': 'p1',
+    'waznosc_oferty': 'p1',
+    'gwarancja': 'p1',
+    'cena': 'p1'
+}
+
 # File paths
 TEMPLATE_PATH = 'templates/offer_template.docx'
 OUTPUT_FOLDER = 'generated_docs'

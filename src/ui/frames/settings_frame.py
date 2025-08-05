@@ -72,6 +72,9 @@ class SettingsFrame(Frame):
         # Company data section
         self.create_company_data_section(content_container)
         
+        # Offer details section
+        self.create_offer_details_section(content_container)
+        
         # Buttons section
         self.create_buttons_section(scrollable_frame)
     
@@ -175,6 +178,80 @@ class SettingsFrame(Frame):
         self.entries['account_number'] = Entry(account_frame, width=60, font=("Arial", 11))
         self.entries['account_number'].pack(fill=X, pady=(5, 0))
     
+    def create_offer_details_section(self, parent):
+        """Create offer details settings section"""
+        # Section title
+        offer_title = Label(parent, text="Szczegóły oferty - domyślne wartości", 
+                           font=("Arial", 16, "bold"), 
+                           bg='#f0f0f0', fg='#333333')
+        offer_title.pack(anchor=W, pady=(20, 20))
+        
+        # Main form frame with border
+        form_frame = Frame(parent, bg='#ffffff', relief=RIDGE, bd=2)
+        form_frame.pack(fill=X, pady=(0, 30))
+        
+        # Inner frame with padding
+        inner_frame = Frame(form_frame, bg='#ffffff')
+        inner_frame.pack(fill=X, padx=20, pady=20)
+        
+        # Create two columns
+        columns_frame = Frame(inner_frame, bg='#ffffff')
+        columns_frame.pack(fill=X)
+        
+        left_column = Frame(columns_frame, bg='#ffffff')
+        left_column.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 10))
+        
+        right_column = Frame(columns_frame, bg='#ffffff')
+        right_column.pack(side=RIGHT, fill=BOTH, expand=True, padx=(10, 0))
+        
+        # Termin realizacji
+        termin_realizacji_frame = Frame(left_column, bg='#ffffff')
+        termin_realizacji_frame.pack(fill=X, pady=5)
+        Label(termin_realizacji_frame, text="Termin realizacji:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['termin_realizacji'] = Entry(termin_realizacji_frame, width=30, font=("Arial", 11))
+        self.entries['termin_realizacji'].pack(fill=X, pady=(5, 0))
+        
+        # Termin płatności
+        termin_platnosci_frame = Frame(left_column, bg='#ffffff')
+        termin_platnosci_frame.pack(fill=X, pady=5)
+        Label(termin_platnosci_frame, text="Termin płatności:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['termin_platnosci'] = Entry(termin_platnosci_frame, width=30, font=("Arial", 11))
+        self.entries['termin_platnosci'].pack(fill=X, pady=(5, 0))
+        
+        # Warunki dostawy
+        warunki_dostawy_frame = Frame(left_column, bg='#ffffff')
+        warunki_dostawy_frame.pack(fill=X, pady=5)
+        Label(warunki_dostawy_frame, text="Warunki dostawy:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['warunki_dostawy'] = Entry(warunki_dostawy_frame, width=30, font=("Arial", 11))
+        self.entries['warunki_dostawy'].pack(fill=X, pady=(5, 0))
+        
+        # Ważność oferty
+        waznosc_oferty_frame = Frame(right_column, bg='#ffffff')
+        waznosc_oferty_frame.pack(fill=X, pady=5)
+        Label(waznosc_oferty_frame, text="Ważność oferty:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['waznosc_oferty'] = Entry(waznosc_oferty_frame, width=30, font=("Arial", 11))
+        self.entries['waznosc_oferty'].pack(fill=X, pady=(5, 0))
+        
+        # Gwarancja
+        gwarancja_frame = Frame(right_column, bg='#ffffff')
+        gwarancja_frame.pack(fill=X, pady=5)
+        Label(gwarancja_frame, text="Gwarancja:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['gwarancja'] = Entry(gwarancja_frame, width=30, font=("Arial", 11))
+        self.entries['gwarancja'].pack(fill=X, pady=(5, 0))
+        
+        # Cena
+        cena_frame = Frame(right_column, bg='#ffffff')
+        cena_frame.pack(fill=X, pady=5)
+        Label(cena_frame, text="Cena:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        self.entries['cena'] = Entry(cena_frame, width=30, font=("Arial", 11))
+        self.entries['cena'].pack(fill=X, pady=(5, 0))
+    
     def create_buttons_section(self, parent):
         """Create buttons section"""
         buttons_frame = Frame(parent, bg='#f0f0f0')
@@ -209,6 +286,16 @@ class SettingsFrame(Frame):
                 value = company_settings.get(field, '')
                 self.entries[field].delete(0, END)
                 self.entries[field].insert(0, value)
+        
+        # Load offer details data
+        offer_details_settings = self.settings_manager.get_all_offer_details_settings()
+        offer_details_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
+        
+        for field in offer_details_fields:
+            if field in self.entries:
+                value = offer_details_settings.get(field, '')
+                self.entries[field].delete(0, END)
+                self.entries[field].insert(0, value)
     
     def save_settings(self):
         """Save settings to file"""
@@ -221,6 +308,16 @@ class SettingsFrame(Frame):
         
         # Update settings
         self.settings_manager.update_company_data_settings(company_settings)
+        
+        # Collect offer details settings
+        offer_details_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
+        offer_details_settings = {}
+        for field in offer_details_fields:
+            if field in self.entries:
+                offer_details_settings[field] = self.entries[field].get().strip()
+        
+        # Update offer details settings
+        self.settings_manager.update_offer_details_settings(offer_details_settings)
         
         # Save to file
         if self.settings_manager.save_settings():
@@ -246,6 +343,7 @@ class SettingsFrame(Frame):
                                            "Czy na pewno chcesz przywrócić domyślne ustawienia?")
         if result:
             self.settings_manager.reset_company_data_to_defaults()
+            self.settings_manager.reset_offer_details_to_defaults()
             self.load_current_settings()
             tkinter.messagebox.showinfo("Sukces", "Przywrócono domyślne ustawienia!")
     
