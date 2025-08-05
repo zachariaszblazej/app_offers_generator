@@ -25,7 +25,10 @@ class BrowseOffersFrame(Frame):
         super().__init__(parent)
         self.nav_manager = nav_manager
         self.offers_list = []
+        self.sort_by = 'date'  # default sort by date
+        self.sort_reverse = True  # newest first
         self.create_ui()
+        self.update_column_headers()  # Set initial column headers
         self.load_offers()
     
     def create_ui(self):
@@ -59,11 +62,36 @@ class BrowseOffersFrame(Frame):
         list_frame = Frame(content_frame, bg='white', relief=RIDGE, bd=2)
         list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
         
-        # List header
-        list_header = Label(list_frame, text="Lista wygenerowanych ofert", 
+        # List header and sorting controls
+        header_controls_frame = Frame(list_frame, bg='white')
+        header_controls_frame.pack(fill=X, pady=15, padx=20)
+        
+        list_header = Label(header_controls_frame, text="Lista wygenerowanych ofert", 
                            font=("Arial", 14, "bold"), 
                            bg='white', fg='#333333')
-        list_header.pack(pady=15)
+        list_header.pack(side=LEFT)
+        
+        # Sorting controls
+        sort_frame = Frame(header_controls_frame, bg='white')
+        sort_frame.pack(side=RIGHT)
+        
+        Label(sort_frame, text="Sortuj według:", 
+              font=("Arial", 10), bg='white', fg='#666666').pack(side=LEFT, padx=(0, 5))
+        
+        self.sort_var = StringVar(value="Data utworzenia" if self.sort_by == 'date' else "Nazwa pliku")
+        sort_combo = ttk.Combobox(sort_frame, textvariable=self.sort_var, 
+                                 values=['Data utworzenia', 'Nazwa pliku'], 
+                                 state='readonly', width=14)
+        sort_combo.pack(side=LEFT, padx=(0, 5))
+        sort_combo.bind('<<ComboboxSelected>>', self.on_sort_change)
+        
+        # Sort order button
+        self.sort_order_btn = Button(sort_frame, text="↓", 
+                                    font=("Arial", 12, "bold"),
+                                    width=3, command=self.toggle_sort_order,
+                                    cursor='hand2')
+        self.sort_order_btn.pack(side=LEFT)
+        self.update_sort_order_button()
         
         # Treeview for offers
         tree_frame = Frame(list_frame, bg='white')
@@ -74,8 +102,8 @@ class BrowseOffersFrame(Frame):
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
         
         # Configure columns
-        self.tree.heading('filename', text='Nazwa pliku')
-        self.tree.heading('date', text='Data utworzenia')
+        self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
+        self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
         self.tree.heading('size', text='Rozmiar')
         
         self.tree.column('filename', width=400, minwidth=300)
@@ -132,6 +160,62 @@ class BrowseOffersFrame(Frame):
                            cursor='hand2')
         folder_btn.pack(side=LEFT, padx=(0, 10))
     
+    def on_sort_change(self, event=None):
+        """Handle sort criteria change"""
+        selected_text = self.sort_var.get()
+        if selected_text == "Data utworzenia":
+            self.sort_by = 'date'
+        elif selected_text == "Nazwa pliku":
+            self.sort_by = 'filename'
+        self.update_column_headers()
+        self.load_offers()
+    
+    def toggle_sort_order(self):
+        """Toggle sort order between ascending and descending"""
+        self.sort_reverse = not self.sort_reverse
+        self.update_sort_order_button()
+        self.update_column_headers()
+        self.load_offers()
+    
+    def update_sort_order_button(self):
+        """Update sort order button text"""
+        if self.sort_reverse:
+            self.sort_order_btn.config(text="↓", fg='#333333')
+        else:
+            self.sort_order_btn.config(text="↑", fg='#333333')
+    
+    def sort_by_column(self, column):
+        """Sort by clicking on column header"""
+        if self.sort_by == column:
+            # If already sorting by this column, toggle order
+            self.sort_reverse = not self.sort_reverse
+        else:
+            # New column, start with descending
+            self.sort_by = column
+            self.sort_reverse = True
+        
+        # Update UI
+        combo_text = "Data utworzenia" if self.sort_by == 'date' else "Nazwa pliku"
+        self.sort_var.set(combo_text)
+        self.update_sort_order_button()
+        self.update_column_headers()
+        
+        # Reload with new sort
+        self.load_offers()
+    
+    def update_column_headers(self):
+        """Update column headers to show current sort direction"""
+        # Reset all headers
+        self.tree.heading('filename', text='Nazwa pliku')
+        self.tree.heading('date', text='Data utworzenia')
+        
+        # Add sort indicator to current sort column
+        arrow = " ↓" if self.sort_reverse else " ↑"
+        if self.sort_by == 'filename':
+            self.tree.heading('filename', text=f'Nazwa pliku{arrow}')
+        elif self.sort_by == 'date':
+            self.tree.heading('date', text=f'Data utworzenia{arrow}')
+    
     def load_offers(self):
         """Load offers from the output folder"""
         # Clear existing items
@@ -148,21 +232,35 @@ class BrowseOffersFrame(Frame):
         # Get all .docx files from output folder
         try:
             files = [f for f in os.listdir(OFFERS_FOLDER) if f.endswith('.docx')]
-            files.sort(reverse=True)  # Sort by name (newest first due to timestamp)
             
+            # Create list of file info for sorting
+            file_info_list = []
             for filename in files:
                 filepath = os.path.join(OFFERS_FOLDER, filename)
-                
-                # Get file stats
                 stat_info = os.stat(filepath)
-                file_size = self.format_file_size(stat_info.st_size)
-                file_date = datetime.fromtimestamp(stat_info.st_mtime).strftime("%Y-%m-%d %H:%M")
+                file_info_list.append({
+                    'filename': filename,
+                    'filepath': filepath,
+                    'mtime': stat_info.st_mtime,
+                    'size': stat_info.st_size
+                })
+            
+            # Sort based on selected criteria
+            if self.sort_by == 'filename':
+                file_info_list.sort(key=lambda x: x['filename'], reverse=self.sort_reverse)
+            else:  # sort by date
+                file_info_list.sort(key=lambda x: x['mtime'], reverse=self.sort_reverse)
+            
+            # Add sorted files to treeview
+            for file_info in file_info_list:
+                file_size = self.format_file_size(file_info['size'])
+                file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
                 
                 # Add to treeview
-                self.tree.insert('', 'end', values=(filename, file_date, file_size))
-                self.offers_list.append(filepath)
+                self.tree.insert('', 'end', values=(file_info['filename'], file_date, file_size))
+                self.offers_list.append(file_info['filepath'])
             
-            print(f"Loaded {len(files)} offers from {OFFERS_FOLDER}")
+            print(f"Loaded {len(files)} offers from {OFFERS_FOLDER} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
             
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować listy ofert: {e}")
