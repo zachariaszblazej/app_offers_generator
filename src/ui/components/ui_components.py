@@ -69,7 +69,7 @@ class UIComponents:
                     value = self.offer_details_data.get(field, '')
                     self.entries[field].insert(0, value)
     
-    def create_upper_section(self):
+    def create_upper_section(self, show_offer_number=False):
         """Create the upper section of the form"""
         # Town entry
         self.entries['town'] = Entry(self.window, width=10)
@@ -84,10 +84,11 @@ class UIComponents:
         date_btn = Button(self.window, text="📅", width=2, command=self.open_date_picker)
         date_btn.place(x=870, y=90)
 
-        # Offer number field (read-only)
-        Label(self.window, text="Numer oferty:", font=("Arial", 10)).place(x=50, y=60)
-        self.entries['offer_number_display'] = Entry(self.window, width=25, state='readonly')
-        self.entries['offer_number_display'].place(x=150, y=60)
+        # Offer number field (only in editor mode)
+        if show_offer_number:
+            Label(self.window, text="Numer oferty:", font=("Arial", 10)).place(x=50, y=60)
+            self.entries['offer_number_display'] = Entry(self.window, width=25, state='readonly')
+            self.entries['offer_number_display'].place(x=150, y=60)
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data['address_1'])
@@ -323,7 +324,7 @@ class UIComponents:
                 # Add visual indication for read-only fields
                 self.entries[field].config(bg='#f0f0f0', fg='#666666')
         
-        # Display offer number if available
+        # Display offer number if available and field exists
         if self.offer_number and 'offer_number_display' in self.entries:
             self.entries['offer_number_display'].config(state='normal')
             self.entries['offer_number_display'].delete(0, END)

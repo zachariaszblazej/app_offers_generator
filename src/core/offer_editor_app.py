@@ -61,7 +61,7 @@ class OfferEditorApp:
         self.product_edit = ProductEditWindow(self.window, self.update_product)
         
         # Create UI sections
-        self.ui.create_upper_section()
+        self.ui.create_upper_section(show_offer_number=True)  # Show offer number in editor
         self.ui.create_offer_section()
         self.ui.create_offer_details_section()
         self.ui.create_totals_section()
