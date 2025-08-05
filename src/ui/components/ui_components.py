@@ -44,6 +44,7 @@ class UIComponents:
         self.date_var = StringVar(value=datetime.now().strftime("%d %m %Y"))
         self.suma_var = StringVar(value="0")  # Add StringVar for suma field
         self.product_table = product_table  # Reference to product table
+        self.offer_number = None  # Store original offer number for editing
     
     def refresh_company_data(self):
         """Refresh company data from settings"""
@@ -273,6 +274,7 @@ class UIComponents:
             'gwarancja': self.entries['gwarancja'].get(),
             'cena': self.entries['cena'].get(),
             'uwagi': self.entries['uwagi'].get("1.0", "end-1c"),  # Get text from Text widget
+            'offer_number': self.offer_number,  # Preserve original offer number
             'products': []  # Initialize empty products list
         }
         

@@ -142,6 +142,22 @@ class OfferEditorApp:
     def populate_ui_from_context(self, context_data):
         """Populate UI fields with data from context"""
         try:
+            # Load and preserve original offer number
+            if 'offer_number' in context_data:
+                self.ui.offer_number = context_data['offer_number']
+                print(f"Preserved offer number: {self.ui.offer_number}")
+            else:
+                # For older offers without offer_number, try to extract from filename
+                filename = os.path.basename(self.offer_path)
+                # Try to extract number from filename like "289_OF_2025_LUCZ.docx"
+                import re
+                match = re.match(r'(\d+_OF_\d+_[A-Z]+)', filename.replace('.docx', ''))
+                if match:
+                    self.ui.offer_number = match.group(1)
+                    print(f"Extracted offer number from filename: {self.ui.offer_number}")
+                else:
+                    print("Warning: Could not determine offer number")
+            
             # Load client data
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
             for field in client_fields:
