@@ -15,6 +15,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from src.utils.config import OFFERS_FOLDER
+from src.data.database_service import delete_offer_from_db, find_offer_by_filename
 
 
 class BrowseOffersFrame(Frame):
@@ -221,12 +222,30 @@ class BrowseOffersFrame(Frame):
         
         if result:
             try:
+                # First, try to remove from database
+                db_success, db_message = delete_offer_from_db(offer_path)
+                
+                # Remove the file regardless of database operation result
                 os.remove(offer_path)
-                tkinter.messagebox.showinfo("Sukces", f"Oferta {filename} została usunięta!")
+                
+                # Show appropriate message
+                if db_success:
+                    tkinter.messagebox.showinfo("Sukces", 
+                        f"Oferta {filename} została usunięta z plików i bazy danych!")
+                else:
+                    tkinter.messagebox.showinfo("Częściowy sukces", 
+                        f"Plik {filename} został usunięty, ale wystąpił problem z bazą danych:\\n{db_message}")
+                
                 self.load_offers()  # Refresh the list
                 
             except Exception as e:
-                tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
+                # If file deletion fails, try to check if it was in database and show appropriate error
+                offer_in_db = find_offer_by_filename(filename)
+                if offer_in_db:
+                    tkinter.messagebox.showerror("Błąd", 
+                        f"Nie udało się usunąć pliku: {e}\\n\\nOferta nadal istnieje w bazie danych.")
+                else:
+                    tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
     
     def open_offers_folder(self):
         """Open the offers folder in file explorer"""

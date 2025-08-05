@@ -326,3 +326,41 @@ def delete_supplier_from_db(nip):
         return True, "Dostawca został usunięty z bazy"
     except sqlite3.Error as e:
         return False, f"Błąd podczas usuwania dostawcy: {e}"
+
+
+def delete_offer_from_db(offer_file_path):
+    """Delete offer from database based on file path"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Delete offer by file path
+        cursor.execute("DELETE FROM Offers WHERE OfferFilePath = ?", (offer_file_path,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "Oferta nie została znaleziona w bazie danych"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "Oferta została usunięta z bazy danych"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas usuwania oferty z bazy: {e}"
+
+
+def find_offer_by_filename(filename):
+    """Find offer in database by filename"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Search for offer by filename (using LIKE to match the end of the path)
+        cursor.execute("SELECT OfferOrderNumber, OfferFilePath FROM Offers WHERE OfferFilePath LIKE ?", 
+                      (f"%{filename}",))
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result
+    except sqlite3.Error as e:
+        return None
