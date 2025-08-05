@@ -119,3 +119,11 @@ class MainMenuFrame(Frame):
         """Exit the application"""
         if tkinter.messagebox.askquestion("Potwierdzenie", "Czy na pewno chcesz zamknąć aplikację?") == 'yes':
             self.nav_manager.root.destroy()
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)

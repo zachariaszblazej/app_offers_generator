@@ -350,3 +350,11 @@ class SettingsFrame(Frame):
     def return_to_main_menu(self):
         """Return to main menu"""
         self.nav_manager.show_frame('main_menu')
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)

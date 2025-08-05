@@ -308,6 +308,89 @@ class UIComponents:
             
         return context
     
+    def load_context_for_new_offer(self, context_data):
+        """Load context data for creating new offer based on existing one (without offer number)"""
+        try:
+            # Load client data
+            client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
+            for field in client_fields:
+                if field in context_data and field in self.entries:
+                    self.entries[field].delete(0, END)
+                    self.entries[field].insert(0, context_data.get(field, ''))
+            
+            # Store client alias for new offer generation
+            if 'client_alias' in context_data:
+                self.selected_client_alias = context_data['client_alias']
+            
+            # Load supplier data
+            supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
+            for field in supplier_fields:
+                if field in context_data and field in self.entries:
+                    self.entries[field].delete(0, END)
+                    self.entries[field].insert(0, context_data.get(field, ''))
+            
+            # Load offer details
+            offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 
+                          'waznosc_oferty', 'gwarancja', 'cena']
+            for field in offer_fields:
+                if field in context_data and field in self.entries:
+                    self.entries[field].delete(0, END)
+                    self.entries[field].insert(0, context_data.get(field, ''))
+            
+            # Load town
+            if 'town' in context_data and 'town' in self.entries:
+                self.entries['town'].delete(0, END)
+                self.entries['town'].insert(0, context_data.get('town', ''))
+            
+            # Load notes (Text widget, not Entry)
+            if 'uwagi' in context_data and 'uwagi' in self.entries:
+                self.entries['uwagi'].delete(1.0, END)
+                self.entries['uwagi'].insert(1.0, context_data.get('uwagi', ''))
+            
+            # Set current date (not the original date)
+            from datetime import datetime
+            current_date = datetime.now().strftime("%d %m %Y")
+            self.date_var.set(current_date)
+            
+            # Load products data
+            if 'products' in context_data and self.product_table:
+                products = context_data.get('products', [])
+                # Clear existing products
+                if self.product_table.tree:
+                    for item in self.product_table.tree.get_children():
+                        self.product_table.tree.delete(item)
+                
+                # Add products from context
+                for product in products:
+                    if isinstance(product, list) and len(product) >= 5:
+                        # Convert prices from Polish format (comma) to English format (dot)
+                        unit_price = str(product[4]).replace(',', '.')
+                        
+                        # Create tuple for input_record (expects 5 elements)
+                        product_tuple = (
+                            str(product[0]),    # pid
+                            str(product[1]),    # pname
+                            str(product[2]),    # unit
+                            str(product[3]),    # qty
+                            unit_price          # unit_price (converted to dot format)
+                        )
+                        
+                        try:
+                            self.product_table.input_record(product_tuple)
+                        except Exception as e:
+                            print(f"Error adding product {product}: {e}")
+                
+                # Recalculate totals
+                if hasattr(self.product_table, 'calculate_totals'):
+                    total = self.product_table.calculate_totals()
+                    self.update_suma(total)
+                    
+            return True
+            
+        except Exception as e:
+            print(f"Error loading context for new offer: {e}")
+            return False
+    
     def set_editor_mode(self):
         """Set fields to read-only mode for offer editing"""
         # Fields that should be read-only in editor mode

@@ -55,3 +55,13 @@ class OfferCreationFrame(Frame):
             # Perform any necessary cleanup
             pass
         self.nav_manager.show_frame('main_menu')
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)
+        # Initialize offer app when shown
+        self.initialize_offer_app()

@@ -70,3 +70,11 @@ class OfferEditorFrame(Frame):
             # Perform any necessary cleanup
             pass
         self.nav_manager.show_frame('browse_offers')
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)

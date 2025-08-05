@@ -123,6 +123,15 @@ class BrowseOffersFrame(Frame):
                          cursor='hand2')
         edit_btn.pack(side=LEFT, padx=(0, 10))
         
+        # Create similar offer button
+        similar_btn = Button(buttons_frame, text="📋 Stwórz podobną",
+                            font=("Arial", 12),
+                            bg='#6f42c1', fg='white',
+                            padx=15, pady=8,
+                            command=self.create_similar_offer,
+                            cursor='hand2')
+        similar_btn.pack(side=LEFT, padx=(0, 10))
+        
         # Delete button
         delete_btn = Button(buttons_frame, text="🗑️ Usuń ofertę",
                            font=("Arial", 12),
@@ -309,6 +318,51 @@ class BrowseOffersFrame(Frame):
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć folderu: {e}")
     
+    def create_similar_offer(self):
+        """Create a new offer based on selected offer"""
+        selected_item = self.tree.selection()
+        if not selected_item:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw wybierz ofertę z listy!")
+            return
+            
+        # Get selected offer info
+        item_values = self.tree.item(selected_item[0])['values']
+        if not item_values:
+            return
+            
+        filename = item_values[0]
+        offer_path = os.path.join(OFFERS_FOLDER, filename)
+        
+        # Load context from selected offer
+        from src.data.database_service import get_offer_context_from_db
+        context_data = get_offer_context_from_db(offer_path)
+        
+        if not context_data:
+            # For older offers without context, show warning
+            result = tkinter.messagebox.askyesno(
+                "Brak kontekstu", 
+                f"Oferta '{filename}' nie ma zapisanego kontekstu.\\n\\n" +
+                "Czy chcesz przejść do kreatora ofert z pustymi polami?"
+            )
+            if result:
+                self.nav_manager.show_frame('offer_generator')
+            return
+        
+        # Remove offer_number from context (it will be generated anew)
+        if 'offer_number' in context_data:
+            del context_data['offer_number']
+        
+        # Pass context to offer generator
+        self.nav_manager.show_frame('offer_generator', template_context=context_data)
+    
     def return_to_main_menu(self):
         """Return to main menu"""
         self.nav_manager.show_frame('main_menu')
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)

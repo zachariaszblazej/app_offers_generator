@@ -22,9 +22,10 @@ from src.utils.config import BACKGROUND_IMAGE
 class OfferGeneratorApp:
     """Original offer generator app, now embedded within a frame"""
     
-    def __init__(self, parent_frame, nav_manager):
+    def __init__(self, parent_frame, nav_manager, template_context=None):
         self.parent_frame = parent_frame
         self.nav_manager = nav_manager
+        self.template_context = template_context  # Context data to use as template
         # Use content_container instead of offer_container
         self.window = parent_frame.content_container
         
@@ -33,6 +34,10 @@ class OfferGeneratorApp:
         
         # Initialize calculation variables
         self.count = 0
+        
+        # Load template data if provided
+        if self.template_context:
+            self.load_template_context()
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
@@ -143,6 +148,67 @@ class OfferGeneratorApp:
         
         # Update the suma field using the new method
         self.ui.update_suma(total)
+    
+    def load_template_context(self):
+        """Load data from template context for creating similar offer"""
+        try:
+            if self.template_context:
+                # Load data into UI (without offer number)
+                success = self.ui.load_context_for_new_offer(self.template_context)
+                
+                if success:
+                    # Show info message
+                    import tkinter.messagebox
+                    tkinter.messagebox.showinfo("Dane załadowane", 
+                        "Pomyślnie załadowano dane z wybranej oferty.\\n\\n" +
+                        "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
+                else:
+                    import tkinter.messagebox
+                    tkinter.messagebox.showwarning("Błąd ładowania", 
+                        "Wystąpił problem podczas ładowania danych z szablonu.")
+            else:
+                import tkinter.messagebox
+                tkinter.messagebox.showwarning("Brak danych", 
+                    "Nie znaleziono danych kontekstu dla wybranej oferty.")
+                    
+        except Exception as e:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror("Błąd", f"Wystąpił błąd podczas ładowania danych: {e}")
+    
+    def load_template_data(self):
+        """Load data from template offer for creating similar offer (deprecated method)"""
+        try:
+            # Import here to avoid circular imports
+            from src.data.database_service import get_offer_context_from_db
+            
+            # Get offer context from database
+            context_data = get_offer_context_from_db(self.template_offer_path)
+            
+            if context_data:
+                # Load data into UI (without offer number)
+                success = self.ui.load_context_for_new_offer(context_data)
+                
+                if success:
+                    # Show info message
+                    import tkinter.messagebox
+                    tkinter.messagebox.showinfo("Dane załadowane", 
+                        f"Pomyślnie załadowano dane z oferty:\\n{os.path.basename(self.template_offer_path)}\\n\\n" +
+                        "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
+                else:
+                    import tkinter.messagebox
+                    tkinter.messagebox.showwarning("Błąd ładowania", 
+                        "Wystąpił problem podczas ładowania danych z szablonu.")
+            else:
+                import tkinter.messagebox
+                tkinter.messagebox.showwarning("Brak danych", 
+                    f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.template_offer_path)}\\n\\n" +
+                    "Oferta została prawdopodobnie utworzona przed implementacją zapisywania kontekstu.")
+                    
+        except Exception as e:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror("Błąd", 
+                f"Nie udało się załadować danych z szablonu:\\n{e}")
+            print(f"Error loading template data: {e}")  # Debug
     
     def generate_offer(self):
         """Generate the offer document"""

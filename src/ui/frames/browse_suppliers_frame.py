@@ -420,3 +420,11 @@ class BrowseSuppliersFrame(Frame):
             self.hide_form()
         else:
             tkinter.messagebox.showerror("Błąd", message)
+    
+    def hide(self):
+        """Hide this frame"""
+        self.pack_forget()
+    
+    def show(self):
+        """Show this frame"""
+        self.pack(fill=BOTH, expand=True)

@@ -61,6 +61,9 @@ class OfferGeneratorMainApp:
         from src.core.offer_generator_app import OfferGeneratorApp
         self.nav_manager.add_frame('offer_creation', OfferCreationFrame, OfferGeneratorApp)
         
+        # Alias for offer_generator (same as offer_creation but different name for template functionality)
+        self.nav_manager.add_frame('offer_generator', OfferCreationFrame, OfferGeneratorApp)
+        
         # Offer editor frame
         self.nav_manager.add_frame('offer_editor', OfferEditorFrame, OfferGeneratorApp)
         

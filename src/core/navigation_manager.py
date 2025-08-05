@@ -19,21 +19,43 @@ class NavigationManager:
         return frame
     
     def show_frame(self, frame_name, **kwargs):
-        """Show a specific frame and hide others"""
-        if self.current_frame:
-            self.current_frame.pack_forget()
+        """Show the specified frame with optional parameters"""
+        # Hide all frames first
+        for name, frame in self.frames.items():
+            frame.hide()
         
+        # Show the requested frame
         if frame_name in self.frames:
-            self.current_frame = self.frames[frame_name]
-            self.current_frame.pack(fill=BOTH, expand=True)
+            # Handle special cases with parameters
+            if frame_name == 'offer_editor' and 'offer_path' in kwargs:
+                # Create new editor instance with offer path
+                from src.core.offer_editor_app import OfferEditorApp
+                # Clear existing content
+                for widget in self.frames[frame_name].content_container.winfo_children():
+                    widget.destroy()
+                # Create new editor app
+                OfferEditorApp(self.frames[frame_name], self, kwargs['offer_path'])
+            elif frame_name == 'offer_generator' and 'template_context' in kwargs:
+                # Create new generator instance with template context
+                from src.core.offer_generator_app import OfferGeneratorApp
+                # Clear existing content
+                for widget in self.frames[frame_name].content_container.winfo_children():
+                    widget.destroy()
+                # Create new generator app with template context
+                OfferGeneratorApp(self.frames[frame_name], self, template_context=kwargs['template_context'])
             
-            # Initialize offer app if this is the offer creation frame
-            if frame_name == 'offer_creation' and hasattr(self.current_frame, 'initialize_offer_app'):
-                self.current_frame.initialize_offer_app()
-            
-            # Initialize offer editor if this is the offer editor frame
-            elif frame_name == 'offer_editor' and hasattr(self.current_frame, 'initialize_offer_app'):
-                offer_path = kwargs.get('offer_path')
-                self.current_frame.initialize_offer_app(offer_path)
+            self.frames[frame_name].show()
+            self.current_frame = frame_name
         else:
-            raise ValueError(f"Frame '{frame_name}' not found")
+            print(f"Frame '{frame_name}' not found!")
+    
+    def show_main_generator(self):
+        """Show main generator without template"""
+        if 'offer_generator' in self.frames:
+            # Clear existing content
+            for widget in self.frames['offer_generator'].content_container.winfo_children():
+                widget.destroy()
+            # Create new generator app without template
+            from src.core.offer_generator_app import OfferGeneratorApp
+            OfferGeneratorApp(self.frames['offer_generator'], self)
+            self.show_frame('offer_generator')
