@@ -70,10 +70,6 @@ class SettingsManager:
         if 'company_data' not in self.settings:
             self.settings['company_data'] = {}
         self.settings['company_data'].update(new_settings)
-    
-    def reset_company_data_to_defaults(self):
-        """Reset company data settings to defaults"""
-        self.settings['company_data'] = DEFAULT_COMPANY_DATA.copy()
 
     # Offer details methods
     def get_offer_details_setting(self, key):
@@ -95,10 +91,6 @@ class SettingsManager:
         if 'offer_details' not in self.settings:
             self.settings['offer_details'] = {}
         self.settings['offer_details'].update(new_settings)
-    
-    def reset_offer_details_to_defaults(self):
-        """Reset offer details settings to defaults"""
-        self.settings['offer_details'] = DEFAULT_OFFER_DETAILS.copy()
 
 # Global settings manager instance
 settings_manager = SettingsManager()

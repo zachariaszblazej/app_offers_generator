@@ -265,15 +265,6 @@ class SettingsFrame(Frame):
                          command=self.save_settings,
                          cursor='hand2')
         save_btn.pack(side=LEFT, padx=10)
-        
-        # Reset button
-        reset_btn = Button(buttons_frame, text="Przywróć domyślne",
-                          font=("Arial", 12),
-                          bg='#ffc107', fg='black',
-                          padx=20, pady=10,
-                          command=self.reset_to_defaults,
-                          cursor='hand2')
-        reset_btn.pack(side=LEFT, padx=10)
     
     def load_current_settings(self):
         """Load current settings into the form"""
@@ -336,16 +327,6 @@ class SettingsFrame(Frame):
                     offer_frame.offer_app.ui.refresh_company_data()
         except Exception as e:
             print(f"Could not refresh offer creation data: {e}")
-    
-    def reset_to_defaults(self):
-        """Reset settings to defaults"""
-        result = tkinter.messagebox.askyesno("Potwierdzenie", 
-                                           "Czy na pewno chcesz przywrócić domyślne ustawienia?")
-        if result:
-            self.settings_manager.reset_company_data_to_defaults()
-            self.settings_manager.reset_offer_details_to_defaults()
-            self.load_current_settings()
-            tkinter.messagebox.showinfo("Sukces", "Przywrócono domyślne ustawienia!")
     
     def return_to_main_menu(self):
         """Return to main menu"""
