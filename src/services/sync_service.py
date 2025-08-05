@@ -42,6 +42,9 @@ class OfferSyncService:
         result = SyncResult()
         
         try:
+            # First check if required database tables exist
+            self._check_database_tables()
+            
             # Step 1: Get all offers from database
             db_offers = self._get_database_offers()
             result.total_offers_db = len(db_offers)
@@ -66,6 +69,25 @@ class OfferSyncService:
             result.errors.append(f"Błąd podczas synchronizacji: {str(e)}")
         
         return result
+    
+    def _check_database_tables(self):
+        """Check if all required database tables exist"""
+        required_tables = ['Offers', 'Clients', 'Suppliers']
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            for table in required_tables:
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+                if not cursor.fetchone():
+                    conn.close()
+                    raise Exception(f"Tabela '{table}' nie istnieje w bazie danych. Baza danych nie została zainicjalizowana lub jest uszkodzona.")
+            
+            conn.close()
+            
+        except sqlite3.Error as e:
+            raise Exception(f"Błąd dostępu do bazy danych: {str(e)}")
     
     def _get_database_offers(self) -> List[Dict]:
         """Get all offers from database"""
@@ -95,6 +117,8 @@ class OfferSyncService:
             
         except Exception as e:
             print(f"Error getting database offers: {e}")
+            # Re-raise the exception so it can be caught by synchronize()
+            raise
         
         return offers
     
