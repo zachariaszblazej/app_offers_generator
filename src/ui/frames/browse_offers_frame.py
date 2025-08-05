@@ -126,7 +126,7 @@ class BrowseOffersFrame(Frame):
         # Create similar offer button
         similar_btn = Button(buttons_frame, text="📋 Stwórz podobną",
                             font=("Arial", 12),
-                            bg='#6f42c1', fg='white',
+                            bg='#6f42c1', fg='black',
                             padx=15, pady=8,
                             command=self.create_similar_offer,
                             cursor='hand2')

@@ -96,7 +96,7 @@ class OfferEditorApp:
         # Update offer button (instead of generate)
         update_offer_button = Button(self.window, text="Zapisz zmiany", 
                                    font=("Arial", 12, "bold"),
-                                   bg='#ff6600', fg='white',
+                                   bg='#ff6600', fg='black',
                                    command=self.update_offer)
         update_offer_button.place(x=700, y=980)
     
