@@ -14,8 +14,6 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.ui.components.ui_components import UIComponents
-from src.ui.windows.client_search_window import ClientSearchWindow
-from src.ui.windows.supplier_search_window import SupplierSearchWindow
 from src.ui.windows.product_add_window import ProductAddWindow
 from src.ui.windows.product_edit_window import ProductEditWindow
 from src.ui.components.product_table import ProductTable
@@ -59,8 +57,6 @@ class OfferEditorApp:
         # Initialize UI components
         self.product_table = ProductTable(self.window)
         self.ui = UIComponents(self.window, self.product_table)
-        self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
-        self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         self.product_add = ProductAddWindow(self.window, self.insert_product)
         self.product_edit = ProductEditWindow(self.window, self.update_product)
         
@@ -96,18 +92,6 @@ class OfferEditorApp:
                padx=15, pady=8,
                command=self.edit_product,
                cursor='hand2').place(x=50, y=780)
-                
-        # Client search button
-        search_client_button = Button(self.window, text="Szukaj klienta", 
-                                    font=("Arial", 10),
-                                    command=self.client_search.open_client_search)
-        search_client_button.place(x=900, y=360)
-        
-        # Supplier search button
-        search_supplier_button = Button(self.window, text="Szukaj dostawcę", 
-                                      font=("Arial", 10),
-                                      command=self.supplier_search.open_supplier_search)
-        search_supplier_button.place(x=300, y=360)
         
         # Update offer button (instead of generate)
         update_offer_button = Button(self.window, text="Zapisz zmiany", 
