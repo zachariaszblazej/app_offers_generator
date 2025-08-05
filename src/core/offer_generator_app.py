@@ -37,7 +37,10 @@ class OfferGeneratorApp:
         
         # Load template data if provided
         if self.template_context:
+            print(f"Debug: template_context exists, calling load_template_context()")
             self.load_template_context()
+        else:
+            print(f"Debug: No template_context provided")
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""

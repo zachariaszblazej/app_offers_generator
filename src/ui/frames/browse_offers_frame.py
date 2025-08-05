@@ -337,6 +337,8 @@ class BrowseOffersFrame(Frame):
         from src.data.database_service import get_offer_context_from_db
         context_data = get_offer_context_from_db(offer_path)
         
+        print(f"Debug: get_offer_context_from_db returned: {type(context_data)} with keys: {list(context_data.keys()) if context_data else 'None'}")
+        
         if not context_data:
             # For older offers without context, show warning
             result = tkinter.messagebox.askyesno(
