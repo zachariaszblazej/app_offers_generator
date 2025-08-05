@@ -10,7 +10,7 @@ import sys
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import TEMPLATE_PATH, OUTPUT_FOLDER, OFFERS_FOLDER
+from src.utils.config import TEMPLATE_PATH, OFFERS_FOLDER
 from src.data.database_service import get_next_offer_number, save_offer_to_db
 
 
@@ -129,12 +129,6 @@ def generate_offer_document(context_data):
         
         # Save to offers folder
         doc.save(file_path)
-        
-        # Also save to local generated_docs folder for backup
-        backup_filename = f"last_generated_offer_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-        backup_path = os.path.join(OUTPUT_FOLDER, backup_filename)
-        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-        doc.save(backup_path)
         
         # Save to database only if we auto-generated the number
         if order_number is not None:
