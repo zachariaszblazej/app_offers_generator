@@ -321,10 +321,15 @@ class SettingsFrame(Frame):
     def refresh_offer_creation_data(self):
         """Refresh company data in offer creation window if it exists"""
         try:
-            if hasattr(self.nav_manager, 'frames') and 'offer_creation' in self.nav_manager.frames:
-                offer_frame = self.nav_manager.frames['offer_creation']
-                if hasattr(offer_frame, 'offer_app') and hasattr(offer_frame.offer_app, 'ui'):
-                    offer_frame.offer_app.ui.refresh_company_data()
+            # Check both offer_creation and offer_generator frames
+            for frame_name in ['offer_creation', 'offer_generator']:
+                if hasattr(self.nav_manager, 'frames') and frame_name in self.nav_manager.frames:
+                    offer_frame = self.nav_manager.frames[frame_name]
+                    # Check if the frame has an initialized offer app instance
+                    if hasattr(offer_frame, 'offer_app_instance') and offer_frame.offer_app_instance:
+                        if hasattr(offer_frame.offer_app_instance, 'ui'):
+                            print(f"Refreshing company data in {frame_name}")
+                            offer_frame.offer_app_instance.ui.refresh_company_data()
         except Exception as e:
             print(f"Could not refresh offer creation data: {e}")
     
