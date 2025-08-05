@@ -84,6 +84,11 @@ class UIComponents:
         date_btn = Button(self.window, text="📅", width=2, command=self.open_date_picker)
         date_btn.place(x=870, y=90)
 
+        # Offer number field (read-only)
+        Label(self.window, text="Numer oferty:", font=("Arial", 10)).place(x=50, y=60)
+        self.entries['offer_number_display'] = Entry(self.window, width=25, state='readonly')
+        self.entries['offer_number_display'].place(x=150, y=60)
+
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data['address_1'])
         self.entries['address1'] = Entry(self.window, width=17, textvariable=address1_value)
@@ -301,6 +306,30 @@ class UIComponents:
         ]
             
         return context
+    
+    def set_editor_mode(self):
+        """Set fields to read-only mode for offer editing"""
+        # Fields that should be read-only in editor mode
+        readonly_fields = [
+            'address1', 'address2', 'nip', 'regon', 'email', 'phone', 
+            'bank_name', 'account_number',
+            'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
+            'client_name', 'client_address_1', 'client_address_2', 'client_nip'
+        ]
+        
+        for field in readonly_fields:
+            if field in self.entries:
+                self.entries[field].config(state='readonly')
+                # Add visual indication for read-only fields
+                self.entries[field].config(bg='#f0f0f0', fg='#666666')
+        
+        # Display offer number if available
+        if self.offer_number and 'offer_number_display' in self.entries:
+            self.entries['offer_number_display'].config(state='normal')
+            self.entries['offer_number_display'].delete(0, END)
+            self.entries['offer_number_display'].insert(0, self.offer_number)
+            self.entries['offer_number_display'].config(state='readonly')
+            self.entries['offer_number_display'].config(bg='#e9ecef', fg='#495057')
     
     def open_date_picker(self):
         """Open a calendar date picker dialog"""

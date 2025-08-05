@@ -127,10 +127,16 @@ class OfferEditorApp:
                     f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.offer_path)}\\n\\n" +
                     "Ta oferta została prawdopodobnie utworzona przed implementacją zapisywania kontekstu.\\n" +
                     "Musisz wprowadzić dane ręcznie.")
+                
+                # Still set editor mode for consistent UI
+                self.ui.set_editor_mode()
                 return
                 
             # Load data into UI components
             self.populate_ui_from_context(context_data)
+            
+            # Set editor mode (read-only for certain fields)
+            self.ui.set_editor_mode()
             
             tkinter.messagebox.showinfo("Dane wczytane", 
                 f"Pomyślnie wczytano dane z kontekstu oferty:\\n{os.path.basename(self.offer_path)}")
@@ -157,6 +163,13 @@ class OfferEditorApp:
                     print(f"Extracted offer number from filename: {self.ui.offer_number}")
                 else:
                     print("Warning: Could not determine offer number")
+            
+            # Update offer number display field if it exists
+            if self.ui.offer_number and 'offer_number_display' in self.ui.entries:
+                self.ui.entries['offer_number_display'].config(state='normal')
+                self.ui.entries['offer_number_display'].delete(0, END)
+                self.ui.entries['offer_number_display'].insert(0, self.ui.offer_number)
+                self.ui.entries['offer_number_display'].config(state='readonly')
             
             # Load client data
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
