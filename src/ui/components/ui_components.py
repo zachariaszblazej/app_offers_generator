@@ -15,6 +15,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from src.utils.settings import settings_manager
 
 
+def format_nip(nip_value):
+    """Format NIP to XXX-XXX-XX-XX format"""
+    if not nip_value:
+        return ""
+    
+    # Remove any existing formatting (hyphens, spaces)
+    clean_nip = ''.join(c for c in str(nip_value) if c.isdigit())
+    
+    # Check if we have exactly 10 digits
+    if len(clean_nip) == 10:
+        return f"{clean_nip[:3]}-{clean_nip[3:6]}-{clean_nip[6:8]}-{clean_nip[8:10]}"
+    else:
+        # Return original value if it's not a valid 10-digit NIP
+        return str(nip_value)
+
+
 class UIComponents:
     """Handles UI component creation and management"""
     
@@ -226,11 +242,11 @@ class UIComponents:
             'supplier_name': self.entries['supplier_name'].get(),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),
-            'supplier_nip': self.entries['supplier_nip'].get(),
+            'supplier_nip': format_nip(self.entries['supplier_nip'].get()),
             'client_name': self.entries['client_name'].get(),
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
-            'client_nip': self.entries['client_nip'].get(),
+            'client_nip': format_nip(self.entries['client_nip'].get()),
             'client_alias': self.selected_client_alias,  # Add client alias
             'termin_realizacji': self.entries['termin_realizacji'].get(),
             'termin_platnosci': self.entries['termin_platnosci'].get(),
