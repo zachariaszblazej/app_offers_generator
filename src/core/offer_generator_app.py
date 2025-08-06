@@ -91,6 +91,21 @@ class OfferGeneratorApp:
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
+        
+        # Product movement buttons
+        Button(self.window, text="▲", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_up,
+               cursor='hand2').place(x=250, y=740)
+        
+        Button(self.window, text="▼", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_down,
+               cursor='hand2').place(x=320, y=740)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
@@ -127,14 +142,20 @@ class OfferGeneratorApp:
         # Automatically recalculate total after deletion
         self.calc_total()
     
-    def edit_product(self):
-        """Edit selected product from the table"""
-        selected_product = self.product_table.get_selected_product()
-        if selected_product:
-            self.product_edit.open_product_edit_window(selected_product)
-        else:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
+    def move_product_up(self):
+        """Move selected product up in the table"""
+        if self.product_table.move_product_up():
+            # Mark user modifications
+            self.user_modifications_made = True
+            # No need to recalculate total as order change doesn't affect sums
     
+    def move_product_down(self):
+        """Move selected product down in the table"""
+        if self.product_table.move_product_down():
+            # Mark user modifications
+            self.user_modifications_made = True
+            # No need to recalculate total as order change doesn't affect sums
+
     def edit_product(self):
         """Edit selected product from the table"""
         selected_product = self.product_table.get_selected_product()

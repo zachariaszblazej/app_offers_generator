@@ -383,6 +383,69 @@ class ProductTable:
                     # Call the edit callback with the selected product
                     self.edit_callback()
     
+    def move_product_up(self):
+        """Move selected product up in the table"""
+        if not self.tree or not self.tree.selection():
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do przesunięcia!")
+            return False
+        
+        selected_item = self.tree.selection()[0]
+        all_children = self.tree.get_children()
+        
+        # Find current index
+        current_index = all_children.index(selected_item)
+        
+        # Check if can move up (not already at top)
+        if current_index == 0:
+            tkinter.messagebox.showinfo("Informacja", "Produkt jest już na górze tabeli!")
+            return False
+        
+        # Get values of current and previous items
+        current_values = list(self.tree.item(selected_item)['values'])
+        prev_item = all_children[current_index - 1]
+        prev_values = list(self.tree.item(prev_item)['values'])
+        
+        # Swap the items by moving current item before previous
+        self.tree.move(selected_item, '', current_index - 1)
+        
+        # Renumber all items to maintain sequential order
+        self.renumber_items()
+        
+        # Keep selection on moved item
+        self.tree.selection_set(selected_item)
+        self.tree.focus(selected_item)
+        
+        return True
+    
+    def move_product_down(self):
+        """Move selected product down in the table"""
+        if not self.tree or not self.tree.selection():
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do przesunięcia!")
+            return False
+        
+        selected_item = self.tree.selection()[0]
+        all_children = self.tree.get_children()
+        
+        # Find current index
+        current_index = all_children.index(selected_item)
+        
+        # Check if can move down (not already at bottom)
+        if current_index == len(all_children) - 1:
+            tkinter.messagebox.showinfo("Informacja", "Produkt jest już na dole tabeli!")
+            return False
+        
+        # Move current item after next item
+        self.tree.move(selected_item, '', current_index + 1)
+        
+        # Renumber all items to maintain sequential order
+        self.renumber_items()
+        
+        # Keep selection on moved item
+        self.tree.selection_set(selected_item)
+        self.tree.focus(selected_item)
+        
+        return True
+
     def on_single_click(self, event):
         """Handle single-click on table to check for delete column clicks"""
         # Get the region that was clicked

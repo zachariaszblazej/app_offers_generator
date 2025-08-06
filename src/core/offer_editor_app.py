@@ -83,6 +83,21 @@ class OfferEditorApp:
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
         
+        # Product movement buttons
+        Button(self.window, text="▲", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_up,
+               cursor='hand2').place(x=250, y=740)
+        
+        Button(self.window, text="▼", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_down,
+               cursor='hand2').place(x=320, y=740)
+        
         # Update offer button (instead of generate)
         update_offer_button = Button(self.window, text="Zapisz zmiany", 
                                    font=("Arial", 12, "bold"),
@@ -280,6 +295,18 @@ class OfferEditorApp:
         # Automatically recalculate total after deletion
         self.calc_total()
     
+    def move_product_up(self):
+        """Move selected product up in the table"""
+        if self.product_table.move_product_up():
+            # No need to recalculate total as order change doesn't affect sums
+            pass
+    
+    def move_product_down(self):
+        """Move selected product down in the table"""
+        if self.product_table.move_product_down():
+            # No need to recalculate total as order change doesn't affect sums
+            pass
+
     def edit_product(self):
         """Edit selected product from the table"""
         selected_product = self.product_table.get_selected_product()
