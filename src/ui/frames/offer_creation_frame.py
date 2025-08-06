@@ -268,11 +268,31 @@ class OfferCreationFrame(Frame):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
     
     def return_to_main_menu(self):
-        """Return to main menu"""
+        """Return to main menu with unsaved changes check"""
+        # Check if user has unsaved changes
+        if self.offer_app_instance and hasattr(self.offer_app_instance, 'has_unsaved_changes'):
+            if self.offer_app_instance.has_unsaved_changes():
+                # Show confirmation dialog
+                import tkinter.messagebox
+                result = tkinter.messagebox.askyesno(
+                    "Niezapisane zmiany",
+                    "Czy na pewno chcesz wrócić do strony głównej?\n\n"
+                    "Wszelkie wprowadzone zmiany zostaną utracone.",
+                    icon='warning'
+                )
+                
+                if not result:  # User clicked "No"
+                    return  # Stay in the creator
+        
+        # Clear all data before returning to main menu
+        if self.offer_app_instance and hasattr(self.offer_app_instance, 'clear_all_data'):
+            self.offer_app_instance.clear_all_data()
+        
         # Clean up any resources if needed
         if self.offer_app_instance:
             # Perform any necessary cleanup
             pass
+        
         self.nav_manager.show_frame('main_menu')
     
     def hide(self):
@@ -295,6 +315,15 @@ class OfferCreationFrame(Frame):
         # Initialize offer app when shown (only if not already initialized)
         if not self.offer_app_instance:
             self.initialize_offer_app()
+        else:
+            # Only clear data if this is NOT a template-based instance
+            # (template instances are created fresh by NavigationManager)
+            should_clear = True
+            if hasattr(self.offer_app_instance, 'template_context') and self.offer_app_instance.template_context:
+                should_clear = False  # Don't clear if we have template data
+                
+            if should_clear and hasattr(self.offer_app_instance, 'clear_all_data'):
+                self.offer_app_instance.clear_all_data()
         
         # Re-bind global mouse wheel events when showing
         self.bind_all("<MouseWheel>", self.on_mousewheel)

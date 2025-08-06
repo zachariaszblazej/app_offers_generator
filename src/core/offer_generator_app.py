@@ -29,6 +29,9 @@ class OfferGeneratorApp:
         # Use content_container instead of offer_container
         self.window = parent_frame.content_container
         
+        # Track if user has made any modifications after template load
+        self.user_modifications_made = False
+        
         # Initialize components
         self.setup_ui()
         
@@ -38,6 +41,8 @@ class OfferGeneratorApp:
         # Load template data if provided
         if self.template_context:
             self.load_template_context()
+            # Reset modification flag after template load
+            self.user_modifications_made = False
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
@@ -58,6 +63,10 @@ class OfferGeneratorApp:
         # Initialize UI components
         self.product_table = ProductTable(self.window, self.parent_frame)
         self.ui = UIComponents(self.window, self.product_table)
+        
+        # Set modification callback so UI components can notify about user changes
+        self.ui.set_modification_callback(self.mark_as_modified)
+        
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         self.product_add = ProductAddWindow(self.window, self.insert_product)
@@ -117,6 +126,8 @@ class OfferGeneratorApp:
     def insert_product(self, product_data):
         """Insert a new product into the table"""
         if self.product_table.input_record(product_data):
+            # Mark user modifications
+            self.user_modifications_made = True
             # Automatically recalculate total
             self.calc_total()
             return True
@@ -124,9 +135,11 @@ class OfferGeneratorApp:
     
     def remove_product(self):
         """Remove selected product from the table"""
-        self.product_table.remove_record()
-        # Automatically recalculate total after removal
-        self.calc_total()
+        if self.product_table.remove_record():
+            # Mark user modifications
+            self.user_modifications_made = True
+            # Automatically recalculate total after removal
+            self.calc_total()
     
     def edit_product(self):
         """Edit selected product from the table"""
@@ -139,10 +152,16 @@ class OfferGeneratorApp:
     def update_product(self, item_id, product_data):
         """Update existing product in the table"""
         if self.product_table.update_record(item_id, product_data):
+            # Mark user modifications
+            self.user_modifications_made = True
             # Automatically recalculate total after update
             self.calc_total()
             return True
         return False
+    
+    def mark_as_modified(self):
+        """Mark that user has made modifications"""
+        self.user_modifications_made = True
     
     def calc_total(self):
         """Calculate and display totals"""
@@ -225,6 +244,101 @@ class OfferGeneratorApp:
                 self.parent_frame.update_scroll_region()
         except Exception as e:
             print(f"Could not update scroll region: {e}")
+    
+    def has_unsaved_changes(self):
+        """Check if user has made any changes that would be lost"""
+        try:
+            # If this is a template-based instance and user hasn't made modifications yet
+            if self.template_context and not self.user_modifications_made:
+                return False  # Template data is not considered "unsaved changes"
+            
+            # Check if product table has any items
+            if hasattr(self, 'product_table') and self.product_table and self.product_table.tree:
+                if len(self.product_table.tree.get_children()) > 0:
+                    return True
+            
+            # Check if client fields are filled (beyond default values)
+            if hasattr(self, 'ui') and self.ui and hasattr(self.ui, 'entries'):
+                # Check client fields
+                client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
+                for field in client_fields:
+                    if field in self.ui.entries:
+                        value = self.ui.entries[field].get().strip()
+                        if value:  # If any client field has content
+                            return True
+                
+                # Check supplier fields
+                supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
+                for field in supplier_fields:
+                    if field in self.ui.entries:
+                        value = self.ui.entries[field].get().strip()
+                        if value:  # If any supplier field has content
+                            return True
+                
+                # Check additional offer details
+                additional_fields = ['termin_realizacji', 'termin_platnosci', 'uwagi']
+                for field in additional_fields:
+                    if field in self.ui.entries:
+                        if field == 'uwagi':  # Text widget
+                            value = self.ui.entries[field].get('1.0', 'end-1c').strip()
+                        else:  # Entry widget
+                            value = self.ui.entries[field].get().strip()
+                        if value:
+                            return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"Error checking for unsaved changes: {e}")
+            return False  # If error, assume no changes to avoid blocking user
+    
+    def clear_all_data(self):
+        """Clear all data from the form"""
+        try:
+            # Clear product table
+            if hasattr(self, 'product_table') and self.product_table and self.product_table.tree:
+                for item in self.product_table.tree.get_children():
+                    self.product_table.tree.delete(item)
+                self.product_table.count = 0
+            
+            # Clear UI fields
+            if hasattr(self, 'ui') and self.ui and hasattr(self.ui, 'entries'):
+                # Fields to clear
+                fields_to_clear = [
+                    'client_name', 'client_address_1', 'client_address_2', 'client_nip',
+                    'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
+                    'termin_realizacji', 'termin_platnosci', 'uwagi'
+                ]
+                
+                # Clear all specified fields
+                for field_name in fields_to_clear:
+                    if field_name in self.ui.entries:
+                        if field_name == 'uwagi':  # Text widget
+                            self.ui.entries[field_name].delete('1.0', 'end')
+                        else:  # Entry widget
+                            self.ui.entries[field_name].delete(0, 'end')
+                
+                # Reset suma to 0
+                if hasattr(self.ui, 'clear_suma'):
+                    self.ui.clear_suma()
+                
+                # Clear selected client and supplier aliases
+                if hasattr(self.ui, 'selected_client_alias'):
+                    self.ui.selected_client_alias = None
+                if hasattr(self.ui, 'selected_supplier_alias'):
+                    self.ui.selected_supplier_alias = None
+            
+            # Reset calculation variables
+            self.count = 0
+            
+            # Reset modification flag and template context
+            self.user_modifications_made = False
+            self.template_context = None
+            
+            print("All data cleared from offer creator")
+            
+        except Exception as e:
+            print(f"Error clearing data: {e}")
     
     def generate_offer(self):
         """Generate the offer document"""

@@ -45,6 +45,16 @@ class UIComponents:
         self.suma_var = StringVar(value="0")  # Add StringVar for suma field
         self.product_table = product_table  # Reference to product table
         self.offer_number = None  # Store original offer number for editing
+        self.modification_callback = None  # Callback for tracking modifications
+    
+    def set_modification_callback(self, callback):
+        """Set callback to be called when user modifies form fields"""
+        self.modification_callback = callback
+    
+    def _on_field_modified(self, *args):
+        """Called when any form field is modified"""
+        if self.modification_callback:
+            self.modification_callback()
     
     def refresh_company_data(self):
         """Refresh company data from settings"""
@@ -129,12 +139,15 @@ class UIComponents:
         # Supplier entries
         self.entries['supplier_name'] = Entry(self.window, width=25)
         self.entries['supplier_name'].place(x=60, y=270)
+        self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['supplier_address_1'] = Entry(self.window, width=25)
         self.entries['supplier_address_1'].place(x=60, y=300)
+        self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['supplier_address_2'] = Entry(self.window, width=25)
         self.entries['supplier_address_2'].place(x=60, y=330)
+        self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
@@ -142,12 +155,15 @@ class UIComponents:
         # Client entries
         self.entries['client_name'] = Entry(self.window, width=25)
         self.entries['client_name'].place(x=660, y=270)
+        self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['client_address_1'] = Entry(self.window, width=25)
         self.entries['client_address_1'].place(x=660, y=300)
+        self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['client_address_2'] = Entry(self.window, width=25)
         self.entries['client_address_2'].place(x=660, y=330)
+        self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
         self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
@@ -157,10 +173,12 @@ class UIComponents:
         self.entries['termin_realizacji'] = Entry(self.window, width=20)
         self.entries['termin_realizacji'].place(x=260, y=810)
         self.entries['termin_realizacji'].insert(0, self.offer_details_data.get('termin_realizacji', 'p1'))
+        self.entries['termin_realizacji'].bind('<KeyRelease>', self._on_field_modified)
         
         self.entries['termin_platnosci'] = Entry(self.window, width=20)
         self.entries['termin_platnosci'].place(x=260, y=840)
         self.entries['termin_platnosci'].insert(0, self.offer_details_data.get('termin_platnosci', 'p1'))
+        self.entries['termin_platnosci'].bind('<KeyRelease>', self._on_field_modified)
         
         self.entries['warunki_dostawy'] = Entry(self.window, width=20)
         self.entries['warunki_dostawy'].place(x=260, y=870)
@@ -181,6 +199,7 @@ class UIComponents:
         # Multi-line text field for notes (no default value)
         self.entries['uwagi'] = Text(self.window, width=25, height=3)
         self.entries['uwagi'].place(x=260, y=990)
+        self.entries['uwagi'].bind('<KeyRelease>', self._on_field_modified)
     
     def create_totals_section(self):
         """Create the totals section"""
