@@ -51,7 +51,16 @@ try:
 except Exception as e:
     print(f"[FAIL] tkcalendar failed: {e}")
 
-# Test 7: Main app
+# Test 7: docxtpl
+try:
+    import docxtpl
+    print(f"[OK] docxtpl version: {docxtpl.__version__}")
+    from docxtpl import DocxTemplate
+    print("[OK] DocxTemplate imported")
+except Exception as e:
+    print(f"[FAIL] docxtpl failed: {e}")
+
+# Test 8: Main app
 try:
     sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
     from src.core.main_app import OfferGeneratorMainApp

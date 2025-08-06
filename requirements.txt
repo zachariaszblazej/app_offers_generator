@@ -5,6 +5,7 @@ PyInstaller>=5.0.0
 tkcalendar>=1.6.0
 babel>=2.9.0
 lxml>=4.6.0
+docxtpl>=0.16.0
 
 # Optional dependencies for enhanced functionality
 docxcompose>=1.4.0

@@ -30,7 +30,8 @@ def install_requirements():
             'Pillow>=8.0.0', 
             'PyInstaller>=5.0.0',
             'tkcalendar>=1.6.0',
-            'docxcompose>=1.4.0'
+            'docxcompose>=1.4.0',
+            'docxtpl>=0.16.0'
         ]
         for package in packages:
             run_command([sys.executable, '-m', 'pip', 'install', package])
@@ -91,6 +92,7 @@ def create_exe():
         '--hidden-import=docx.shared',
         '--hidden-import=docx.enum.text',
         '--hidden-import=docx.enum.table',
+        '--hidden-import=docxtpl',
         '--hidden-import=tkcalendar',
         '--hidden-import=tkcalendar.calendar_',
         '--hidden-import=tkcalendar.dateentry',
