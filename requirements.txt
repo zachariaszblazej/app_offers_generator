@@ -1,0 +1,7 @@
+# Core dependencies
+python-docx>=0.8.11
+Pillow>=8.0.0
+PyInstaller>=5.0.0
+
+# Optional dependencies for enhanced functionality
+docxcompose>=1.4.0

@@ -106,7 +106,7 @@ class ProductAddWindow:
         product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))  # Numpad Enter
         
         # Set focus to first field
-        self.entries['product_id'].focus_set()
+        self.entries['product_name'].focus_set()
     
     def _add_product(self, product_window):
         """Handle product addition"""

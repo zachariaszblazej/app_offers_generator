@@ -1,0 +1,26 @@
+{
+    "company_data": {
+        "town": "Wałbrzych",
+        "address_1": "ul. Truskawiecka 14/4",
+        "address_2": "58-301 Wałbrzych",
+        "nip": "886-301-82-63",
+        "regon": "520101773",
+        "email": "g.ciesla@hantech.net.pl",
+        "phone_number": "+48 796 996 912",
+        "bank_name": "Pekao S.A.",
+        "account_number": "37 1240 1952 1111 0011 3033 5600",
+        "offer_number": ""
+    },
+    "offer_details": {
+        "termin_realizacji": "12 dni roboczychhhh",
+        "termin_platnosci": "2 dni od wystawienia faktury",
+        "warunki_dostawy": "FABBBB",
+        "waznosc_oferty": "14 dni",
+        "gwarancja": "2 lata",
+        "cena": "Z VATem"
+    },
+    "app_settings": {
+        "offers_folder": "/Users/blzc/FakeHantechServer/Oferty",
+        "database_path": "/Users/blzc/FakeHantechServer/DocumentsCreationData.db"
+    }
+}

@@ -5,9 +5,10 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from src.utils.config import DEFAULT_COMPANY_DATA, DEFAULT_OFFER_DETAILS, DEFAULT_APP_SETTINGS
+from src.utils.config import DEFAULT_COMPANY_DATA, DEFAULT_OFFER_DETAILS, DEFAULT_APP_SETTINGS, get_data_dir
 
-SETTINGS_FILE = 'app_settings.json'
+# Settings file should be in a persistent, writable location
+SETTINGS_FILE = os.path.join(get_data_dir(), 'app_settings.json')
 
 class SettingsManager:
     """Manages application settings"""

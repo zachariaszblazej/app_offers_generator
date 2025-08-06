@@ -1,4 +1,22 @@
 """Configuration settings for the Offer Generator application"""
+import os
+import sys
+
+# Add compatibility for PyInstaller
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+def get_data_dir():
+    """Get data directory that's persistent and writable"""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 # Database configuration
 DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData.db'
@@ -34,9 +52,9 @@ DEFAULT_OFFER_DETAILS = {
 }
 
 # File paths
-TEMPLATE_PATH = 'templates/offer_template.docx'
+TEMPLATE_PATH = get_resource_path('templates/offer_template.docx')
 OFFERS_FOLDER = '../FakeHantechServer/Oferty'  # Fallback default
-BACKGROUND_IMAGE = 'background_offer_1.png'
+BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
 
 def get_offers_folder():
     """Get the current offers folder from settings or return default"""

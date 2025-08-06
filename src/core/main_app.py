@@ -48,7 +48,7 @@ class OfferGeneratorMainApp:
         self.setup_frames()
         
         # Perform database synchronization with offers folder
-        self.perform_synchronization()
+        # self.perform_synchronization()
         
         # Start with main menu
         self.nav_manager.show_frame('main_menu')
