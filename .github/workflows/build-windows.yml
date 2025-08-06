@@ -19,16 +19,32 @@ jobs:
       with:
         python-version: '3.11'
     
+    - name: Test Python imports
+      run: |
+        python -c "import sys; print('Python version:', sys.version)"
+        python -c "import tkinter; print('Tkinter available')"
+        python -c "import sys, os; sys.path.insert(0, os.path.join(os.getcwd(), 'src')); from src.core.main_app import OfferGeneratorMainApp; print('Main app import successful')"
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install python-docx Pillow PyInstaller docxcompose lxml
     
-    - name: Build executable
+    - name: Build executable (with console for debugging)
+      run: |
+        python -m PyInstaller --clean --onefile --console --name=OfferGenerator-Debug --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." main.py
+    
+    - name: Build executable (without console - final version)
       run: |
         python -m PyInstaller --clean --onefile --noconsole --name=OfferGenerator --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." main.py
     
-    - name: Upload executable
+    - name: Upload executable (Debug version)
+      uses: actions/upload-artifact@v4
+      with:
+        name: OfferGenerator-Windows-Debug
+        path: dist/OfferGenerator-Debug.exe
+    
+    - name: Upload executable (Final version)
       uses: actions/upload-artifact@v4
       with:
         name: OfferGenerator-Windows
