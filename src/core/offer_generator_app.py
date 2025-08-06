@@ -342,4 +342,19 @@ class OfferGeneratorApp:
         # The conversion to string will be handled in generate_offer_document
         
         # Generate document
-        generate_offer_document(context_data)
+        result = generate_offer_document(context_data)
+        
+        # Handle the result
+        if result['success']:
+            # Show success message
+            tkinter.messagebox.showinfo("Success", 
+                                      f"Offer generated successfully!\n"
+                                      f"Offer number: {result['offer_number']}\n"
+                                      f"File saved to: {result['file_path']}")
+            
+            # Navigate back to main menu
+            if self.nav_manager:
+                self.nav_manager.show_frame('main_menu')
+        else:
+            # Error message was already shown by the service
+            pass

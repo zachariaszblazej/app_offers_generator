@@ -141,12 +141,13 @@ def generate_offer_document(context_data):
             if not save_offer_to_db(order_number, file_path, storage_context):
                 tkinter.messagebox.showwarning("Warning", "Offer generated but failed to save to database")
         
-        tkinter.messagebox.showinfo("Success", 
-                                  f"Offer generated successfully!\n"
-                                  f"Offer number: {offer_number}\n"
-                                  f"File saved to: {file_path}")
-        return True
+        # Return success status and details instead of showing message here
+        return {
+            'success': True,
+            'offer_number': offer_number,
+            'file_path': file_path
+        }
         
     except Exception as e:
         tkinter.messagebox.showerror("Error", f"Failed to generate offer: {e}")
-        return False
+        return {'success': False, 'error': str(e)}
