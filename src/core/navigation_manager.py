@@ -7,15 +7,14 @@ from tkinter import *
 class NavigationManager:
     """Manages navigation between different screens/frames"""
     
-    def __init__(self, window, main_app=None):
-        self.window = window
-        self.main_app = main_app
+    def __init__(self, root_window):
+        self.root = root_window
         self.current_frame = None
         self.frames = {}
         
     def add_frame(self, name, frame_class, *args, **kwargs):
         """Add a frame to the navigation manager"""
-        frame = frame_class(self.window, self, *args, **kwargs)
+        frame = frame_class(self.root, self, *args, **kwargs)
         self.frames[name] = frame
         return frame
     
