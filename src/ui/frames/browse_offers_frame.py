@@ -72,15 +72,17 @@ class BrowseOffersFrame(Frame):
         tree_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
         
         # Create treeview
-        columns = ('filename', 'date')
+        columns = ('filename', 'date', 'delete')
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
         
         # Configure columns
         self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
         self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
+        self.tree.heading('delete', text='❌')
         
         self.tree.column('filename', width=500, minwidth=400)
         self.tree.column('date', width=200, minwidth=150)
+        self.tree.column('delete', minwidth=40, width=40, stretch=NO)
         
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(tree_frame, orient=VERTICAL, command=self.tree.yview)
@@ -91,6 +93,9 @@ class BrowseOffersFrame(Frame):
         self.tree.pack(side=LEFT, fill=BOTH, expand=True)
         v_scrollbar.pack(side=RIGHT, fill=Y)
         h_scrollbar.pack(side=BOTTOM, fill=X)
+        
+        # Bind single click for delete functionality
+        self.tree.bind("<ButtonRelease-1>", self.on_single_click)
         
         # Buttons frame
         buttons_frame = Frame(content_frame, bg='#f0f0f0')
@@ -131,15 +136,6 @@ class BrowseOffersFrame(Frame):
                             command=self.create_similar_offer,
                             cursor='hand2')
         similar_btn.pack(side=LEFT, padx=(0, 10))
-        
-        # Delete button
-        delete_btn = Button(buttons_frame, text="🗑️ Usuń ofertę",
-                           font=("Arial", 12),
-                           bg='#dc3545', fg='black',
-                           padx=15, pady=8,
-                           command=self.delete_selected_offer,
-                           cursor='hand2')
-        delete_btn.pack(side=LEFT, padx=(0, 10))
         
         # Open folder button
         folder_btn = Button(buttons_frame, text="📁 Otwórz folder",
@@ -219,7 +215,7 @@ class BrowseOffersFrame(Frame):
                 file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
                 
                 # Add to treeview
-                self.tree.insert('', 'end', values=(file_info['filename'], file_date))
+                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "❌"))
                 self.offers_list.append(file_info['filepath'])
             
             print(f"Loaded {len(files)} offers from {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
@@ -359,6 +355,61 @@ class BrowseOffersFrame(Frame):
         # Pass context to offer generator
         self.nav_manager.show_frame('offer_generator', template_context=context_data)
     
+    def on_single_click(self, event):
+        """Handle single-click on table to check for delete column clicks"""
+        # Get the region that was clicked
+        region = self.tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.tree.identify_column(event.x)
+            
+            # DELETE column should be the last column
+            num_columns = len(self.tree['columns'])
+            delete_column_index = f"#{num_columns}"
+            
+            if column == delete_column_index:  
+                # Get the item that was clicked
+                item = self.tree.identify_row(event.y)
+                if item:
+                    # Get filename from the selected item
+                    item_values = self.tree.item(item)['values']
+                    filename = item_values[0]
+                    
+                    # Ask for confirmation
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdzenie usunięcia", 
+                        f"Czy na pewno chcesz usunąć ofertę:\\n{filename}\\n\\nTej operacji nie można cofnąć!"
+                    )
+                    if result:
+                        # Get full path for deletion
+                        offer_path = os.path.join(get_offers_folder(), filename)
+                        
+                        try:
+                            # First, try to remove from database
+                            db_success, db_message = delete_offer_from_db(offer_path)
+                            
+                            # Remove the file regardless of database operation result
+                            os.remove(offer_path)
+                            
+                            # Show appropriate message
+                            if db_success:
+                                # Silent success - no messagebox, just refresh
+                                pass
+                            else:
+                                tkinter.messagebox.showwarning("Częściowy sukces", 
+                                    f"Plik {filename} został usunięty, ale wystąpił problem z bazą danych:\\n{db_message}")
+                            
+                            self.load_offers()  # Refresh the list
+                            
+                        except Exception as e:
+                            # If file deletion fails, try to check if it was in database and show appropriate error
+                            offer_in_db = find_offer_by_filename(filename)
+                            if offer_in_db:
+                                tkinter.messagebox.showerror("Błąd", 
+                                    f"Nie udało się usunąć pliku: {e}\\n\\nOferta nadal istnieje w bazie danych.")
+                            else:
+                                tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
+
     def return_to_main_menu(self):
         """Return to main menu"""
         self.nav_manager.show_frame('main_menu')
