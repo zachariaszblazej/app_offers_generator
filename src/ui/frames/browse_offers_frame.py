@@ -455,5 +455,7 @@ class BrowseOffersFrame(Frame):
         self.pack_forget()
     
     def show(self):
-        """Show this frame"""
+        """Show this frame and automatically refresh offers list"""
         self.pack(fill=BOTH, expand=True)
+        # Automatically refresh offers list when frame is shown
+        self.load_offers()
