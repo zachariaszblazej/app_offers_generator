@@ -114,6 +114,9 @@ class BrowseSuppliersFrame(Frame):
         # Bind selection event
         self.suppliers_tree.bind('<<TreeviewSelect>>', self.on_supplier_select)
         
+        # Bind double-click for editing suppliers
+        self.suppliers_tree.bind('<Double-Button-1>', self.on_supplier_double_click)
+        
         # Edit/Delete buttons frame
         buttons_frame = Frame(list_frame, bg='#f0f0f0')
         buttons_frame.pack(fill=X, pady=10)
@@ -306,6 +309,13 @@ class BrowseSuppliersFrame(Frame):
             values = item['values']
             if values:
                 self.selected_supplier_nip = values[0]
+    
+    def on_supplier_double_click(self, event):
+        """Handle double-click on supplier item to edit supplier"""
+        selection = self.suppliers_tree.selection()
+        if selection:
+            # Call edit_selected_supplier method
+            self.edit_selected_supplier()
     
     def edit_selected_supplier(self):
         """Edit the selected supplier"""

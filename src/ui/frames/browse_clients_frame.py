@@ -116,6 +116,9 @@ class BrowseClientsFrame(Frame):
         # Bind selection event
         self.clients_tree.bind('<<TreeviewSelect>>', self.on_client_select)
         
+        # Bind double-click for editing clients
+        self.clients_tree.bind('<Double-Button-1>', self.on_client_double_click)
+        
         # Edit/Delete buttons frame
         buttons_frame = Frame(list_frame, bg='#f0f0f0')
         buttons_frame.pack(fill=X, pady=10)
@@ -313,6 +316,13 @@ class BrowseClientsFrame(Frame):
             values = item['values']
             if values:
                 self.selected_client_nip = values[0]
+    
+    def on_client_double_click(self, event):
+        """Handle double-click on client item to edit client"""
+        selection = self.clients_tree.selection()
+        if selection:
+            # Call edit_selected_client method
+            self.edit_selected_client()
     
     def edit_selected_client(self):
         """Edit the selected client"""
