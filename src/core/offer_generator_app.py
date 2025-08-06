@@ -22,10 +22,11 @@ from src.utils.config import BACKGROUND_IMAGE
 class OfferGeneratorApp:
     """Original offer generator app, now embedded within a frame"""
     
-    def __init__(self, parent_frame, nav_manager, template_context=None):
+    def __init__(self, parent_frame, nav_manager, template_context=None, source_frame=None):
         self.parent_frame = parent_frame
         self.nav_manager = nav_manager
         self.template_context = template_context  # Context data to use as template
+        self.source_frame = source_frame  # Track where we came from ('browse_offers' or None for main menu)
         # Use content_container instead of offer_container
         self.window = parent_frame.content_container
         
@@ -361,9 +362,12 @@ class OfferGeneratorApp:
                                       f"Offer number: {result['offer_number']}\n"
                                       f"File saved to: {result['file_path']}")
             
-            # Navigate back to main menu
+            # Navigate back to appropriate frame based on source
             if self.nav_manager:
-                self.nav_manager.show_frame('main_menu')
+                if self.source_frame == 'browse_offers':
+                    self.nav_manager.show_frame('browse_offers')
+                else:
+                    self.nav_manager.show_frame('main_menu')
         else:
             # Error message was already shown by the service
             pass

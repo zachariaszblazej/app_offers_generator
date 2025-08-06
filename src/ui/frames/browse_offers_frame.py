@@ -331,8 +331,8 @@ class BrowseOffersFrame(Frame):
         if 'offer_number' in context_data:
             del context_data['offer_number']
         
-        # Pass context to offer generator
-        self.nav_manager.show_frame('offer_generator', template_context=context_data)
+        # Pass context to offer generator with source frame information
+        self.nav_manager.show_frame('offer_generator', template_context=context_data, source_frame='browse_offers')
     
     def on_single_click(self, event):
         """Handle single-click on table to check for action column clicks"""
@@ -385,8 +385,8 @@ class BrowseOffersFrame(Frame):
                     if 'offer_number' in context_data:
                         del context_data['offer_number']
                     
-                    # Pass context to offer generator
-                    self.nav_manager.show_frame('offer_generator', template_context=context_data)
+                    # Pass context to offer generator with source frame information
+                    self.nav_manager.show_frame('offer_generator', template_context=context_data, source_frame='browse_offers')
                     
                 elif column == delete_column_index:
                     # Delete offer

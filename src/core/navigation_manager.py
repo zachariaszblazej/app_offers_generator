@@ -44,8 +44,17 @@ class NavigationManager:
                 # Clear existing content
                 for widget in self.frames[frame_name].content_container.winfo_children():
                     widget.destroy()
-                # Create new generator app with template context and mark it as initialized
-                self.frames[frame_name].offer_app_instance = OfferGeneratorApp(self.frames[frame_name], self, template_context=kwargs['template_context'])
+                # Create new generator app with template context and source frame information
+                source_frame = kwargs.get('source_frame', None)
+                self.frames[frame_name].offer_app_instance = OfferGeneratorApp(
+                    self.frames[frame_name], 
+                    self, 
+                    template_context=kwargs['template_context'],
+                    source_frame=source_frame
+                )
+                # Update back button text
+                if hasattr(self.frames[frame_name], 'update_back_button_text'):
+                    self.frames[frame_name].update_back_button_text()
             elif frame_name == 'offer_generator':
                 # Regular generator without template - ensure it's initialized
                 if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:

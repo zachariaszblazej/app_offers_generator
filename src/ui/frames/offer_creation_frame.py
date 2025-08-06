@@ -32,14 +32,15 @@ class OfferCreationFrame(Frame):
         back_frame.pack(fill=X, padx=10, pady=5)
         back_frame.pack_propagate(False)
         
-        back_btn = Button(back_frame, 
-                         text="← Powrót do menu głównego",
-                         font=("Arial", 12),
-                         bg='#9E9E9E', fg='black',
-                         padx=15, pady=5,
-                         command=self.return_to_main_menu,
-                         cursor='hand2')
-        back_btn.pack(side=LEFT)
+        # Create back button - text and behavior will be updated when offer app is created
+        self.back_btn = Button(back_frame, 
+                              text="← Powrót do menu głównego",
+                              font=("Arial", 12),
+                              bg='#9E9E9E', fg='black',
+                              padx=15, pady=5,
+                              command=self.return_to_source,
+                              cursor='hand2')
+        self.back_btn.pack(side=LEFT)
         
         # Create scrollable content area
         self.create_scrollable_content()
@@ -169,11 +170,60 @@ class OfferCreationFrame(Frame):
                 # Update scroll region after content is loaded
                 self.after(100, self.update_scroll_region)
                 
+                # Update back button text based on source
+                self.update_back_button_text()
+                
                 # Start mouse position checking
                 self.start_mouse_position_checking()
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować interfejsu tworzenia oferty: {e}")
-            print(f"Detailed error: {e}")  # For debugging
+    
+    def update_back_button_text(self):
+        """Update back button text based on source frame"""
+        if (self.offer_app_instance and 
+            hasattr(self.offer_app_instance, 'source_frame') and 
+            self.offer_app_instance.source_frame == 'browse_offers'):
+            self.back_btn.config(text="← Powrót do przeglądarki ofert")
+        else:
+            self.back_btn.config(text="← Powrót do menu głównego")
+    
+    def return_to_source(self):
+        """Return to appropriate source frame"""
+        # Determine target frame
+        target_frame = 'main_menu'  # default
+        confirmation_text = "strony głównej"
+        
+        if (self.offer_app_instance and 
+            hasattr(self.offer_app_instance, 'source_frame') and 
+            self.offer_app_instance.source_frame == 'browse_offers'):
+            target_frame = 'browse_offers'
+            confirmation_text = "przeglądarki ofert"
+        
+        # Check if user has unsaved changes
+        if self.offer_app_instance and hasattr(self.offer_app_instance, 'has_unsaved_changes'):
+            if self.offer_app_instance.has_unsaved_changes():
+                # Show confirmation dialog
+                import tkinter.messagebox
+                result = tkinter.messagebox.askyesno(
+                    "Niezapisane zmiany",
+                    f"Czy na pewno chcesz wrócić do {confirmation_text}?\n\n"
+                    "Wszelkie wprowadzone zmiany zostaną utracone.",
+                    icon='warning'
+                )
+                
+                if not result:  # User clicked "No"
+                    return  # Stay in the creator
+        
+        # Clear all data before returning
+        if self.offer_app_instance and hasattr(self.offer_app_instance, 'clear_all_data'):
+            self.offer_app_instance.clear_all_data()
+        
+        # Clean up any resources if needed
+        if self.offer_app_instance:
+            # Perform any necessary cleanup
+            pass
+        
+        self.nav_manager.show_frame(target_frame)
     
     def start_mouse_position_checking(self):
         """Start periodic checking of mouse position relative to product table"""
