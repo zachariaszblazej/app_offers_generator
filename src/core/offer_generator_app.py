@@ -41,6 +41,9 @@ class OfferGeneratorApp:
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
+        # Set minimum height for content container to ensure scrolling works
+        self.window.configure(height=1200)  # Set explicit height for scrolling
+        
         # Set background
         try:
             bg = PhotoImage(file=BACKGROUND_IMAGE)
@@ -203,12 +206,25 @@ class OfferGeneratorApp:
                 tkinter.messagebox.showwarning("Brak danych", 
                     f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.template_offer_path)}" +
                     "Oferta została prawdopodobnie utworzona przed implementacją zapisywania kontekstu.")
+            # Finally, update scroll region after all data is loaded
+            self.update_scroll_region()
                     
         except Exception as e:
             import tkinter.messagebox
             tkinter.messagebox.showerror("Błąd", 
                 f"Nie udało się załadować danych z szablonu:{e}")
             print(f"Error loading template data: {e}")  # Debug
+    
+        # Update scroll region after all data is loaded
+        self.update_scroll_region()
+        
+    def update_scroll_region(self):
+        """Update scroll region if parent frame has scrolling capability"""
+        try:
+            if hasattr(self.parent_frame, 'update_scroll_region'):
+                self.parent_frame.update_scroll_region()
+        except Exception as e:
+            print(f"Could not update scroll region: {e}")
     
     def generate_offer(self):
         """Generate the offer document"""

@@ -28,13 +28,16 @@ class NavigationManager:
         if frame_name in self.frames:
             # Handle special cases with parameters
             if frame_name == 'offer_editor' and 'offer_path' in kwargs:
-                # Create new editor instance with offer path
-                from src.core.offer_editor_app import OfferEditorApp
+                # Initialize editor with offer path using frame's method
+                self.frames[frame_name].offer_path = kwargs['offer_path']
+                # Clear existing instance to force recreation
+                self.frames[frame_name].offer_app_instance = None
                 # Clear existing content
-                for widget in self.frames[frame_name].content_container.winfo_children():
-                    widget.destroy()
-                # Create new editor app
-                OfferEditorApp(self.frames[frame_name], self, kwargs['offer_path'])
+                if hasattr(self.frames[frame_name], 'content_container'):
+                    for widget in self.frames[frame_name].content_container.winfo_children():
+                        widget.destroy()
+                # Initialize with new offer path
+                self.frames[frame_name].initialize_offer_app(kwargs['offer_path'])
             elif frame_name == 'offer_generator' and 'template_context' in kwargs:
                 # Create new generator instance with template context
                 from src.core.offer_generator_app import OfferGeneratorApp
@@ -45,6 +48,10 @@ class NavigationManager:
                 self.frames[frame_name].offer_app_instance = OfferGeneratorApp(self.frames[frame_name], self, template_context=kwargs['template_context'])
             elif frame_name == 'offer_generator':
                 # Regular generator without template - ensure it's initialized
+                if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
+                    self.frames[frame_name].initialize_offer_app()
+            elif frame_name == 'offer_creation':
+                # Regular offer creation - ensure it's initialized
                 if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
                     self.frames[frame_name].initialize_offer_app()
             

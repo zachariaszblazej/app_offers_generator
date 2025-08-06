@@ -43,6 +43,9 @@ class OfferEditorApp:
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
+        # Set minimum height for content container to ensure scrolling works
+        self.window.configure(height=1200)  # Set explicit height for scrolling
+        
         # Set background
         try:
             bg = PhotoImage(file=BACKGROUND_IMAGE)
@@ -264,10 +267,21 @@ class OfferEditorApp:
                 # Recalculate totals
                 self.calc_total()
                 
+            # Update scroll region after all data is loaded
+            self.update_scroll_region()
+                
         except Exception as e:
             tkinter.messagebox.showerror("Błąd ładowania danych", 
                 f"Wystąpił błąd podczas ładowania danych z kontekstu:\\n{e}")
             print(f"Error loading context data: {e}")  # For debugging
+    
+    def update_scroll_region(self):
+        """Update scroll region if parent frame has scrolling capability"""
+        try:
+            if hasattr(self.parent_frame, 'update_scroll_region'):
+                self.parent_frame.update_scroll_region()
+        except Exception as e:
+            print(f"Could not update scroll region: {e}")
     
     def insert_product(self, product_data):
         """Insert a new product into the table"""
