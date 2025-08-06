@@ -105,7 +105,7 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.column('Adres 1', width=150)
         self.clients_tree.column('Adres 2', width=150)
         self.clients_tree.column('Alias', width=80)
-        self.clients_tree.column('DELETE', width=40, stretch=NO)
+        self.clients_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.clients_tree.yview)

@@ -84,9 +84,9 @@ class BrowseOffersFrame(Frame):
         
         self.tree.column('filename', width=450, minwidth=350)
         self.tree.column('date', width=170, minwidth=150)
-        self.tree.column('edit', minwidth=40, width=40, stretch=NO)
-        self.tree.column('similar', minwidth=40, width=40, stretch=NO)
-        self.tree.column('delete', minwidth=40, width=40, stretch=NO)
+        self.tree.column('edit', minwidth=40, width=40, stretch=NO, anchor=CENTER)
+        self.tree.column('similar', minwidth=40, width=40, stretch=NO, anchor=CENTER)
+        self.tree.column('delete', minwidth=40, width=40, stretch=NO, anchor=CENTER)
         
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(tree_frame, orient=VERTICAL, command=self.tree.yview)

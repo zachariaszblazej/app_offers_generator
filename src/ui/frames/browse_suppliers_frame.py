@@ -103,7 +103,7 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.column('Nazwa firmy', width=250)
         self.suppliers_tree.column('Adres 1', width=200)
         self.suppliers_tree.column('Adres 2', width=200)
-        self.suppliers_tree.column('DELETE', width=40, stretch=NO)
+        self.suppliers_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.suppliers_tree.yview)
