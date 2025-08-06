@@ -142,8 +142,6 @@ class ProductAddWindow:
         
         # Call the callback function to add product
         if self.product_add_callback(product_data):
-            # Show success message
-            tkinter.messagebox.showinfo("Sukces", "Produkt został pomyślnie dodany do tabeli!")
             # Clear fields after successful addition
             for entry in self.entries.values():
                 entry.delete(0, END)

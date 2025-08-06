@@ -104,7 +104,6 @@ class ProductTable:
                 self.tree.insert('', index=END, iid=self.count,
                                values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "❌"))
                 self.count += 1
-                print(f"Product added to table. Total items: {self.count}")
                 return True
             else:
                 print("Error: Table not initialized!")
@@ -163,7 +162,6 @@ class ProductTable:
                 
                 # Update the record
                 self.tree.item(item_id, values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "❌"))
-                print(f"Product updated: {product_id}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
                 return True
             else:
                 print("Error: Table not initialized!")

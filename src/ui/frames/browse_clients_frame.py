@@ -343,7 +343,6 @@ class BrowseClientsFrame(Frame):
                 success, message = delete_client_from_db(nip)
                 
                 if success:
-                    tkinter.messagebox.showinfo("Sukces", message)
                     self.refresh_clients_list()
                 else:
                     tkinter.messagebox.showerror("Błąd", message)
@@ -443,7 +442,6 @@ class BrowseClientsFrame(Frame):
             success, message = update_client_in_db(nip, company_name, address_p1, address_p2, alias)
         
         if success:
-            tkinter.messagebox.showinfo("Sukces", message)
             self.refresh_clients_list()
             self.hide_form()
         else:
@@ -485,7 +483,6 @@ class BrowseClientsFrame(Frame):
                         # Delete from database
                         success, message = delete_client_from_db(client_nip)
                         if success:
-                            tkinter.messagebox.showinfo("Sukces", message)
                             self.refresh_clients_list()
                         else:
                             tkinter.messagebox.showerror("Błąd", message)

@@ -139,7 +139,6 @@ class ProductEditWindow:
             if self.product_update_callback(self.item_id, product_data):
                 print("DEBUG: Product updated successfully")  # Debug
                 window.destroy()
-                tkinter.messagebox.showinfo("Sukces", "Produkt został zaktualizowany!")
             else:
                 print("DEBUG: Product update failed")  # Debug
         except Exception as e:

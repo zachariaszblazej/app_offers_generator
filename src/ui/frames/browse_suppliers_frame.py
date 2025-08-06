@@ -337,7 +337,6 @@ class BrowseSuppliersFrame(Frame):
                 success, message = delete_supplier_from_db(nip)
                 
                 if success:
-                    tkinter.messagebox.showinfo("Sukces", message)
                     self.refresh_suppliers_list()
                 else:
                     tkinter.messagebox.showerror("Błąd", message)
@@ -411,7 +410,6 @@ class BrowseSuppliersFrame(Frame):
             success, message = update_supplier_in_db(nip, company_name, address_p1, address_p2)
         
         if success:
-            tkinter.messagebox.showinfo("Sukces", message)
             self.refresh_suppliers_list()
             self.hide_form()
         else:
@@ -451,7 +449,6 @@ class BrowseSuppliersFrame(Frame):
                         # Delete from database
                         success, message = delete_supplier_from_db(supplier_nip)
                         if success:
-                            tkinter.messagebox.showinfo("Sukces", message)
                             self.refresh_suppliers_list()
                         else:
                             tkinter.messagebox.showerror("Błąd", message)
