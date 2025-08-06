@@ -72,26 +72,26 @@ class OfferGeneratorApp:
     def create_buttons(self):
         """Create all buttons"""
         # Product management buttons
-        Button(self.window, text="DODAJ PRODUKT", 
+        Button(self.window, text="DODAJ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#28a745', fg='black',
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
                
-        Button(self.window, text="USUŃ PRODUKT", 
+        Button(self.window, text="USUŃ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#dc3545', fg='black',
                padx=15, pady=8,
                command=self.remove_product,
-               cursor='hand2').place(x=260, y=740)
+               cursor='hand2').place(x=470, y=740)
                
-        Button(self.window, text="EDYTUJ PRODUKT", 
+        Button(self.window, text="EDYTUJ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#ffc107', fg='black',
                padx=15, pady=8,
                command=self.edit_product,
-               cursor='hand2').place(x=50, y=780)
+               cursor='hand2').place(x=260, y=740)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
@@ -100,7 +100,7 @@ class OfferGeneratorApp:
         search_client_button.place(x=900, y=360)
         
         # Supplier search button
-        search_supplier_button = Button(self.window, text="Szukaj dostawcę", 
+        search_supplier_button = Button(self.window, text="Szukaj dostawcy", 
                                       font=("Arial", 10),
                                       command=self.supplier_search.open_supplier_search)
         search_supplier_button.place(x=300, y=360)
@@ -160,7 +160,7 @@ class OfferGeneratorApp:
                     # Show info message
                     import tkinter.messagebox
                     tkinter.messagebox.showinfo("Dane załadowane", 
-                        "Pomyślnie załadowano dane z wybranej oferty.\\n\\n" +
+                        "Pomyślnie załadowano dane z wybranej oferty." +
                         "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
                 else:
                     import tkinter.messagebox
@@ -192,7 +192,7 @@ class OfferGeneratorApp:
                     # Show info message
                     import tkinter.messagebox
                     tkinter.messagebox.showinfo("Dane załadowane", 
-                        f"Pomyślnie załadowano dane z oferty:\\n{os.path.basename(self.template_offer_path)}\\n\\n" +
+                        f"Pomyślnie załadowano dane z oferty:{os.path.basename(self.template_offer_path)}" +
                         "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
                 else:
                     import tkinter.messagebox
@@ -201,13 +201,13 @@ class OfferGeneratorApp:
             else:
                 import tkinter.messagebox
                 tkinter.messagebox.showwarning("Brak danych", 
-                    f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.template_offer_path)}\\n\\n" +
+                    f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.template_offer_path)}" +
                     "Oferta została prawdopodobnie utworzona przed implementacją zapisywania kontekstu.")
                     
         except Exception as e:
             import tkinter.messagebox
             tkinter.messagebox.showerror("Błąd", 
-                f"Nie udało się załadować danych z szablonu:\\n{e}")
+                f"Nie udało się załadować danych z szablonu:{e}")
             print(f"Error loading template data: {e}")  # Debug
     
     def generate_offer(self):
