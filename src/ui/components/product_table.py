@@ -42,11 +42,12 @@ class ProductTable:
 
         # Configure columns
         self.tree.column('PID', minwidth=50, width=50, stretch=NO)
-        self.tree.column('PNAME', minwidth=250, width=300, stretch=YES)
+        self.tree.column('PNAME', minwidth=250, width=280, stretch=YES)
         self.tree.column('UNIT', minwidth=60, width=60, stretch=NO)
         self.tree.column('QTY', minwidth=60, width=80, stretch=NO)
         self.tree.column('U_PRICE', minwidth=100, width=100, stretch=NO)
         self.tree.column('TOTAL', minwidth=100, width=100, stretch=NO)
+        self.tree.column('EDIT', minwidth=40, width=40, stretch=NO)
         self.tree.column('DELETE', minwidth=40, width=40, stretch=NO)
 
         # Configure headings
@@ -56,6 +57,7 @@ class ProductTable:
         self.tree.heading('QTY', text='ilość')
         self.tree.heading('U_PRICE', text='Cena jednostkowa netto [PLN]')
         self.tree.heading('TOTAL', text='Wartość netto [PLN]')
+        self.tree.heading('EDIT', text='✏️')
         self.tree.heading('DELETE', text='❌')
         
         # Add scrollbar and keep reference
@@ -73,11 +75,7 @@ class ProductTable:
         self.tree.bind("<Motion>", self.on_table_motion)
         self.scrollbar_y.bind("<Motion>", self.on_table_motion)
         
-        # Bind double-click for editing products
-        if self.edit_callback:
-            self.tree.bind("<Double-Button-1>", self.on_double_click)
-        
-        # Bind single click for delete functionality
+        # Bind single click for edit and delete functionality
         self.tree.bind("<ButtonRelease-1>", self.on_single_click)
     
     def input_record(self, product_data):
@@ -110,7 +108,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 self.tree.insert('', index=END, iid=self.count,
-                               values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "❌"))
+                               values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "✏️", "❌"))
                 self.count += 1
                 return True
             else:
@@ -195,7 +193,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 # Update the record
-                self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "❌"))
+                self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "✏️", "❌"))
                 return True
             else:
                 print("Error: Table not initialized!")
@@ -228,8 +226,8 @@ class ProductTable:
             for child in self.tree.get_children():
                 item = self.tree.item(child)
                 if item['values']:
-                    # Extract values: position, pname, unit, qty, unit_price, total (skip DELETE column)
-                    values = item['values'][:6]  # Take only first 6 values, skip DELETE
+                    # Extract values: position, pname, unit, qty, unit_price, total (skip EDIT and DELETE columns)
+                    values = item['values'][:6]  # Take only first 6 values, skip EDIT and DELETE
                     position, pname, unit, qty, unit_price, total = values
                     
                     # Create a row as list with formatted values (comma as decimal separator)
@@ -257,7 +255,8 @@ class ProductTable:
             for child in self.tree.get_children():
                 item = self.tree.item(child)
                 if item['values']:
-                    pid, pname, unit, qty, unit_price, total = item['values']
+                    # Extract values: (position, pname, unit, qty, unit_price, total, edit_icon, delete_icon)
+                    pid, pname, unit, qty, unit_price, total = item['values'][:6]  # Take only first 6 values
                     product = {
                         'pid': pid,
                         'pname': pname,
@@ -371,18 +370,6 @@ class ProductTable:
         if self.parent_frame and hasattr(self.parent_frame, 'on_product_table_enter'):
             self.parent_frame.on_product_table_enter()
     
-    def on_double_click(self, event):
-        """Handle double-click on table item to edit product"""
-        if self.edit_callback:
-            # Get the item that was double-clicked
-            item = self.tree.selection()
-            if item:
-                # Get the selected product data
-                selected_product = self.get_selected_product()
-                if selected_product:
-                    # Call the edit callback with the selected product
-                    self.edit_callback()
-    
     def move_product_up(self):
         """Move selected product up in the table"""
         if not self.tree or not self.tree.selection():
@@ -447,21 +434,39 @@ class ProductTable:
         return True
 
     def on_single_click(self, event):
-        """Handle single-click on table to check for delete column clicks"""
+        """Handle single-click on table to check for edit and delete column clicks"""
         # Get the region that was clicked
         region = self.tree.identify_region(event.x, event.y)
         if region == "cell":
             # Get the column that was clicked
             column = self.tree.identify_column(event.x)
             
-            # DELETE column should be the last column
-            num_columns = len(self.tree['columns'])
-            delete_column_index = f"#{num_columns}"
-            
-            if column == delete_column_index:  
-                # Get the item that was clicked
-                item = self.tree.identify_row(event.y)
-                if item:
+            # Get the item that was clicked
+            item = self.tree.identify_row(event.y)
+            if item:
+                # Get number of columns to determine column indices
+                num_columns = len(self.tree['columns'])
+                edit_column_index = f"#{num_columns - 1}"  # Second to last column (EDIT)
+                delete_column_index = f"#{num_columns}"    # Last column (DELETE)
+                
+                if column == edit_column_index:  # EDIT column
+                    # Get product data
+                    values = self.tree.item(item)['values']
+                    if values and self.edit_callback:
+                        # Call edit callback with product data
+                        # values format: (position, name, unit, qty, price, total, edit_icon, delete_icon)
+                        product_data = {
+                            'item_id': item,
+                            'position': values[0],
+                            'product_name': values[1],  # Changed from 'name' to 'product_name'
+                            'unit': values[2],
+                            'quantity': values[3],
+                            'unit_price': values[4].replace(',', '.'),  # Convert back from display format
+                            'total': values[5].replace(',', '.')        # Convert back from display format
+                        }
+                        self.edit_callback(product_data)
+                        
+                elif column == delete_column_index:  # DELETE column
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
                         "Potwierdź usunięcie", 

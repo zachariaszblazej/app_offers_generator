@@ -307,13 +307,18 @@ class OfferEditorApp:
             # No need to recalculate total as order change doesn't affect sums
             pass
 
-    def edit_product(self):
+    def edit_product(self, product_data=None):
         """Edit selected product from the table"""
-        selected_product = self.product_table.get_selected_product()
-        if selected_product:
-            self.product_edit.open_product_edit_window(selected_product)
+        if product_data:
+            # New system: called from EDIT column click with product data
+            self.product_edit.open_product_edit_window(product_data)
         else:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
+            # Legacy system: get selected product (fallback)
+            selected_product = self.product_table.get_selected_product()
+            if selected_product:
+                self.product_edit.open_product_edit_window(selected_product)
+            else:
+                tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
     
     def update_product(self, item_id, product_data):
         """Update existing product in the table"""
