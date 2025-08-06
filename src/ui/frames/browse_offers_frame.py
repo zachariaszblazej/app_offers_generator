@@ -72,16 +72,20 @@ class BrowseOffersFrame(Frame):
         tree_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
         
         # Create treeview
-        columns = ('filename', 'date', 'delete')
+        columns = ('filename', 'date', 'edit', 'similar', 'delete')
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
         
         # Configure columns
         self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
         self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
+        self.tree.heading('edit', text='✏️')
+        self.tree.heading('similar', text='📋')
         self.tree.heading('delete', text='❌')
         
-        self.tree.column('filename', width=500, minwidth=400)
-        self.tree.column('date', width=200, minwidth=150)
+        self.tree.column('filename', width=450, minwidth=350)
+        self.tree.column('date', width=170, minwidth=150)
+        self.tree.column('edit', minwidth=40, width=40, stretch=NO)
+        self.tree.column('similar', minwidth=40, width=40, stretch=NO)
         self.tree.column('delete', minwidth=40, width=40, stretch=NO)
         
         # Scrollbars
@@ -111,24 +115,6 @@ class BrowseOffersFrame(Frame):
                             command=self.load_offers,
                             cursor='hand2')
         refresh_btn.pack(side=LEFT, padx=(0, 10))
-        
-        # Edit button
-        edit_btn = Button(buttons_frame, text="✏️ Edytuj ofertę",
-                         font=("Arial", 12),
-                         bg='#ffc107', fg='black',
-                         padx=15, pady=8,
-                         command=self.edit_selected_offer,
-                         cursor='hand2')
-        edit_btn.pack(side=LEFT, padx=(0, 10))
-        
-        # Create similar offer button
-        similar_btn = Button(buttons_frame, text="📋 Stwórz podobną",
-                            font=("Arial", 12),
-                            bg='#6f42c1', fg='black',
-                            padx=15, pady=8,
-                            command=self.create_similar_offer,
-                            cursor='hand2')
-        similar_btn.pack(side=LEFT, padx=(0, 10))
         
         # Open folder button
         folder_btn = Button(buttons_frame, text="📁 Otwórz folder",
@@ -208,7 +194,7 @@ class BrowseOffersFrame(Frame):
                 file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
                 
                 # Add to treeview
-                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "❌"))
+                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "✏️", "📋", "❌"))
                 self.offers_list.append(file_info['filepath'])
             
             print(f"Loaded {len(files)} offers from {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
@@ -349,26 +335,61 @@ class BrowseOffersFrame(Frame):
         self.nav_manager.show_frame('offer_generator', template_context=context_data)
     
     def on_single_click(self, event):
-        """Handle single-click on table to check for delete column clicks"""
+        """Handle single-click on table to check for action column clicks"""
         # Get the region that was clicked
         region = self.tree.identify_region(event.x, event.y)
         if region == "cell":
             # Get the column that was clicked
             column = self.tree.identify_column(event.x)
             
-            # DELETE column should be the last column
-            num_columns = len(self.tree['columns'])
-            delete_column_index = f"#{num_columns}"
-            
-            if column == delete_column_index:  
-                # Get the item that was clicked
-                item = self.tree.identify_row(event.y)
-                if item:
-                    # Get filename from the selected item
-                    item_values = self.tree.item(item)['values']
-                    filename = item_values[0]
+            # Get the item that was clicked
+            item = self.tree.identify_row(event.y)
+            if item:
+                # Get filename from the selected item
+                item_values = self.tree.item(item)['values']
+                filename = item_values[0]
+                
+                # Check which action column was clicked
+                num_columns = len(self.tree['columns'])
+                edit_column_index = f"#{num_columns - 2}"      # Third from last (✏️)
+                similar_column_index = f"#{num_columns - 1}"   # Second from last (📋)
+                delete_column_index = f"#{num_columns}"        # Last column (❌)
+                
+                if column == edit_column_index:
+                    # Edit offer
+                    offer_path = os.path.join(get_offers_folder(), filename)
+                    self.tree.selection_set(item)
+                    self.nav_manager.show_frame('offer_editor', offer_path=offer_path)
                     
-                    # Ask for confirmation
+                elif column == similar_column_index:
+                    # Create similar offer
+                    offer_path = os.path.join(get_offers_folder(), filename)
+                    self.tree.selection_set(item)
+                    
+                    # Load context from selected offer
+                    from src.data.database_service import get_offer_context_from_db
+                    context_data = get_offer_context_from_db(offer_path)
+                    
+                    if not context_data:
+                        # For older offers without context, show warning
+                        result = tkinter.messagebox.askyesno(
+                            "Brak kontekstu", 
+                            f"Oferta '{filename}' nie ma zapisanego kontekstu.\\n\\n" +
+                            "Czy chcesz przejść do kreatora ofert z pustymi polami?"
+                        )
+                        if result:
+                            self.nav_manager.show_frame('offer_generator')
+                        return
+                    
+                    # Remove offer_number from context (it will be generated anew)
+                    if 'offer_number' in context_data:
+                        del context_data['offer_number']
+                    
+                    # Pass context to offer generator
+                    self.nav_manager.show_frame('offer_generator', template_context=context_data)
+                    
+                elif column == delete_column_index:
+                    # Delete offer
                     result = tkinter.messagebox.askyesno(
                         "Potwierdzenie usunięcia", 
                         f"Czy na pewno chcesz usunąć ofertę:\\n{filename}\\n\\nTej operacji nie można cofnąć!"
@@ -411,11 +432,13 @@ class BrowseOffersFrame(Frame):
             # Get the column that was clicked
             column = self.tree.identify_column(event.x)
             
-            # Don't open if clicking on delete column
+            # Don't open if clicking on action columns (edit, similar, delete)
             num_columns = len(self.tree['columns'])
-            delete_column_index = f"#{num_columns}"
+            edit_column_index = f"#{num_columns - 2}"      # Third from last (✏️)
+            similar_column_index = f"#{num_columns - 1}"   # Second from last (📋)
+            delete_column_index = f"#{num_columns}"        # Last column (❌)
             
-            if column != delete_column_index:
+            if column not in [edit_column_index, similar_column_index, delete_column_index]:
                 # Get the item that was clicked
                 item = self.tree.identify_row(event.y)
                 if item:
