@@ -75,6 +75,30 @@ class MainMenuFrame(Frame):
                                      cursor='hand2')
         browse_suppliers_btn.pack(pady=10)
         
+        # Test data button
+        test_data_btn = Button(
+            buttons_frame, 
+            text="🧪 Generuj dane testowe",
+            font=("Arial", 12),
+            bg='#ff9800', fg='white',
+            padx=30, pady=10,
+            command=self.generate_test_data,
+            cursor='hand2'
+        )
+        test_data_btn.pack(pady=10)
+        
+        # Cleanup test data button
+        cleanup_btn = Button(
+            buttons_frame, 
+            text="🗑️ Usuń dane testowe",
+            font=("Arial", 12),
+            bg='#f44336', fg='white',
+            padx=30, pady=10,
+            command=self.cleanup_test_data,
+            cursor='hand2'
+        )
+        cleanup_btn.pack(pady=10)
+        
         # Settings button (placeholder for future functionality)
         settings_btn = Button(buttons_frame, 
                              text="Ustawienia",
@@ -103,6 +127,52 @@ class MainMenuFrame(Frame):
         """Navigate to browse offers screen"""
         self.nav_manager.show_frame('browse_offers')
     
+    def generate_test_data(self):
+        """Generate test data for scrolling tests"""
+        import tkinter.messagebox
+        
+        # Ask for confirmation
+        result = tkinter.messagebox.askyesno(
+            "Generowanie danych testowych",
+            "Czy chcesz wygenerować dane testowe?\n\n"
+            "To doda:\n"
+            "• 100 klientów testowych\n"
+            "• 100 dostawców testowych\n"
+            "• 100 ofert testowych\n\n"
+            "Operacja może potrwać kilka minut."
+        )
+        
+        if result:
+            try:
+                # Access main app through navigation manager
+                if hasattr(self.nav_manager, 'main_app'):
+                    self.nav_manager.main_app.generate_test_data()
+                else:
+                    # Alternative approach - find main app in window
+                    main_window = self.nav_manager.window
+                    if hasattr(main_window, 'main_app'):
+                        main_window.main_app.generate_test_data()
+                    else:
+                        # Direct import and execution
+                        from src.core.main_app import OfferGeneratorMainApp
+                        temp_app = OfferGeneratorMainApp()
+                        temp_app.generate_test_data()
+            except Exception as e:
+                tkinter.messagebox.showerror("Błąd", f"Nie udało się wygenerować danych testowych:\n{str(e)}")
+
+    def cleanup_test_data(self):
+        """Clean up test data"""
+        try:
+            # Access main app through navigation manager
+            if hasattr(self.nav_manager, 'main_app'):
+                self.nav_manager.main_app.cleanup_test_data()
+            else:
+                import tkinter.messagebox
+                tkinter.messagebox.showerror("Błąd", "Nie można uzyskać dostępu do funkcji czyszczenia danych.")
+        except Exception as e:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć danych testowych:\n{str(e)}")
+
     def browse_clients(self):
         """Navigate to browse clients screen"""
         self.nav_manager.show_frame('browse_clients')
