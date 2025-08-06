@@ -23,21 +23,26 @@ jobs:
       run: |
         python -c "import sys; print('Python version:', sys.version)"
         python -c "import tkinter; print('Tkinter available')"
-        python -c "import tkcalendar; print('tkcalendar available')"
+        python -c "import tkcalendar; print('tkcalendar version:', tkcalendar.__version__)"
+        python -c "import tkcalendar.calendar_; print('tkcalendar.calendar_ available')"
+        python -c "import tkcalendar.dateentry; print('tkcalendar.dateentry available')"
+        python -c "import tkcalendar.tooltip; print('tkcalendar.tooltip available')"
+        python -c "import PIL; print('PIL available')"
+        python -c "import docx; print('python-docx available')"
         python -c "import sys, os; sys.path.insert(0, os.path.join(os.getcwd(), 'src')); from src.core.main_app import OfferGeneratorMainApp; print('Main app import successful')"
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install python-docx Pillow PyInstaller docxcompose lxml tkcalendar
+        pip install -r requirements.txt
     
     - name: Build executable (with console for debugging)
       run: |
-        python -m PyInstaller --clean --onefile --console --name=OfferGenerator-Debug --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip main.py
+        python -m PyInstaller --clean --onefile --console --name=OfferGenerator-Debug --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=PIL._tkinter_finder --hidden-import=PIL.Image --hidden-import=docx --hidden-import=docx.shared --hidden-import=docx.enum.text --hidden-import=docx.enum.table --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip --hidden-import=src.core.main_app --hidden-import=src.core.navigation_manager --hidden-import=src.core.offer_generator_app --hidden-import=src.core.offer_editor_app --hidden-import=src.ui.frames.main_menu_frame --hidden-import=src.ui.frames.settings_frame --hidden-import=src.ui.frames.browse_clients_frame --hidden-import=src.ui.frames.browse_suppliers_frame --hidden-import=src.ui.frames.browse_offers_frame --hidden-import=src.ui.frames.offer_creation_frame --hidden-import=src.ui.frames.offer_editor_frame --hidden-import=src.ui.components.ui_components --hidden-import=src.ui.components.product_table --hidden-import=src.ui.windows.client_search_window --hidden-import=src.ui.windows.supplier_search_window --hidden-import=src.ui.windows.product_add_window --hidden-import=src.ui.windows.product_edit_window --hidden-import=src.services.offer_generator_service --hidden-import=src.services.offer_editor_service --hidden-import=src.services.sync_service --hidden-import=src.data.database_service --hidden-import=src.utils.config --hidden-import=src.utils.settings main.py
     
     - name: Build executable (without console - final version)
       run: |
-        python -m PyInstaller --clean --onefile --noconsole --name=OfferGenerator --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip main.py
+        python -m PyInstaller --clean --onefile --noconsole --name=OfferGenerator --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=PIL._tkinter_finder --hidden-import=PIL.Image --hidden-import=docx --hidden-import=docx.shared --hidden-import=docx.enum.text --hidden-import=docx.enum.table --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip --hidden-import=src.core.main_app --hidden-import=src.core.navigation_manager --hidden-import=src.core.offer_generator_app --hidden-import=src.core.offer_editor_app --hidden-import=src.ui.frames.main_menu_frame --hidden-import=src.ui.frames.settings_frame --hidden-import=src.ui.frames.browse_clients_frame --hidden-import=src.ui.frames.browse_suppliers_frame --hidden-import=src.ui.frames.browse_offers_frame --hidden-import=src.ui.frames.offer_creation_frame --hidden-import=src.ui.frames.offer_editor_frame --hidden-import=src.ui.components.ui_components --hidden-import=src.ui.components.product_table --hidden-import=src.ui.windows.client_search_window --hidden-import=src.ui.windows.supplier_search_window --hidden-import=src.ui.windows.product_add_window --hidden-import=src.ui.windows.product_edit_window --hidden-import=src.services.offer_generator_service --hidden-import=src.services.offer_editor_service --hidden-import=src.services.sync_service --hidden-import=src.data.database_service --hidden-import=src.utils.config --hidden-import=src.utils.settings main.py
     
     - name: Upload executable (Debug version)
       uses: actions/upload-artifact@v4

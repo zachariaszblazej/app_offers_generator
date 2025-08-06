@@ -46,6 +46,25 @@ def create_exe():
         print("PyInstaller not found. Installing...")
         run_command([sys.executable, "-m", "pip", "install", "PyInstaller"])
     
+    # Test critical imports before building
+    print("🧪 Testing critical imports...")
+    try:
+        import tkcalendar
+        from tkcalendar import DateEntry, Calendar
+        print(f"✅ tkcalendar {tkcalendar.__version__} imports successful")
+    except ImportError as e:
+        print(f"❌ tkcalendar import failed: {e}")
+        return False
+    
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
+        from src.core.main_app import OfferGeneratorMainApp
+        print("✅ Main app import successful")
+    except ImportError as e:
+        print(f"❌ Main app import failed: {e}")
+        return False
+    
     # Clean up any existing build directories
     build_dirs = ['build', 'dist', '__pycache__']
     for dir_name in build_dirs:
