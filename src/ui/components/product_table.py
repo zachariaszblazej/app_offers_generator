@@ -25,9 +25,10 @@ def format_currency(value):
 class ProductTable:
     """Handles product table functionality"""
     
-    def __init__(self, parent_window, parent_frame=None):
+    def __init__(self, parent_window, parent_frame=None, edit_callback=None):
         self.parent_window = parent_window
         self.parent_frame = parent_frame  # Reference to containing frame for scroll conflict management
+        self.edit_callback = edit_callback  # Callback for double-click edit
         self.tree = None
         self.count = 0
         self.create_table()
@@ -68,6 +69,10 @@ class ProductTable:
         # Also bind to motion events to catch cursor movement over table area
         self.tree.bind("<Motion>", self.on_table_motion)
         self.scrollbar_y.bind("<Motion>", self.on_table_motion)
+        
+        # Bind double-click for editing products
+        if self.edit_callback:
+            self.tree.bind("<Double-Button-1>", self.on_double_click)
     
     def input_record(self, product_data):
         """Insert a new product record"""
@@ -325,3 +330,15 @@ class ProductTable:
         # Ensure that parent frame knows cursor is over table
         if self.parent_frame and hasattr(self.parent_frame, 'on_product_table_enter'):
             self.parent_frame.on_product_table_enter()
+    
+    def on_double_click(self, event):
+        """Handle double-click on table item to edit product"""
+        if self.edit_callback:
+            # Get the item that was double-clicked
+            item = self.tree.selection()
+            if item:
+                # Get the selected product data
+                selected_product = self.get_selected_product()
+                if selected_product:
+                    # Call the edit callback with the selected product
+                    self.edit_callback()

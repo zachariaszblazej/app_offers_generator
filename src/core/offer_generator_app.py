@@ -61,7 +61,7 @@ class OfferGeneratorApp:
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.product_table = ProductTable(self.window, self.parent_frame)
+        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product)
         self.ui = UIComponents(self.window, self.product_table)
         
         # Set modification callback so UI components can notify about user changes
