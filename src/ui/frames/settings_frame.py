@@ -48,22 +48,27 @@ class SettingsFrame(Frame):
         return_btn.pack(side=RIGHT)
         
         # Main scrollable frame
-        main_canvas = Canvas(self, bg='#f0f0f0')
-        scrollbar = ttk.Scrollbar(self, orient="vertical", command=main_canvas.yview)
-        scrollable_frame = Frame(main_canvas, bg='#f0f0f0')
+        self.main_canvas = Canvas(self, bg='#f0f0f0')
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.main_canvas.yview)
+        scrollable_frame = Frame(self.main_canvas, bg='#f0f0f0')
         
         # Configure scrolling
         scrollable_frame.bind(
             "<Configure>",
-            lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
         )
         
-        main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        main_canvas.configure(yscrollcommand=scrollbar.set)
+        self.main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.main_canvas.configure(yscrollcommand=scrollbar.set)
         
         # Pack canvas and scrollbar
-        main_canvas.pack(side="left", fill="both", expand=True, padx=20)
+        self.main_canvas.pack(side="left", fill="both", expand=True, padx=20)
         scrollbar.pack(side="right", fill="y")
+        
+        # Bind mouse wheel events for scrolling
+        self.bind_mousewheel(self.main_canvas)
+        self.bind_mousewheel(self.main_canvas.master)
+        self.bind_mousewheel(self)
         
         # Content container
         content_container = Frame(scrollable_frame, bg='#f0f0f0')
@@ -468,6 +473,55 @@ class SettingsFrame(Frame):
     def return_to_main_menu(self):
         """Return to main menu"""
         self.nav_manager.show_frame('main_menu')
+    
+    def bind_mousewheel(self, widget):
+        """Bind mouse wheel events to a widget"""
+        # Bind mousewheel events for different platforms
+        widget.bind("<MouseWheel>", self.on_mousewheel)  # Windows and macOS
+        widget.bind("<Button-4>", self.on_mousewheel)    # Linux
+        widget.bind("<Button-5>", self.on_mousewheel)    # Linux
+        
+        # Additional macOS touchpad events
+        widget.bind("<Shift-MouseWheel>", self.on_mousewheel)
+        
+        # Try to bind to all child widgets as well for better coverage
+        for child in widget.winfo_children():
+            try:
+                self.bind_mousewheel(child)
+            except:
+                pass
+    
+    def unbind_mousewheel(self, widget):
+        """Unbind mouse wheel events from a widget"""
+        widget.unbind("<MouseWheel>")
+        widget.unbind("<Button-4>")
+        widget.unbind("<Button-5>")
+        widget.unbind("<Shift-MouseWheel>")
+    
+    def on_mousewheel(self, event):
+        """Handle mouse wheel scrolling"""
+        try:
+            # Different handling for different platforms and event types
+            if event.delta:
+                # Windows and macOS
+                delta = event.delta
+                # Normalize delta for better scrolling experience
+                if abs(delta) > 100:
+                    delta = delta // abs(delta) * 120  # Normalize to standard wheel step
+            elif event.num == 4:
+                # Linux scroll up
+                delta = 120
+            elif event.num == 5:
+                # Linux scroll down
+                delta = -120
+            else:
+                delta = 0
+            
+            # Apply scrolling to canvas
+            if hasattr(self, 'main_canvas') and self.main_canvas:
+                self.main_canvas.yview_scroll(int(-1 * (delta / 120)), "units")
+        except Exception as e:
+            pass  # Silently ignore scrolling errors
     
     def hide(self):
         """Hide this frame"""
