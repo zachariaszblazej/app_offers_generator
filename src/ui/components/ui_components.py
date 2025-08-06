@@ -94,11 +94,12 @@ class UIComponents:
         date_btn = Button(self.window, text="📅", width=2, command=self.open_date_picker)
         date_btn.place(x=870, y=90)
 
-        # Offer number field (only in editor mode)
+        # Offer number field (only in editor mode) - positioned between supplier and client data
         if show_offer_number:
-            Label(self.window, text="Numer oferty:", font=("Arial", 10)).place(x=50, y=60)
-            self.entries['offer_number_display'] = Entry(self.window, width=25, state='readonly')
-            self.entries['offer_number_display'].place(x=150, y=60)
+            self.entries['offer_number_display'] = Entry(self.window, width=20, state='readonly', 
+                                                       font=("Arial", 12, "bold"), justify='center',
+                                                       bg='#f8f9fa', relief='flat')
+            self.entries['offer_number_display'].place(x=400, y=200)
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data['address_1'])
