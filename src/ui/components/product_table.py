@@ -36,7 +36,7 @@ class ProductTable:
         """Create the product table"""
         # Create and configure the treeview
         self.tree = ttk.Treeview(self.parent_window, columns=TABLE_COLUMNS, show='headings', height=10)
-        self.tree.place(x=50, y=450, width=900, height=300)
+        self.tree.place(x=50, y=410, width=900, height=300)
 
         # Configure columns
         self.tree.column('PID', minwidth=50, width=50, stretch=NO)
@@ -56,7 +56,7 @@ class ProductTable:
         
         # Add scrollbar and keep reference
         self.scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
-        self.scrollbar_y.place(x=950, y=450, height=300)
+        self.scrollbar_y.place(x=950, y=410, height=300)
         self.tree.configure(yscrollcommand=self.scrollbar_y.set)
         
         # Bind mouse events for scroll conflict detection
