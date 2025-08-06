@@ -82,20 +82,6 @@ class OfferEditorApp:
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
-               
-        Button(self.window, text="EDYTUJ POZYCJĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#ffc107', fg='black',
-               padx=15, pady=8,
-               command=self.edit_product,
-               cursor='hand2').place(x=260, y=740)
-               
-        Button(self.window, text="USUŃ POZYCJĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#dc3545', fg='black',
-               padx=15, pady=8,
-               command=self.remove_product,
-               cursor='hand2').place(x=470, y=740)
         
         # Update offer button (instead of generate)
         update_offer_button = Button(self.window, text="Zapisz zmiany", 
@@ -291,12 +277,6 @@ class OfferEditorApp:
             self.calc_total()
             return True
         return False
-    
-    def remove_product(self):
-        """Remove selected product from the table"""
-        self.product_table.remove_record()
-        # Automatically recalculate total after removal
-        self.calc_total()
     
     def on_product_deleted(self):
         """Called when product is deleted via inline delete button"""

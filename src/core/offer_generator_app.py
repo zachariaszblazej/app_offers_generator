@@ -91,20 +91,6 @@ class OfferGeneratorApp:
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
-               
-        Button(self.window, text="USUŃ POZYCJĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#dc3545', fg='black',
-               padx=15, pady=8,
-               command=self.remove_product,
-               cursor='hand2').place(x=470, y=740)
-               
-        Button(self.window, text="EDYTUJ POZYCJĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#ffc107', fg='black',
-               padx=15, pady=8,
-               command=self.edit_product,
-               cursor='hand2').place(x=260, y=740)
                 
         # Client search button
         search_client_button = Button(self.window, text="Szukaj klienta", 
@@ -134,20 +120,20 @@ class OfferGeneratorApp:
             return True
         return False
     
-    def remove_product(self):
-        """Remove selected product from the table"""
-        if self.product_table.remove_record():
-            # Mark user modifications
-            self.user_modifications_made = True
-            # Automatically recalculate total after removal
-            self.calc_total()
-    
     def on_product_deleted(self):
         """Called when product is deleted via inline delete button"""
         # Mark user modifications
         self.user_modifications_made = True
         # Automatically recalculate total after deletion
         self.calc_total()
+    
+    def edit_product(self):
+        """Edit selected product from the table"""
+        selected_product = self.product_table.get_selected_product()
+        if selected_product:
+            self.product_edit.open_product_edit_window(selected_product)
+        else:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
     
     def edit_product(self):
         """Edit selected product from the table"""
