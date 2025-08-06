@@ -117,7 +117,7 @@ class SettingsFrame(Frame):
     def create_company_data_section(self, parent):
         """Create company data settings section"""
         # Section title
-        company_title = Label(parent, text="Dane firmy", 
+        company_title = Label(parent, text="Górna sekcja zapytania ofertowego - domyślne wartości", 
                              font=("Arial", 16, "bold"), 
                              bg='#f0f0f0', fg='#333333')
         company_title.pack(anchor=W, pady=(0, 20))
@@ -217,7 +217,7 @@ class SettingsFrame(Frame):
     def create_offer_details_section(self, parent):
         """Create offer details settings section"""
         # Section title
-        offer_title = Label(parent, text="Szczegóły oferty - domyślne wartości", 
+        offer_title = Label(parent, text="Dolna sekcja zapytania ofertowego - domyślne wartości", 
                            font=("Arial", 16, "bold"), 
                            bg='#f0f0f0', fg='#333333')
         offer_title.pack(anchor=W, pady=(20, 20))
@@ -291,7 +291,7 @@ class SettingsFrame(Frame):
     def create_app_settings_section(self, parent):
         """Create app settings section"""
         # Section title
-        app_title = Label(parent, text="Ustawienia aplikacji", 
+        app_title = Label(parent, text="Inne ustawienia aplikacji", 
                          font=("Arial", 16, "bold"), 
                          bg='#f0f0f0', fg='#333333')
         app_title.pack(anchor=W, pady=(20, 20))
@@ -313,7 +313,7 @@ class SettingsFrame(Frame):
         label_frame.pack(fill=X, pady=(0, 5))
         Label(label_frame, text="Folder z ofertami:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane wygenerowane oferty", 
+        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane oferty", 
               font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
         
         # Entry and browse button
