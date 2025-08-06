@@ -88,7 +88,7 @@ class BrowseClientsFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for clients list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias', 'DELETE')
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias', 'EDIT', 'DELETE')
         self.clients_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
         # Define headings with sorting commands
@@ -97,6 +97,7 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.clients_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
         self.clients_tree.heading('Alias', text='Alias', command=lambda: self.sort_by_column('Alias'))
+        self.clients_tree.heading('EDIT', text='✏️')
         self.clients_tree.heading('DELETE', text='❌')
         
         # Configure column widths
@@ -105,6 +106,7 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.column('Adres 1', width=150)
         self.clients_tree.column('Adres 2', width=150)
         self.clients_tree.column('Alias', width=80)
+        self.clients_tree.column('EDIT', width=40, stretch=NO, anchor=CENTER)
         self.clients_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
@@ -268,6 +270,7 @@ class BrowseClientsFrame(Frame):
                 client['Adres 1'], 
                 client['Adres 2'], 
                 client['Alias'],
+                "✏️",
                 "❌"
             ))
     
@@ -312,11 +315,8 @@ class BrowseClientsFrame(Frame):
                 self.selected_client_nip = values[0]
     
     def on_client_double_click(self, event):
-        """Handle double-click on client item to edit client"""
-        selection = self.clients_tree.selection()
-        if selection:
-            # Call edit_selected_client method
-            self.edit_selected_client()
+        """Handle double-click on client item - now disabled, use edit column instead"""
+        pass
     
     def edit_selected_client(self):
         """Edit the selected client"""
@@ -464,7 +464,7 @@ class BrowseClientsFrame(Frame):
         self.pack(fill=BOTH, expand=True)
     
     def on_client_single_click(self, event):
-        """Handle single-click on clients table to check for delete column clicks"""
+        """Handle single-click on clients table to check for edit/delete column clicks"""
         # Get the region that was clicked
         region = self.clients_tree.identify_region(event.x, event.y)
         print(f"Client clicked region: {region}")
@@ -472,16 +472,22 @@ class BrowseClientsFrame(Frame):
             # Get the column that was clicked
             column = self.clients_tree.identify_column(event.x)
             print(f"Client clicked column: {column}")
-            # DELETE column is the 6th column (index #6)
-            if column == "#6":  
-                # Get the item that was clicked
-                item = self.clients_tree.identify_row(event.y)
-                if item:
-                    # Get client data for confirmation
-                    values = self.clients_tree.item(item)['values']
-                    client_name = values[1]  # Company name
-                    client_nip = values[0]   # NIP
+            
+            # Get the item that was clicked
+            item = self.clients_tree.identify_row(event.y)
+            if item:
+                # Get client data
+                values = self.clients_tree.item(item)['values']
+                client_name = values[1]  # Company name
+                client_nip = values[0]   # NIP
+                
+                # EDIT column is the 6th column (index #6)
+                if column == "#6":  
+                    # Open edit form for this client
+                    self.open_edit_client_form(client_nip, values)
                     
+                # DELETE column is the 7th column (index #7)
+                elif column == "#7":  
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
                         "Potwierdź usunięcie", 
@@ -494,3 +500,10 @@ class BrowseClientsFrame(Frame):
                             self.refresh_clients_list()
                         else:
                             tkinter.messagebox.showerror("Błąd", message)
+
+    def open_edit_client_form(self, client_nip, client_values):
+        """Open edit form for a specific client"""
+        self.current_editing_nip = client_nip
+        self.form_mode = 'edit'
+        self.create_client_form()
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))

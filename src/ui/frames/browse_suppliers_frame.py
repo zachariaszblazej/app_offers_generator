@@ -88,7 +88,7 @@ class BrowseSuppliersFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for suppliers list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'DELETE')
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'EDIT', 'DELETE')
         self.suppliers_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
         # Define headings with sorting commands
@@ -96,6 +96,7 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
         self.suppliers_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.suppliers_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
+        self.suppliers_tree.heading('EDIT', text='✏️')
         self.suppliers_tree.heading('DELETE', text='❌')
         
         # Configure column widths
@@ -103,6 +104,7 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.column('Nazwa firmy', width=250)
         self.suppliers_tree.column('Adres 1', width=200)
         self.suppliers_tree.column('Adres 2', width=200)
+        self.suppliers_tree.column('EDIT', width=40, stretch=NO, anchor=CENTER)
         self.suppliers_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
@@ -261,6 +263,7 @@ class BrowseSuppliersFrame(Frame):
                 supplier['Nazwa firmy'], 
                 supplier['Adres 1'], 
                 supplier['Adres 2'],
+                "✏️",
                 "❌"
             ))
     
@@ -305,11 +308,8 @@ class BrowseSuppliersFrame(Frame):
                 self.selected_supplier_nip = values[0]
     
     def on_supplier_double_click(self, event):
-        """Handle double-click on supplier item to edit supplier"""
-        selection = self.suppliers_tree.selection()
-        if selection:
-            # Call edit_selected_supplier method
-            self.edit_selected_supplier()
+        """Handle double-click on supplier item - now disabled, use edit column instead"""
+        pass
     
     def edit_selected_supplier(self):
         """Edit the selected supplier"""
@@ -432,22 +432,28 @@ class BrowseSuppliersFrame(Frame):
         self.pack(fill=BOTH, expand=True)
     
     def on_supplier_single_click(self, event):
-        """Handle single-click on suppliers table to check for delete column clicks"""
+        """Handle single-click on suppliers table to check for edit/delete column clicks"""
         # Get the region that was clicked
         region = self.suppliers_tree.identify_region(event.x, event.y)
         if region == "cell":
             # Get the column that was clicked
             column = self.suppliers_tree.identify_column(event.x)
-            # DELETE column is the 5th column (index #5)
-            if column == "#5":  
-                # Get the item that was clicked
-                item = self.suppliers_tree.identify_row(event.y)
-                if item:
-                    # Get supplier data for confirmation
-                    values = self.suppliers_tree.item(item)['values']
-                    supplier_name = values[1]  # Company name
-                    supplier_nip = values[0]   # NIP
+            
+            # Get the item that was clicked
+            item = self.suppliers_tree.identify_row(event.y)
+            if item:
+                # Get supplier data
+                values = self.suppliers_tree.item(item)['values']
+                supplier_name = values[1]  # Company name
+                supplier_nip = values[0]   # NIP
+                
+                # EDIT column is the 5th column (index #5)
+                if column == "#5":  
+                    # Open edit form for this supplier
+                    self.open_edit_supplier_form(supplier_nip, values)
                     
+                # DELETE column is the 6th column (index #6)
+                elif column == "#6":  
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
                         "Potwierdź usunięcie", 
@@ -460,3 +466,10 @@ class BrowseSuppliersFrame(Frame):
                             self.refresh_suppliers_list()
                         else:
                             tkinter.messagebox.showerror("Błąd", message)
+
+    def open_edit_supplier_form(self, supplier_nip, supplier_values):
+        """Open edit form for a specific supplier"""
+        self.current_editing_nip = supplier_nip
+        self.form_mode = 'edit'
+        self.create_supplier_form()
+        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
