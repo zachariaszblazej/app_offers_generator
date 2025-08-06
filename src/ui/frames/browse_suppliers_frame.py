@@ -122,26 +122,6 @@ class BrowseSuppliersFrame(Frame):
         # Bind single click for delete functionality
         self.suppliers_tree.bind('<ButtonRelease-1>', self.on_supplier_single_click)
         
-        # Edit/Delete buttons frame
-        buttons_frame = Frame(list_frame, bg='#f0f0f0')
-        buttons_frame.pack(fill=X, pady=10)
-        
-        edit_btn = Button(buttons_frame, text="Edytuj wybranego dostawcę",
-                         font=("Arial", 12),
-                         bg='#28a745', fg='black',
-                         padx=15, pady=8,
-                         command=self.edit_selected_supplier,
-                         cursor='hand2')
-        edit_btn.pack(side=LEFT, padx=(0, 10))
-        
-        delete_btn = Button(buttons_frame, text="Usuń wybranego dostawcę",
-                           font=("Arial", 12),
-                           bg='#dc3545', fg='black',
-                           padx=15, pady=8,
-                           command=self.delete_selected_supplier,
-                           cursor='hand2')
-        delete_btn.pack(side=LEFT)
-        
         # Form frame (for both editing and adding)
         self.form_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
         self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
