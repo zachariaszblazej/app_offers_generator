@@ -189,6 +189,9 @@ class BrowseSuppliersFrame(Frame):
             # Bind validation events
             if field_name == 'nip' and not is_readonly:
                 entry.bind('<KeyRelease>', self.validate_nip_input)
+            
+            # Bind Enter key to save supplier
+            entry.bind('<Return>', lambda event: self.save_supplier())
         
         # Buttons frame
         form_buttons_frame = Frame(self.form_frame, bg='#f0f0f0')
@@ -212,6 +215,11 @@ class BrowseSuppliersFrame(Frame):
                            command=self.hide_form,
                            cursor='hand2')
         cancel_btn.pack(side=LEFT, padx=10)
+        
+        # Bind Enter key globally to the form frame and all its children
+        self.form_frame.bind('<Return>', lambda event: self.save_supplier())
+        self.form_frame.bind('<KP_Enter>', lambda event: self.save_supplier())  # Numpad Enter
+        self.form_frame.focus_set()  # Allow form frame to receive key events
         
         # If editing, populate form with current data
         if self.form_mode == 'edit' and self.current_editing_nip:
