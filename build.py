@@ -80,6 +80,7 @@ def create_exe():
         '--windowed',
         '--name=OfferGenerator',
         '--additional-hooks-dir=.',
+        '--add-data=src/*:src',
         '--add-data=templates/*:templates',
         '--add-data=background_offer_1.png:.',
         '--add-data=app_settings.json:.',
