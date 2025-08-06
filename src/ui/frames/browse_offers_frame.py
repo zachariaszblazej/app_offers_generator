@@ -112,15 +112,6 @@ class BrowseOffersFrame(Frame):
                             cursor='hand2')
         refresh_btn.pack(side=LEFT, padx=(0, 10))
         
-        # Open button
-        open_btn = Button(buttons_frame, text="📄 Otwórz ofertę",
-                         font=("Arial", 12),
-                         bg='#17a2b8', fg='black',
-                         padx=15, pady=8,
-                         command=self.open_selected_offer,
-                         cursor='hand2')
-        open_btn.pack(side=LEFT, padx=(0, 10))
-        
         # Edit button
         edit_btn = Button(buttons_frame, text="✏️ Edytuj ofertę",
                          font=("Arial", 12),
