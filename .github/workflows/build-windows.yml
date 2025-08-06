@@ -52,6 +52,7 @@ jobs:
         pip install PyInstaller>=5.0.0
         pip install tkcalendar>=1.6.0
         pip install babel>=2.9.0
+        pip install lxml>=4.6.0
         pip install docxcompose>=1.4.0
         echo "Final pip list:"
         pip list
