@@ -153,7 +153,7 @@ class BrowseOffersFrame(Frame):
             self.tree.heading('date', text=f'Data utworzenia{arrow}')
     
     def load_offers(self):
-        """Load offers from the output folder"""
+        """Load offers from the output folder that exist in database"""
         # Clear existing items
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -168,20 +168,39 @@ class BrowseOffersFrame(Frame):
             os.makedirs(offers_folder)
             return
         
-        # Get all .docx files from output folder
+        # Import database service here to avoid circular imports
+        from src.data.database_service import get_all_offer_file_paths
+        
+        # Get all offer file paths from database
         try:
-            files = [f for f in os.listdir(offers_folder) if f.endswith('.docx')]
+            db_offer_paths = get_all_offer_file_paths()
             
-            # Create list of file info for sorting
+            # Also get all .docx files from folder for comparison
+            all_files_in_folder = [f for f in os.listdir(offers_folder) if f.endswith('.docx')]
+            
+            # Create list of file info for files that exist both in folder and database
             file_info_list = []
-            for filename in files:
+            files_in_db_count = 0
+            for db_path in db_offer_paths:
+                # Extract filename from database path
+                filename = os.path.basename(db_path)
                 filepath = os.path.join(offers_folder, filename)
-                stat_info = os.stat(filepath)
-                file_info_list.append({
-                    'filename': filename,
-                    'filepath': filepath,
-                    'mtime': stat_info.st_mtime
-                })
+                
+                # Check if file actually exists in the folder and is a .docx file
+                if os.path.exists(filepath) and filename.endswith('.docx'):
+                    stat_info = os.stat(filepath)
+                    file_info_list.append({
+                        'filename': filename,
+                        'filepath': filepath,
+                        'mtime': stat_info.st_mtime
+                    })
+                    files_in_db_count += 1
+            
+            # Check for files in folder that are not in database (for debugging)
+            db_filenames = [os.path.basename(path) for path in db_offer_paths]
+            orphaned_files = [f for f in all_files_in_folder if f not in db_filenames]
+            if orphaned_files:
+                print(f"Found {len(orphaned_files)} .docx files in folder that are not in database: {orphaned_files}")
             
             # Sort based on selected criteria
             if self.sort_by == 'filename':
@@ -197,10 +216,11 @@ class BrowseOffersFrame(Frame):
                 self.tree.insert('', 'end', values=(file_info['filename'], file_date, "✏️", "📋", "❌"))
                 self.offers_list.append(file_info['filepath'])
             
-            print(f"Loaded {len(files)} offers from {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
+            print(f"Loaded {len(file_info_list)} offers from database that exist in {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
             
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować listy ofert: {e}")
+            print(f"Error loading offers: {e}")
     
     def get_selected_offer_path(self):
         """Get the full path of the selected offer"""

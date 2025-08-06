@@ -411,3 +411,21 @@ def find_offer_by_filename(filename):
         return result
     except sqlite3.Error as e:
         return None
+
+
+def get_all_offer_file_paths():
+    """Get all offer file paths from database"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Get all offer file paths from database
+        cursor.execute("SELECT OfferFilePath FROM Offers ORDER BY OfferOrderNumber DESC")
+        results = cursor.fetchall()
+        conn.close()
+        
+        # Return list of file paths
+        return [result[0] for result in results] if results else []
+    except sqlite3.Error as e:
+        print(f"Database error in get_all_offer_file_paths: {e}")
+        return []
