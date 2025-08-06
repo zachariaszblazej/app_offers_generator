@@ -172,13 +172,7 @@ class OfferGeneratorApp:
                 # Load data into UI (without offer number)
                 success = self.ui.load_context_for_new_offer(self.template_context)
                 
-                if success:
-                    # Show info message
-                    import tkinter.messagebox
-                    tkinter.messagebox.showinfo("Dane załadowane", 
-                        "Pomyślnie załadowano dane z wybranej oferty." +
-                        "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
-                else:
+                if not success:
                     import tkinter.messagebox
                     tkinter.messagebox.showwarning("Błąd ładowania", 
                         "Wystąpił problem podczas ładowania danych z szablonu.")
@@ -204,13 +198,7 @@ class OfferGeneratorApp:
                 # Load data into UI (without offer number)
                 success = self.ui.load_context_for_new_offer(context_data)
                 
-                if success:
-                    # Show info message
-                    import tkinter.messagebox
-                    tkinter.messagebox.showinfo("Dane załadowane", 
-                        f"Pomyślnie załadowano dane z oferty:{os.path.basename(self.template_offer_path)}" +
-                        "Numer oferty zostanie wygenerowany automatycznie po utworzeniu oferty.")
-                else:
+                if not success:
                     import tkinter.messagebox
                     tkinter.messagebox.showwarning("Błąd ładowania", 
                         "Wystąpił problem podczas ładowania danych z szablonu.")
