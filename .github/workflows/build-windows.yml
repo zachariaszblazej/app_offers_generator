@@ -23,6 +23,7 @@ jobs:
       run: |
         python -c "import sys; print('Python version:', sys.version)"
         python -c "import tkinter; print('Tkinter available')"
+        python -c "import tkcalendar; print('tkcalendar available')"
         python -c "import sys, os; sys.path.insert(0, os.path.join(os.getcwd(), 'src')); from src.core.main_app import OfferGeneratorMainApp; print('Main app import successful')"
     
     - name: Install dependencies

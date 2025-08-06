@@ -18,6 +18,23 @@ def run_command(cmd, check=True):
         print(result.stderr)
     return result
 
+def install_requirements():
+    """Install requirements"""
+    print("📦 Installing requirements...")
+    if Path('requirements.txt').exists():
+        run_command([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
+    else:
+        # Install minimal requirements
+        packages = [
+            'python-docx>=0.8.11',
+            'Pillow>=8.0.0', 
+            'PyInstaller>=5.0.0',
+            'tkcalendar>=1.6.0',
+            'docxcompose>=1.4.0'
+        ]
+        for package in packages:
+            run_command([sys.executable, '-m', 'pip', 'install', package])
+
 def create_exe():
     """Create executable using PyInstaller"""
     
@@ -36,134 +53,7 @@ def create_exe():
             print(f"Removing existing {dir_name} directory...")
             shutil.rmtree(dir_name)
     
-    # Create the spec file content
-    spec_content = '''
-# -*- mode: python ; coding: utf-8 -*-
-
-block_cipher = None
-
-a = Analysis(
-    ['main.py'],
-    pathex=[],
-    binaries=[],
-    def create_exe(target_platform="current"):
-    """Create the executable using PyInstaller"""
-    print(f"Building executable for {target_platform}...")
-    
-    # Set executable name based on platform
-    if target_platform == "windows":
-        exe_name = "OfferGenerator.exe"
-        console_flag = "--noconsole"
-        additional_flags = ""
-    else:
-        exe_name = "OfferGenerator"
-        console_flag = "--windowed"
-        additional_flags = ""
-    
-    # Remove existing build and dist directories
-    if os.path.exists('build'):
-        shutil.rmtree('build')
-        print("Removed existing build directory")
-    if os.path.exists('dist'):
-        shutil.rmtree('dist')
-        print("Removed existing dist directory")
-    
-    # Run PyInstaller with platform-specific settings
-    cmd = f"{python_executable} -m PyInstaller --clean --onefile {console_flag} --name={exe_name.split('.')[0]} --add-data=templates/*:templates --add-data=background_offer_1.png:. --add-data=app_settings.json:. main.py"
-    print(f"Running: {cmd}")
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        print(f"❌ Error during build: {result.stderr}")
-        return False, None
-        
-    print("✅ Build completed successfully!")
-    
-    # Find the created executable
-    dist_path = os.path.join('dist')
-    if target_platform == "windows":
-        exe_path = os.path.join(dist_path, exe_name)
-    else:
-        exe_path = os.path.join(dist_path, exe_name.split('.')[0])
-    
-    return True, exe_path
-    hiddenimports=[
-        'PIL._tkinter_finder',
-        'PIL.Image',
-        'docx',
-        'docx.shared',
-        'docx.enum.text',
-        'docx.enum.table',
-        'tkcalendar',
-        'tkcalendar.calendar_',
-        'tkcalendar.dateentry',
-        'tkcalendar.tooltip',
-        'src.core.main_app',
-        'src.core.navigation_manager',
-        'src.core.offer_generator_app',
-        'src.core.offer_editor_app',
-        'src.ui.frames.main_menu_frame',
-        'src.ui.frames.settings_frame',
-        'src.ui.frames.browse_clients_frame',
-        'src.ui.frames.browse_suppliers_frame',
-        'src.ui.frames.browse_offers_frame',
-        'src.ui.frames.offer_creation_frame',
-        'src.ui.frames.offer_editor_frame',
-        'src.ui.components.ui_components',
-        'src.ui.components.product_table',
-        'src.ui.windows.client_search_window',
-        'src.ui.windows.supplier_search_window',
-        'src.ui.windows.product_add_window',
-        'src.ui.windows.product_edit_window',
-        'src.services.offer_generator_service',
-        'src.services.offer_editor_service',
-        'src.services.sync_service',
-        'src.data.database_service',
-        'src.utils.config',
-        'src.utils.settings',
-    ],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='OfferGenerator',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,  # Set to True if you want to see console output
-    disable_windowed_traceback=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon=None,  # Add path to .ico file if you have one
-)
-'''
-    
-    # Write the spec file
-    with open('OfferGenerator.spec', 'w') as f:
-        f.write(spec_content)
-    
-    print("Created OfferGenerator.spec file")
-    
-    # Run PyInstaller
+    # Run PyInstaller with all necessary flags
     cmd = [
         sys.executable, '-m', 'PyInstaller',
         '--clean',
@@ -173,6 +63,40 @@ exe = EXE(
         '--add-data=templates/*:templates',
         '--add-data=background_offer_1.png:.',
         '--add-data=app_settings.json:.',
+        # Hidden imports for all modules
+        '--hidden-import=PIL._tkinter_finder',
+        '--hidden-import=PIL.Image',
+        '--hidden-import=docx',
+        '--hidden-import=docx.shared',
+        '--hidden-import=docx.enum.text',
+        '--hidden-import=docx.enum.table',
+        '--hidden-import=tkcalendar',
+        '--hidden-import=tkcalendar.calendar_',
+        '--hidden-import=tkcalendar.dateentry',
+        '--hidden-import=tkcalendar.tooltip',
+        '--hidden-import=src.core.main_app',
+        '--hidden-import=src.core.navigation_manager',
+        '--hidden-import=src.core.offer_generator_app',
+        '--hidden-import=src.core.offer_editor_app',
+        '--hidden-import=src.ui.frames.main_menu_frame',
+        '--hidden-import=src.ui.frames.settings_frame',
+        '--hidden-import=src.ui.frames.browse_clients_frame',
+        '--hidden-import=src.ui.frames.browse_suppliers_frame',
+        '--hidden-import=src.ui.frames.browse_offers_frame',
+        '--hidden-import=src.ui.frames.offer_creation_frame',
+        '--hidden-import=src.ui.frames.offer_editor_frame',
+        '--hidden-import=src.ui.components.ui_components',
+        '--hidden-import=src.ui.components.product_table',
+        '--hidden-import=src.ui.windows.client_search_window',
+        '--hidden-import=src.ui.windows.supplier_search_window',
+        '--hidden-import=src.ui.windows.product_add_window',
+        '--hidden-import=src.ui.windows.product_edit_window',
+        '--hidden-import=src.services.offer_generator_service',
+        '--hidden-import=src.services.offer_editor_service',
+        '--hidden-import=src.services.sync_service',
+        '--hidden-import=src.data.database_service',
+        '--hidden-import=src.utils.config',
+        '--hidden-import=src.utils.settings',
         'main.py'
     ]
     
@@ -192,9 +116,9 @@ exe = EXE(
     
     return True
 
-def create_distribution(exe_path, target_platform="current"):
+def create_distribution():
     """Create a distribution package with all necessary files"""
-    print("📦 Distribution package created in: distribution")
+    print("📦 Creating distribution package...")
     
     dist_dir = "distribution"
     if os.path.exists(dist_dir):
@@ -202,11 +126,8 @@ def create_distribution(exe_path, target_platform="current"):
     os.makedirs(dist_dir)
     
     # Copy executable
-    if target_platform == "windows":
-        dist_exe_path = os.path.join(dist_dir, "OfferGenerator.exe")
-    else:
-        dist_exe_path = os.path.join(dist_dir, "OfferGenerator")
-    
+    exe_path = os.path.join("dist", "OfferGenerator")
+    dist_exe_path = os.path.join(dist_dir, "OfferGenerator")
     shutil.copy2(exe_path, dist_exe_path)
     print("✅ Copied executable to distribution")
     
@@ -227,19 +148,19 @@ def create_distribution(exe_path, target_platform="current"):
         print("✅ Copied templates directory")
     
     # Create README
-    readme_content = f"""# Generator Ofert
+    readme_content = """# Generator Ofert
 
 ## Instrukcja uruchomienia
 
 1. Upewnij się, że masz dostęp do bazy danych SQLite
-2. Uruchom aplikację przez dwukliknięcie na plik wykonywalny {'OfferGenerator.exe' if target_platform == 'windows' else 'OfferGenerator'}
+2. Uruchom aplikację przez dwukliknięcie na plik wykonywalny OfferGenerator
 3. Przy pierwszym uruchomieniu przejdź do Ustawień i skonfiguruj:
    - Ścieżkę do folderu z ofertami
    - Ścieżkę do bazy danych
 
 ## Wymagania systemowe
 
-- System operacyjny: {'Windows 10/11' if target_platform == 'windows' else 'Windows 10/11, macOS 10.14+, lub Linux'}
+- System operacyjny: Windows 10/11, macOS 10.14+, lub Linux
 - Dostęp do folderu z ofertami
 - Dostęp do bazy danych SQLite
 
@@ -259,7 +180,7 @@ W przypadku problemów skontaktuj się z administratorem systemu.
         f.write(readme_content)
     
     # Show contents
-    print("📋 Contents:")
+    print("📋 Distribution contents:")
     for root, dirs, files in os.walk(dist_dir):
         level = root.replace(dist_dir, '').count(os.sep)
         indent = ' ' * 2 * level
@@ -286,9 +207,7 @@ def main():
         return
     
     # Install requirements
-    print("📦 Installing requirements...")
-    if Path('requirements.txt').exists():
-        run_command([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
+    install_requirements()
     
     # Create executable
     success = create_exe()
