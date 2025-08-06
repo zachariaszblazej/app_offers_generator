@@ -38,7 +38,28 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        echo "Current pip version:"
+        pip --version
+        echo "Python version:"
+        python --version
+        echo "Contents of requirements.txt:"
+        type requirements.txt
+        echo "Installing requirements from requirements.txt..."
+        pip install -r requirements.txt || echo "requirements.txt failed, trying individual packages..."
+        echo "Installing critical packages individually..."
+        pip install python-docx>=0.8.11
+        pip install Pillow>=8.0.0
+        pip install PyInstaller>=5.0.0
+        pip install tkcalendar>=1.6.0
+        pip install babel>=2.9.0
+        pip install docxcompose>=1.4.0
+        echo "Final pip list:"
+        pip list
+        echo "Verifying final installations..."
+        pip show tkcalendar
+        pip show babel
+        pip show Pillow
+        pip show python-docx
     
     - name: Build executable (with console for debugging)
       run: |
