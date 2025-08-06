@@ -82,19 +82,19 @@ class OfferEditorApp:
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
                
-        Button(self.window, text="USUŃ PRODUKT", 
-               font=("Arial", 12, "bold"),
-               bg='#dc3545', fg='black',
-               padx=15, pady=8,
-               command=self.remove_product,
-               cursor='hand2').place(x=260, y=740)
-               
         Button(self.window, text="EDYTUJ PRODUKT", 
                font=("Arial", 12, "bold"),
                bg='#ffc107', fg='black',
                padx=15, pady=8,
                command=self.edit_product,
-               cursor='hand2').place(x=50, y=780)
+               cursor='hand2').place(x=260, y=740)
+               
+        Button(self.window, text="USUŃ PRODUKT", 
+               font=("Arial", 12, "bold"),
+               bg='#dc3545', fg='black',
+               padx=15, pady=8,
+               command=self.remove_product,
+               cursor='hand2').place(x=470, y=740)
         
         # Update offer button (instead of generate)
         update_offer_button = Button(self.window, text="Zapisz zmiany", 
