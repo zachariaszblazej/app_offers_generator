@@ -25,8 +25,9 @@ def format_currency(value):
 class ProductTable:
     """Handles product table functionality"""
     
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, parent_frame=None):
         self.parent_window = parent_window
+        self.parent_frame = parent_frame  # Reference to containing frame for scroll conflict management
         self.tree = None
         self.count = 0
         self.create_table()
@@ -53,10 +54,20 @@ class ProductTable:
         self.tree.heading('U_PRICE', text='Cena jednostkowa netto [PLN]')
         self.tree.heading('TOTAL', text='Wartość netto [PLN]')
         
-        # Add scrollbar
-        scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
-        scrollbar_y.place(x=950, y=450, height=300)
-        self.tree.configure(yscrollcommand=scrollbar_y.set)
+        # Add scrollbar and keep reference
+        self.scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
+        self.scrollbar_y.place(x=950, y=450, height=300)
+        self.tree.configure(yscrollcommand=self.scrollbar_y.set)
+        
+        # Bind mouse events for scroll conflict detection
+        self.tree.bind("<Enter>", self.on_table_enter)
+        self.tree.bind("<Leave>", self.on_table_leave)
+        self.scrollbar_y.bind("<Enter>", self.on_table_enter)
+        self.scrollbar_y.bind("<Leave>", self.on_table_leave)
+        
+        # Also bind to motion events to catch cursor movement over table area
+        self.tree.bind("<Motion>", self.on_table_motion)
+        self.scrollbar_y.bind("<Motion>", self.on_table_motion)
     
     def input_record(self, product_data):
         """Insert a new product record"""
@@ -217,3 +228,100 @@ class ProductTable:
         
         print(f"Total products retrieved: {len(products)}")
         return products
+
+    def has_scrollbar_active(self):
+        """Check if the table scrollbar is active (visible and needed)"""
+        if not self.tree or not hasattr(self, 'scrollbar_y'):
+            return False
+        
+        try:
+            # Simple check: if we have more than 10 items, assume scrollbar is needed
+            # This avoids timing issues with widget sizing
+            total_items = len(self.tree.get_children())
+            
+            # Scrollbar is likely needed if many items
+            if total_items >= 10:
+                return True
+            
+            # For fewer items, try to calculate more precisely
+            try:
+                # Check if scrollbar is needed by comparing content height with visible height
+                all_children = self.tree.get_children()
+                if not all_children:
+                    return False
+                
+                # Get bbox of first and last items to calculate total content height
+                first_item = all_children[0]
+                last_item = all_children[-1] 
+                
+                first_bbox = self.tree.bbox(first_item)
+                last_bbox = self.tree.bbox(last_item)
+                
+                if first_bbox and last_bbox:
+                    # Content height is from top of first item to bottom of last item
+                    content_height = (last_bbox[1] + last_bbox[3]) - first_bbox[1]
+                    visible_height = self.tree.winfo_height()
+                    
+                    # Scrollbar is needed if content height exceeds visible height
+                    return content_height > visible_height
+                
+                # Fallback: check if there are many items (more than estimated visible)
+                visible_height = self.tree.winfo_height()
+                item_height = 20  # Approximate height of one item in treeview
+                visible_items = max(8, visible_height // item_height) if visible_height > 0 else 8
+                
+                return len(all_children) > visible_items
+                
+            except Exception:
+                # Fallback: assume scrollbar is needed if we have more than 8 items
+                return total_items > 8
+            
+        except Exception:
+            # Final fallback
+            return False
+    
+    def is_cursor_over_table(self, x, y):
+        """Check if cursor coordinates are over the table or its scrollbar"""
+        if not self.tree or not hasattr(self, 'scrollbar_y'):
+            return False
+        
+        try:
+            # Get table bounds
+            table_x = self.tree.winfo_x()
+            table_y = self.tree.winfo_y()
+            table_width = self.tree.winfo_width()
+            table_height = self.tree.winfo_height()
+            
+            # Get scrollbar bounds
+            scrollbar_x = self.scrollbar_y.winfo_x()
+            scrollbar_y = self.scrollbar_y.winfo_y()
+            scrollbar_width = self.scrollbar_y.winfo_width()
+            scrollbar_height = self.scrollbar_y.winfo_height()
+            
+            # Check if cursor is over table or scrollbar
+            over_table = (table_x <= x <= table_x + table_width and 
+                         table_y <= y <= table_y + table_height)
+            over_scrollbar = (scrollbar_x <= x <= scrollbar_x + scrollbar_width and 
+                             scrollbar_y <= y <= scrollbar_y + scrollbar_height)
+            
+            return over_table or over_scrollbar
+        except:
+            return False
+    
+    def on_table_enter(self, event):
+        """Called when mouse enters table area"""
+        # Notify parent frames about table focus
+        if self.parent_frame and hasattr(self.parent_frame, 'on_product_table_enter'):
+            self.parent_frame.on_product_table_enter()
+    
+    def on_table_leave(self, event):
+        """Called when mouse leaves table area"""
+        # Notify parent frames about table focus loss
+        if self.parent_frame and hasattr(self.parent_frame, 'on_product_table_leave'):
+            self.parent_frame.on_product_table_leave()
+    
+    def on_table_motion(self, event):
+        """Called when mouse moves over table area"""
+        # Ensure that parent frame knows cursor is over table
+        if self.parent_frame and hasattr(self.parent_frame, 'on_product_table_enter'):
+            self.parent_frame.on_product_table_enter()

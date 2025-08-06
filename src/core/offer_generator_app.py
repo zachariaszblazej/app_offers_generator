@@ -56,7 +56,7 @@ class OfferGeneratorApp:
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.product_table = ProductTable(self.window)
+        self.product_table = ProductTable(self.window, self.parent_frame)
         self.ui = UIComponents(self.window, self.product_table)
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)

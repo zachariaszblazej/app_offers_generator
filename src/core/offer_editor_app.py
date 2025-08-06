@@ -58,7 +58,7 @@ class OfferEditorApp:
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.product_table = ProductTable(self.window)
+        self.product_table = ProductTable(self.window, self.parent_frame)
         self.ui = UIComponents(self.window, self.product_table)
         self.product_add = ProductAddWindow(self.window, self.insert_product)
         self.product_edit = ProductEditWindow(self.window, self.update_product)

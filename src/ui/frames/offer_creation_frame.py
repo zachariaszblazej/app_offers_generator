@@ -13,6 +13,12 @@ class OfferCreationFrame(Frame):
         self.nav_manager = nav_manager
         self.offer_app_class = offer_app_class
         self.offer_app_instance = None
+        
+        # Scroll conflict management
+        self.is_over_product_table = False
+        self.global_scroll_disabled = False
+        self.mouse_check_job = None  # For periodic mouse position checking
+        
         self.create_ui()
     
     def create_ui(self):
@@ -123,10 +129,14 @@ class OfferCreationFrame(Frame):
         self.canvas.itemconfig(self.canvas_window, width=canvas_width)
         
     def on_mousewheel(self, event):
-        """Handle mouse wheel scrolling"""
+        """Handle mouse wheel scrolling with product table conflict detection"""
         try:
             # Only scroll if this frame is currently visible
             if not self.winfo_viewable():
+                return
+            
+            # Check if we should disable global scrolling due to product table
+            if self.global_scroll_disabled:
                 return
                 
             # Different handling for different platforms and event types
@@ -158,9 +168,99 @@ class OfferCreationFrame(Frame):
                 self.offer_app_instance = self.offer_app_class(self, self.nav_manager)
                 # Update scroll region after content is loaded
                 self.after(100, self.update_scroll_region)
+                
+                # Start mouse position checking
+                self.start_mouse_position_checking()
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować interfejsu tworzenia oferty: {e}")
             print(f"Detailed error: {e}")  # For debugging
+    
+    def start_mouse_position_checking(self):
+        """Start periodic checking of mouse position relative to product table"""
+        self.check_mouse_position()
+    
+    def check_mouse_position(self):
+        """Check if mouse is over product table and adjust scroll behavior"""
+        try:
+            if (hasattr(self, 'offer_app_instance') and 
+                self.offer_app_instance and 
+                hasattr(self.offer_app_instance, 'product_table') and
+                self.offer_app_instance.product_table.tree):
+                
+                # Get current mouse position relative to root window
+                x = self.winfo_pointerx() - self.winfo_rootx()
+                y = self.winfo_pointery() - self.winfo_rooty()
+                
+                # Check if cursor is over table area
+                tree = self.offer_app_instance.product_table.tree
+                scrollbar = self.offer_app_instance.product_table.scrollbar_y
+                
+                # Get table bounds
+                try:
+                    table_x = tree.winfo_x()
+                    table_y = tree.winfo_y() 
+                    table_width = tree.winfo_width()
+                    table_height = tree.winfo_height()
+                    
+                    # Get scrollbar bounds
+                    sb_x = scrollbar.winfo_x()
+                    sb_y = scrollbar.winfo_y()
+                    sb_width = scrollbar.winfo_width()
+                    sb_height = scrollbar.winfo_height()
+                    
+                    # Check if mouse is over table or scrollbar
+                    over_table = (table_x <= x <= table_x + table_width and 
+                                 table_y <= y <= table_y + table_height)
+                    over_scrollbar = (sb_x <= x <= sb_x + sb_width and 
+                                     sb_y <= y <= sb_y + sb_height)
+                    
+                    is_over_table_area = over_table or over_scrollbar
+                    
+                    # Check if table has many items (likely needs scrolling)
+                    item_count = len(tree.get_children())
+                    
+                    if is_over_table_area and item_count >= 5:
+                        if not self.global_scroll_disabled:
+                            self.global_scroll_disabled = True
+                            self.is_over_product_table = True
+                    else:
+                        if self.global_scroll_disabled:
+                            self.global_scroll_disabled = False
+                            self.is_over_product_table = False
+                            
+                except Exception as e:
+                    pass  # Ignore widget geometry errors
+                    
+        except Exception as e:
+            pass  # Ignore any errors in mouse checking
+        
+        # Schedule next check
+        if self.mouse_check_job:
+            self.after_cancel(self.mouse_check_job)
+        self.mouse_check_job = self.after(100, self.check_mouse_position)  # Check every 100ms
+    
+    def on_product_table_enter(self):
+        """Called when mouse enters product table area (event-based backup)"""
+        # Always disable global scroll when over table if table has items
+        if (hasattr(self, 'offer_app_instance') and 
+            self.offer_app_instance and 
+            hasattr(self.offer_app_instance, 'product_table')):
+            
+            # Check if table has any items that might need scrolling
+            try:
+                item_count = len(self.offer_app_instance.product_table.tree.get_children())
+                if item_count >= 5:  # Conservative threshold - disable scroll for 5+ items
+                    self.global_scroll_disabled = True
+                    self.is_over_product_table = True
+            except:
+                # If we can't check items, assume scrollbar might be needed
+                self.global_scroll_disabled = True
+                self.is_over_product_table = True
+    
+    def on_product_table_leave(self):
+        """Called when mouse leaves product table area (event-based backup)"""
+        self.global_scroll_disabled = False
+        self.is_over_product_table = False
     
     def update_scroll_region(self):
         """Force update of scroll region"""
@@ -177,6 +277,11 @@ class OfferCreationFrame(Frame):
     
     def hide(self):
         """Hide this frame"""
+        # Stop mouse position checking
+        if self.mouse_check_job:
+            self.after_cancel(self.mouse_check_job)
+            self.mouse_check_job = None
+            
         # Unbind global mouse wheel events to prevent conflicts
         self.unbind_all("<MouseWheel>")
         self.unbind_all("<Button-4>")
