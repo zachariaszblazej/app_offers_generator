@@ -25,10 +25,11 @@ def format_currency(value):
 class ProductTable:
     """Handles product table functionality"""
     
-    def __init__(self, parent_window, parent_frame=None, edit_callback=None):
+    def __init__(self, parent_window, parent_frame=None, edit_callback=None, delete_callback=None):
         self.parent_window = parent_window
         self.parent_frame = parent_frame  # Reference to containing frame for scroll conflict management
         self.edit_callback = edit_callback  # Callback for double-click edit
+        self.delete_callback = delete_callback  # Callback for inline delete
         self.tree = None
         self.count = 0
         self.create_table()
@@ -354,16 +355,17 @@ class ProductTable:
         """Handle single-click on table to check for delete column clicks"""
         # Get the region that was clicked
         region = self.tree.identify_region(event.x, event.y)
-        print(f"Clicked region: {region}")
         if region == "cell":
             # Get the column that was clicked
             column = self.tree.identify_column(event.x)
-            print(f"Clicked column: {column}")
-            # DELETE column is the 7th column (index #7)
-            if column == "#7":  
+            
+            # DELETE column should be the last column
+            num_columns = len(self.tree['columns'])
+            delete_column_index = f"#{num_columns}"
+            
+            if column == delete_column_index:  
                 # Get the item that was clicked
                 item = self.tree.identify_row(event.y)
-                print(f"Clicked item: {item}")
                 if item:
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
@@ -373,4 +375,7 @@ class ProductTable:
                     if result:
                         # Delete the item
                         self.tree.delete(item)
-                        print(f"Deleted product with item ID: {item}")
+                        
+                        # Call delete callback if provided
+                        if self.delete_callback:
+                            self.delete_callback()

@@ -61,7 +61,8 @@ class OfferGeneratorApp:
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product)
+        # Create product table with edit and delete callbacks
+        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
         self.ui = UIComponents(self.window, self.product_table)
         
         # Set modification callback so UI components can notify about user changes
@@ -140,6 +141,13 @@ class OfferGeneratorApp:
             self.user_modifications_made = True
             # Automatically recalculate total after removal
             self.calc_total()
+    
+    def on_product_deleted(self):
+        """Called when product is deleted via inline delete button"""
+        # Mark user modifications
+        self.user_modifications_made = True
+        # Automatically recalculate total after deletion
+        self.calc_total()
     
     def edit_product(self):
         """Edit selected product from the table"""

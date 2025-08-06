@@ -58,7 +58,8 @@ class OfferEditorApp:
             self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components
-        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product)
+        # Create product table with edit and delete callbacks
+        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
         self.ui = UIComponents(self.window, self.product_table)
         self.product_add = ProductAddWindow(self.window, self.insert_product)
         self.product_edit = ProductEditWindow(self.window, self.update_product)
@@ -295,6 +296,11 @@ class OfferEditorApp:
         """Remove selected product from the table"""
         self.product_table.remove_record()
         # Automatically recalculate total after removal
+        self.calc_total()
+    
+    def on_product_deleted(self):
+        """Called when product is deleted via inline delete button"""
+        # Automatically recalculate total after deletion
         self.calc_total()
     
     def edit_product(self):
