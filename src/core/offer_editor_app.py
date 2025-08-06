@@ -75,21 +75,21 @@ class OfferEditorApp:
     def create_buttons(self):
         """Create all buttons for editor mode"""
         # Product management buttons
-        Button(self.window, text="DODAJ PRODUKT", 
+        Button(self.window, text="DODAJ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#28a745', fg='black',
                padx=15, pady=8,
                command=self.product_add.open_product_add_window,
                cursor='hand2').place(x=50, y=740)
                
-        Button(self.window, text="EDYTUJ PRODUKT", 
+        Button(self.window, text="EDYTUJ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#ffc107', fg='black',
                padx=15, pady=8,
                command=self.edit_product,
                cursor='hand2').place(x=260, y=740)
                
-        Button(self.window, text="USUŃ PRODUKT", 
+        Button(self.window, text="USUŃ POZYCJĘ", 
                font=("Arial", 12, "bold"),
                bg='#dc3545', fg='black',
                padx=15, pady=8,

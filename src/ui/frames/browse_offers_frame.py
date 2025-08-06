@@ -39,7 +39,7 @@ class BrowseOffersFrame(Frame):
         header_frame.pack(fill=X, padx=20, pady=20)
         
         # Title
-        title_label = Label(header_frame, text="Przeglądaj wygenerowane oferty", 
+        title_label = Label(header_frame, text="Przeglądaj oferty", 
                            font=("Arial", 20, "bold"), 
                            bg='#f0f0f0', fg='#333333')
         title_label.pack(side=LEFT)
@@ -62,7 +62,7 @@ class BrowseOffersFrame(Frame):
         list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
         
         # List header
-        list_header = Label(list_frame, text="Lista wygenerowanych ofert", 
+        list_header = Label(list_frame, text="Lista zapytań ofertowych", 
                            font=("Arial", 14, "bold"), 
                            bg='white', fg='#333333')
         list_header.pack(pady=15)
