@@ -260,7 +260,7 @@ class BrowseClientsFrame(Frame):
                 client['Adres 1'], 
                 client['Adres 2'], 
                 client['Alias'],
-                "—"
+                "❌"
             ))
     
     def sort_by_column(self, column):

@@ -253,7 +253,7 @@ class BrowseSuppliersFrame(Frame):
                 supplier['Nazwa firmy'], 
                 supplier['Adres 1'], 
                 supplier['Adres 2'],
-                "—"
+                "❌"
             ))
     
     def sort_by_column(self, column):
