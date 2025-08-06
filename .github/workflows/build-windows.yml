@@ -21,46 +21,56 @@ jobs:
     
     - name: Test Python imports
       run: |
-        python -c "import sys; print('Python version:', sys.version)"
-        python -c "import tkinter; print('Tkinter available')"
-        python -c "import tkcalendar; print('tkcalendar version:', tkcalendar.__version__)"
-        python -c "import tkcalendar.calendar_; print('tkcalendar.calendar_ available')"
-        python -c "import tkcalendar.dateentry; print('tkcalendar.dateentry available')"
-        python -c "import tkcalendar.tooltip; print('tkcalendar.tooltip available')"
-        python -c "import tkcalendar.__main__; print('tkcalendar.__main__ available')"
-        python -c "import babel; print('babel available')"
-        python -c "import babel.dates; print('babel.dates available')"
-        python -c "from tkcalendar import DateEntry, Calendar; print('tkcalendar DateEntry and Calendar imports successful')"
-        python -c "import PIL; print('PIL available')"
-        python -c "import docx; print('python-docx available')"
-        python -c "import sys, os; sys.path.insert(0, os.path.join(os.getcwd(), 'src')); from src.core.main_app import OfferGeneratorMainApp; print('Main app import successful')"
+        echo "=== Running comprehensive import test ==="
+        python test_imports.py
     
     - name: Install dependencies
       run: |
+        echo "=== Starting dependency installation ==="
         python -m pip install --upgrade pip
         echo "Current pip version:"
         pip --version
         echo "Python version:"
         python --version
+        echo "Current working directory:"
+        pwd
+        echo "Files in current directory:"
+        dir
         echo "Contents of requirements.txt:"
         type requirements.txt
-        echo "Installing requirements from requirements.txt..."
-        pip install -r requirements.txt || echo "requirements.txt failed, trying individual packages..."
-        echo "Installing critical packages individually..."
-        pip install python-docx>=0.8.11
-        pip install Pillow>=8.0.0
-        pip install PyInstaller>=5.0.0
-        pip install tkcalendar>=1.6.0
-        pip install babel>=2.9.0
-        pip install lxml>=4.6.0
-        pip install docxcompose>=1.4.0
-        echo "Final pip list:"
+        echo "=== Installing from requirements.txt ==="
+        pip install -r requirements.txt
+        if ($LASTEXITCODE -ne 0) {
+          echo "requirements.txt failed with exit code $LASTEXITCODE, trying individual packages..."
+          echo "=== Installing packages individually ==="
+          pip install python-docx>=0.8.11
+          pip install Pillow>=8.0.0  
+          pip install PyInstaller>=5.0.0
+          pip install tkcalendar>=1.6.0
+          pip install babel>=2.9.0
+          pip install lxml>=4.6.0
+          pip install docxcompose>=1.4.0
+        }
+        echo "=== Final pip list ==="
         pip list
-        echo "Verifying final installations..."
-        pip show tkcalendar
-        pip show babel
-        pip show Pillow
-        pip show python-docx
+        echo "=== Verifying critical packages ==="
+        pip show tkcalendar || echo "tkcalendar not found"
+        pip show babel || echo "babel not found"
+        pip show Pillow || echo "Pillow not found"
+        pip show python-docx || echo "python-docx not found"
+        echo "=== End dependency installation ==="
+    
+    - name: Verify critical dependencies
+      run: |
+        echo "=== Verifying tkcalendar installation ==="
+        python -c "import tkcalendar; print('tkcalendar version:', tkcalendar.__version__)" || exit 1
+        echo "=== Verifying babel installation ==="  
+        python -c "import babel; print('babel version:', babel.__version__)" || exit 1
+        echo "=== Verifying PIL installation ==="
+        python -c "import PIL; print('PIL version:', PIL.__version__)" || exit 1
+        echo "=== Verifying docx installation ==="
+        python -c "import docx; print('python-docx imported successfully')" || exit 1
+        echo "=== All critical dependencies verified ==="
     
     - name: Build executable (with console for debugging)
       run: |
