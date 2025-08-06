@@ -85,6 +85,12 @@ class OfferEditorFrame(Frame):
         # Add enter/leave events to handle focus
         self.canvas.bind("<Enter>", self.on_canvas_enter)
         self.canvas.bind("<Leave>", self.on_canvas_leave)
+        
+        # Bind globally to the entire frame for universal scrolling
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.bind_all("<Button-4>", self.on_mousewheel)
+        self.bind_all("<Button-5>", self.on_mousewheel)
+        self.bind_all("<Shift-MouseWheel>", self.on_mousewheel)
     
     def on_canvas_enter(self, event):
         """When mouse enters canvas, bind mousewheel events globally"""
@@ -131,22 +137,32 @@ class OfferEditorFrame(Frame):
         
     def on_mousewheel(self, event):
         """Handle mouse wheel scrolling"""
-        # Check if we're on macOS or Windows/Linux
-        if event.delta:
-            # Windows and macOS
-            delta = event.delta
-            # Normalize delta for different platforms
-            if abs(delta) >= 120:
-                scroll_amount = int(-1 * (delta / 120))
-            else:
-                scroll_amount = -1 if delta > 0 else 1
-            self.canvas.yview_scroll(scroll_amount, "units")
-        else:
-            # Linux
-            if event.num == 4:
-                self.canvas.yview_scroll(-1, "units")
+        try:
+            # Only scroll if this frame is currently visible
+            if not self.winfo_viewable():
+                return
+                
+            # Different handling for different platforms and event types
+            if event.delta:
+                # Windows and macOS
+                delta = event.delta
+                # Normalize delta for better scrolling experience
+                if abs(delta) > 100:
+                    delta = delta // abs(delta) * 120  # Normalize to standard wheel step
+            elif event.num == 4:
+                # Linux scroll up
+                delta = 120
             elif event.num == 5:
-                self.canvas.yview_scroll(1, "units")
+                # Linux scroll down
+                delta = -120
+            else:
+                delta = 0
+            
+            # Apply scrolling to canvas
+            if hasattr(self, 'canvas') and self.canvas:
+                self.canvas.yview_scroll(int(-1 * (delta / 120)), "units")
+        except Exception as e:
+            pass  # Silently ignore scrolling errors
     
     def initialize_offer_app(self, offer_path=None):
         """Initialize the offer application components for editing"""
@@ -176,11 +192,23 @@ class OfferEditorFrame(Frame):
     
     def hide(self):
         """Hide this frame"""
+        # Unbind global mouse wheel events to prevent conflicts
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
+        self.unbind_all("<Shift-MouseWheel>")
         self.pack_forget()
     
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
+        
+        # Re-bind global mouse wheel events when showing
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.bind_all("<Button-4>", self.on_mousewheel)
+        self.bind_all("<Button-5>", self.on_mousewheel)
+        self.bind_all("<Shift-MouseWheel>", self.on_mousewheel)
+        
         # Ensure offer app is initialized when frame is shown
         if not self.offer_app_instance and self.offer_path:
             self.initialize_offer_app(self.offer_path)
