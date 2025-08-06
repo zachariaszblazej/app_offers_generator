@@ -126,7 +126,12 @@ class SettingsManager:
         return self.get_app_setting('database_path')
     
     def update_database_path_in_config(self, new_path):
-        """Update DATABASE_PATH in config.py file"""
+        """Update DATABASE_PATH in config.py file (only in development mode)"""
+        # Skip updating config.py in PyInstaller environment
+        if getattr(sys, 'frozen', False):
+            print("Running in PyInstaller mode - skipping config.py update")
+            return
+            
         try:
             config_file_path = os.path.join(os.path.dirname(__file__), 'config.py')
             
@@ -152,7 +157,7 @@ class SettingsManager:
                 import tkinter.messagebox
                 tkinter.messagebox.showwarning("Uwaga", 
                     f"Nie udało się zaktualizować ścieżki do bazy danych w pliku config.py.\n"
-                    f"Musisz ręcznie zrestartować aplikację żeby zmiany zaczęły obowiązywać.\n\n"
+                    f"Ustawienie zostało zapisane w app_settings.json i będzie używane przy kolejnym uruchomieniu.\n\n"
                     f"Błąd: {e}")
             except ImportError:
                 # If tkinter is not available, just print the error

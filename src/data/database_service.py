@@ -11,12 +11,44 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import DATABASE_PATH
+from src.utils.settings import SettingsManager
+
+def get_database_path():
+    """Get the current database path from settings or fallback to config"""
+    try:
+        settings_manager = SettingsManager()
+        db_path = settings_manager.get_database_path()
+        
+        print(f"DEBUG: Raw database path from settings: {db_path}")
+        
+        # If path is relative, make it absolute from the executable location
+        if db_path and not os.path.isabs(db_path):
+            if getattr(sys, 'frozen', False):
+                # Running as PyInstaller executable - use executable directory
+                base_dir = os.path.dirname(sys.executable)
+                print(f"DEBUG: PyInstaller mode - base directory: {base_dir}")
+            else:
+                # Running in development - use project root
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                print(f"DEBUG: Development mode - base directory: {base_dir}")
+            db_path = os.path.abspath(os.path.join(base_dir, db_path))
+        
+        final_path = db_path if db_path else DATABASE_PATH
+        print(f"DEBUG: Final database path: {final_path}")
+        print(f"DEBUG: Database file exists: {os.path.exists(final_path)}")
+        
+        return final_path
+    except Exception as e:
+        print(f"Warning: Could not get database path from settings: {e}")
+        print(f"DEBUG: Falling back to DATABASE_PATH: {DATABASE_PATH}")
+        return DATABASE_PATH
 
 
 def get_clients_from_db():
     """Fetch all clients from the database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        db_path = get_database_path()
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients ORDER BY CompanyName")
         clients = cursor.fetchall()
@@ -30,7 +62,8 @@ def get_clients_from_db():
 def get_suppliers_from_db():
     """Fetch all suppliers from the database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        db_path = get_database_path()
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers ORDER BY CompanyName")
         suppliers = cursor.fetchall()
@@ -44,7 +77,8 @@ def get_suppliers_from_db():
 def get_next_offer_number():
     """Get the next offer order number from the database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        db_path = get_database_path()
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT MAX(OfferOrderNumber) FROM Offers")
         result = cursor.fetchone()[0]
@@ -60,7 +94,7 @@ def get_next_offer_number():
 def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
     """Save offer information to the database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Convert context to JSON if provided
@@ -81,7 +115,7 @@ def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
 def get_offer_context_from_db(offer_file_path):
     """Get offer context from database by file path"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT OfferContext FROM Offers WHERE OfferFilePath = ?", (offer_file_path,))
         result = cursor.fetchone()
@@ -102,7 +136,7 @@ def get_offer_context_from_db(offer_file_path):
 def update_offer_context_in_db(offer_file_path, offer_context):
     """Update offer context in database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Convert context to JSON
@@ -126,7 +160,7 @@ def validate_nip(nip):
     
     # Check if NIP already exists in database
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM Clients WHERE Nip = ?", (nip,))
         count = cursor.fetchone()[0]
@@ -165,7 +199,7 @@ def add_client_to_db(nip, company_name, address_p1, address_p2, alias):
             return False, alias_message
         
         # Insert client
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO Clients (Nip, CompanyName, AddressP1, AddressP2, Alias) 
@@ -187,7 +221,7 @@ def validate_supplier_nip(nip):
     
     # Check if NIP already exists in supplier database
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM Suppliers WHERE Nip = ?", (nip,))
         count = cursor.fetchone()[0]
@@ -210,7 +244,7 @@ def add_supplier_to_db(nip, company_name, address_p1, address_p2):
             return False, nip_message
         
         # Insert supplier
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO Suppliers (Nip, CompanyName, AddressP1, AddressP2) 
@@ -227,7 +261,7 @@ def add_supplier_to_db(nip, company_name, address_p1, address_p2):
 def get_client_by_nip(nip):
     """Get client data by NIP"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients WHERE Nip = ?", (nip,))
         client = cursor.fetchone()
@@ -242,7 +276,7 @@ def update_client_in_db(nip, company_name, address_p1, address_p2, alias):
     """Update client data (NIP cannot be changed)"""
     try:
         # Validate alias (but allow current alias to remain the same)
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Check if alias is used by another client
@@ -276,7 +310,7 @@ def update_client_in_db(nip, company_name, address_p1, address_p2, alias):
 def delete_client_from_db(nip):
     """Delete client from database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # First get client's alias
@@ -315,7 +349,7 @@ def delete_client_from_db(nip):
 def get_supplier_by_nip(nip):
     """Get supplier data by NIP"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers WHERE Nip = ?", (nip,))
         supplier = cursor.fetchone()
@@ -329,7 +363,7 @@ def get_supplier_by_nip(nip):
 def update_supplier_in_db(nip, company_name, address_p1, address_p2):
     """Update supplier data (NIP cannot be changed)"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Update supplier
@@ -354,7 +388,7 @@ def update_supplier_in_db(nip, company_name, address_p1, address_p2):
 def delete_supplier_from_db(nip):
     """Delete supplier from database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # For suppliers, we could check if they have any related data
@@ -378,7 +412,7 @@ def delete_supplier_from_db(nip):
 def delete_offer_from_db(offer_file_path):
     """Delete offer from database based on file path"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Delete offer by file path
@@ -399,7 +433,7 @@ def delete_offer_from_db(offer_file_path):
 def find_offer_by_filename(filename):
     """Find offer in database by filename"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Search for offer by filename (using LIKE to match the end of the path)
@@ -416,7 +450,7 @@ def find_offer_by_filename(filename):
 def get_all_offer_file_paths():
     """Get all offer file paths from database"""
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Get all offer file paths from database
