@@ -115,6 +115,47 @@ class SettingsManager:
         if 'app_settings' not in self.settings:
             self.settings['app_settings'] = {}
         self.settings['app_settings'].update(new_settings)
+        
+        # If database_path is updated, also update the config.py file
+        if 'database_path' in new_settings:
+            self.update_database_path_in_config(new_settings['database_path'])
+    
+    def get_database_path(self):
+        """Get current database path"""
+        return self.get_app_setting('database_path')
+    
+    def update_database_path_in_config(self, new_path):
+        """Update DATABASE_PATH in config.py file"""
+        try:
+            config_file_path = os.path.join(os.path.dirname(__file__), 'config.py')
+            
+            # Read the current config file
+            with open(config_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Replace the DATABASE_PATH line
+            import re
+            pattern = r"DATABASE_PATH = ['\"][^'\"]*['\"]"
+            replacement = f"DATABASE_PATH = '{new_path}'"
+            new_content = re.sub(pattern, replacement, content)
+            
+            # Write back to file
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+                
+            print(f"Updated DATABASE_PATH in config.py to: {new_path}")
+            
+        except Exception as e:
+            print(f"Error updating DATABASE_PATH in config.py: {e}")
+            try:
+                import tkinter.messagebox
+                tkinter.messagebox.showwarning("Uwaga", 
+                    f"Nie udało się zaktualizować ścieżki do bazy danych w pliku config.py.\n"
+                    f"Musisz ręcznie zrestartować aplikację żeby zmiany zaczęły obowiązywać.\n\n"
+                    f"Błąd: {e}")
+            except ImportError:
+                # If tkinter is not available, just print the error
+                print(f"Warning: Could not update DATABASE_PATH in config.py: {e}")
 
 # Global settings manager instance
 settings_manager = SettingsManager()

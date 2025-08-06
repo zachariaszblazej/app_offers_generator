@@ -330,6 +330,37 @@ class SettingsFrame(Frame):
                            command=self.browse_offers_folder,
                            cursor='hand2')
         browse_btn.pack(side=RIGHT)
+        
+        # Separator
+        separator = Frame(inner_frame, height=1, bg='#dddddd')
+        separator.pack(fill=X, pady=20)
+        
+        # Database path
+        database_path_frame = Frame(inner_frame, bg='#ffffff')
+        database_path_frame.pack(fill=X, pady=5)
+        
+        # Label and description
+        label_frame = Frame(database_path_frame, bg='#ffffff')
+        label_frame.pack(fill=X, pady=(0, 5))
+        Label(label_frame, text="Ścieżka do bazy danych:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        Label(label_frame, text="Ścieżka do pliku bazy danych SQLite (.db)", 
+              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+        
+        # Entry and browse button
+        db_entry_frame = Frame(database_path_frame, bg='#ffffff')
+        db_entry_frame.pack(fill=X, pady=(5, 0))
+        
+        self.entries['database_path'] = Entry(db_entry_frame, width=50, font=("Arial", 11))
+        self.entries['database_path'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+        
+        browse_db_btn = Button(db_entry_frame, text="Przeglądaj...",
+                              font=("Arial", 10),
+                              bg='#007bff', fg='white',
+                              padx=15, pady=5,
+                              command=self.browse_database_file,
+                              cursor='hand2')
+        browse_db_btn.pack(side=RIGHT)
 
     def browse_offers_folder(self):
         """Open folder browser for offers folder"""
@@ -347,6 +378,36 @@ class SettingsFrame(Frame):
         if folder_path:
             self.entries['offers_folder'].delete(0, END)
             self.entries['offers_folder'].insert(0, folder_path)
+    
+    def browse_database_file(self):
+        """Open file browser for database file"""
+        from tkinter import filedialog
+        
+        current_path = self.entries['database_path'].get()
+        if not current_path:
+            current_path = self.settings_manager.get_app_setting('database_path')
+        
+        # Get initial directory
+        if current_path and os.path.exists(current_path):
+            initial_dir = os.path.dirname(current_path)
+            initial_file = os.path.basename(current_path)
+        else:
+            initial_dir = os.path.expanduser("~")
+            initial_file = "DocumentsCreationData.db"
+        
+        file_path = filedialog.askopenfilename(
+            title="Wybierz plik bazy danych",
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            filetypes=[
+                ("SQLite Database", "*.db"),
+                ("All files", "*.*")
+            ]
+        )
+        
+        if file_path:
+            self.entries['database_path'].delete(0, END)
+            self.entries['database_path'].insert(0, file_path)
     
     def create_buttons_section(self, parent):
         """Create buttons section"""
@@ -386,7 +447,7 @@ class SettingsFrame(Frame):
         
         # Load app settings data
         app_settings = self.settings_manager.get_all_app_settings()
-        app_fields = ['offers_folder']
+        app_fields = ['offers_folder', 'database_path']
         
         for field in app_fields:
             if field in self.entries:
@@ -416,10 +477,11 @@ class SettingsFrame(Frame):
         # Update offer details settings
         self.settings_manager.update_offer_details_settings(offer_details_settings)
         
-        # Collect app settings and check if offers folder changed
-        app_fields = ['offers_folder']
+        # Collect app settings and check if critical settings changed
+        app_fields = ['offers_folder', 'database_path']
         app_settings = {}
         offers_folder_changed = False
+        database_path_changed = False
         
         for field in app_fields:
             if field in self.entries:
@@ -429,15 +491,27 @@ class SettingsFrame(Frame):
                 
                 if field == 'offers_folder' and new_value != old_value:
                     offers_folder_changed = True
+                elif field == 'database_path' and new_value != old_value:
+                    database_path_changed = True
         
         # Update app settings
         self.settings_manager.update_app_settings(app_settings)
         
+        # Validate database path if it changed
+        if database_path_changed:
+            new_db_path = app_settings.get('database_path', '')
+            if new_db_path and not os.path.exists(new_db_path):
+                result = tkinter.messagebox.askyesno("Uwaga", 
+                    f"Podana ścieżka do bazy danych nie istnieje:\n{new_db_path}\n\n"
+                    "Czy chcesz kontynuować? Aplikacja może nie działać poprawnie.")
+                if not result:
+                    return  # Don't save if user cancels
+        
         # Save to file
         if self.settings_manager.save_settings():
             # Check if app restart is needed
-            if offers_folder_changed:
-                self.show_restart_prompt()
+            if offers_folder_changed or database_path_changed:
+                self.show_restart_prompt(database_path_changed)
             else:
                 # Refresh company data in any existing offer creation windows
                 self.refresh_offer_creation_data()
@@ -445,16 +519,27 @@ class SettingsFrame(Frame):
         else:
             tkinter.messagebox.showerror("Błąd", "Nie udało się zapisać ustawień.")
     
-    def show_restart_prompt(self):
-        """Show restart prompt when offers folder has changed"""
+    def show_restart_prompt(self, database_changed=False):
+        """Show restart prompt when critical settings have changed"""
         import tkinter.messagebox
-        result = tkinter.messagebox.showinfo("Restart wymagany", 
-                                           "Ścieżka do folderu z ofertami została zmieniona.\n"
-                                           "Aplikacja zostanie uruchomiona ponownie.\n\n"
-                                           "Kliknij OK aby kontynuować.",
-                                           type='ok')
+        
+        if database_changed:
+            message = ("Ścieżka do bazy danych została zmieniona.\n"
+                      "Aplikacja musi zostać uruchomiona ponownie żeby zmiany zaczęły obowiązywać.\n\n"
+                      "Kliknij OK aby kontynuować.")
+        else:
+            message = ("Ścieżka do folderu z ofertami została zmieniona.\n"
+                      "Aplikacja zostanie uruchomiona ponownie.\n\n"
+                      "Kliknij OK aby kontynuować.")
+        
+        result = tkinter.messagebox.showinfo("Restart wymagany", message, type='ok')
         if result == 'ok':
-            self.restart_application()
+            if database_changed:
+                tkinter.messagebox.showinfo("Informacja", 
+                    "Plik config.py został zaktualizowany.\n"
+                    "Proszę ręcznie zrestartować aplikację żeby zmiany zaczęły obowiązywać.")
+            else:
+                self.restart_application()
     
     def restart_application(self):
         """Restart the application"""

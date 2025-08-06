@@ -1,11 +1,12 @@
 """Configuration settings for the Offer Generator application"""
 
 # Database configuration
-DATABASE_PATH = '../FakeHantechServer/DocumentsCreationData.db'
+DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData.db'
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {
-    'offers_folder': '../FakeHantechServer/Oferty'
+    'offers_folder': '../FakeHantechServer/Oferty',
+    'database_path': '../FakeHantechServer/DocumentsCreationData.db'
 }
 
 # Default company data
