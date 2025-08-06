@@ -94,8 +94,10 @@ class BrowseOffersFrame(Frame):
         v_scrollbar.pack(side=RIGHT, fill=Y)
         h_scrollbar.pack(side=BOTTOM, fill=X)
         
-        # Bind single click for delete functionality
+        # Bind single click for delete functionality and context menu
         self.tree.bind("<ButtonRelease-1>", self.on_single_click)
+        # Bind double click to open in Word
+        self.tree.bind("<Double-1>", self.on_double_click)
         
         # Buttons frame
         buttons_frame = Frame(content_frame, bg='#f0f0f0')
@@ -409,6 +411,26 @@ class BrowseOffersFrame(Frame):
                                     f"Nie udało się usunąć pliku: {e}\\n\\nOferta nadal istnieje w bazie danych.")
                             else:
                                 tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
+
+    def on_double_click(self, event):
+        """Handle double-click to open offer in Word"""
+        # Get the region that was clicked
+        region = self.tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.tree.identify_column(event.x)
+            
+            # Don't open if clicking on delete column
+            num_columns = len(self.tree['columns'])
+            delete_column_index = f"#{num_columns}"
+            
+            if column != delete_column_index:
+                # Get the item that was clicked
+                item = self.tree.identify_row(event.y)
+                if item:
+                    # Select the clicked item and open it
+                    self.tree.selection_set(item)
+                    self.open_selected_offer()
 
     def return_to_main_menu(self):
         """Return to main menu"""
