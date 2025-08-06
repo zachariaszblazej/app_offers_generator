@@ -306,8 +306,7 @@ class OfferGeneratorApp:
                 # Fields to clear
                 fields_to_clear = [
                     'client_name', 'client_address_1', 'client_address_2', 'client_nip',
-                    'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
-                    'termin_realizacji', 'termin_platnosci', 'uwagi'
+                    'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip','uwagi'
                 ]
                 
                 # Clear all specified fields
