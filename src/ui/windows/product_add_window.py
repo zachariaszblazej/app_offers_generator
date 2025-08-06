@@ -47,30 +47,25 @@ class ProductAddWindow:
         form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
         
-        # Product ID
-        Label(form_frame, text="Lp.", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
-        self.entries['product_id'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['product_id'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
-        
         # Product name
-        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
-        self.entries['product_name'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
+        self.entries['product_name'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
         
         # Unit
-        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
-        self.entries['unit'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
         
         # Quantity
-        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
         self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['quantity'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
+        self.entries['quantity'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
         
         # Unit price
-        Label(form_frame, text="Cena jednostkowa netto [PLN]", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Cena jednostkowa netto [PLN]", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['unit_price'].grid(row=4, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit_price'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
         
         # Bind Enter key to all entry fields
         for entry in self.entries.values():
@@ -116,9 +111,8 @@ class ProductAddWindow:
     def _add_product(self, product_window):
         """Handle product addition"""
         print("DEBUG: _add_product called")  # Debug
-        # Get product data
+        # Get product data (without product_id since it's auto-generated)
         product_data = [
-            self.entries['product_id'].get(),
             self.entries['product_name'].get(),
             self.entries['unit'].get(),
             self.entries['quantity'].get(),
@@ -133,11 +127,10 @@ class ProductAddWindow:
         
         # Try to validate numeric fields
         try:
-            int(product_data[0])  # product_id
-            int(product_data[3])  # quantity  
-            float(product_data[4])  # unit_price
+            int(product_data[2])  # quantity  
+            float(product_data[3])  # unit_price
         except ValueError:
-            tkinter.messagebox.showerror("Błąd", "ID produktu i ilość muszą być liczbami całkowitymi, a cena liczbą!")
+            tkinter.messagebox.showerror("Błąd", "Ilość musi być liczbą całkowitą, a cena liczbą!")
             return
         
         # Call the callback function to add product

@@ -51,34 +51,28 @@ class ProductEditWindow:
         form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
         
-        # Product ID
-        Label(form_frame, text="Lp.", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
-        self.entries['product_id'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['product_id'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
-        self.entries['product_id'].insert(0, product_data['product_id'])
-        
         # Product name
-        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
-        self.entries['product_name'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
+        self.entries['product_name'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
         self.entries['product_name'].insert(0, product_data['product_name'])
         
         # Unit
-        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
-        self.entries['unit'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
         self.entries['unit'].insert(0, product_data['unit'])
         
         # Quantity
-        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
         self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['quantity'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
+        self.entries['quantity'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
         self.entries['quantity'].insert(0, product_data['quantity'])
         
         # Unit price
-        Label(form_frame, text="Cena jednostkowa netto [PLN]:", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Cena jednostkowa netto [PLN]:", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
-        self.entries['unit_price'].grid(row=4, column=1, padx=5, pady=12, sticky=W)
+        self.entries['unit_price'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
         self.entries['unit_price'].insert(0, product_data['unit_price'])
         
         # Bind Enter key to all entry fields
@@ -122,16 +116,17 @@ class ProductEditWindow:
         print("DEBUG: Product edit window UI created")  # Debug
     
     def _update_product(self, window):
-        """Update product and close window"""
+        """Handle product update"""
         try:
-            # Get values from entries
-            product_data = (
-                self.entries['product_id'].get().strip(),
-                self.entries['product_name'].get().strip(),
-                self.entries['unit'].get().strip(),
-                self.entries['quantity'].get().strip(),
-                self.entries['unit_price'].get().strip()
-            )
+            print("DEBUG: _update_product called")  # Debug
+            
+            # Get product data (without product_id since position is auto-managed)
+            product_data = [
+                self.entries['product_name'].get(),
+                self.entries['unit'].get(),
+                self.entries['quantity'].get(),
+                self.entries['unit_price'].get()
+            ]
             
             print(f"DEBUG: Updating product with data: {product_data}")  # Debug
             

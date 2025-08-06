@@ -81,20 +81,28 @@ class ProductTable:
         self.tree.bind("<ButtonRelease-1>", self.on_single_click)
     
     def input_record(self, product_data):
-        """Insert a new product record"""
-        product_id, product_name, unit, quantity, unit_price = product_data
+        """Insert a new product record with auto-generated position number"""
+        # Extract data without product_id since it will be auto-generated
+        if len(product_data) == 5:
+            # Old format with product_id - ignore the first element
+            _, product_name, unit, quantity, unit_price = product_data
+        else:
+            # New format without product_id
+            product_name, unit, quantity, unit_price = product_data
         
-        if not all([product_id, product_name, unit, quantity, unit_price]):
+        if not all([product_name, unit, quantity, unit_price]):
             tkinter.messagebox.showinfo("WARNING", "Enter all the fields!")
             return False
         
         try:
-            product_id = int(product_id)
             quantity = int(quantity)
             unit_price = float(unit_price)
             total = quantity * unit_price
             
-            print(f"Adding product: {product_id}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
+            # Auto-generate position number (1-based)
+            position_number = len(self.tree.get_children()) + 1
+            
+            print(f"Adding product: {position_number}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
             
             if self.tree:
                 # Format numbers with comma for display
@@ -102,7 +110,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 self.tree.insert('', index=END, iid=self.count,
-                               values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "❌"))
+                               values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "❌"))
                 self.count += 1
                 return True
             else:
@@ -117,6 +125,24 @@ class ProductTable:
         if self.tree:
             for selected_item in self.tree.selection():
                 self.tree.delete(selected_item)
+            # Renumber all remaining items
+            self.renumber_items()
+    
+    def renumber_items(self):
+        """Renumber all items in the table to maintain sequential order"""
+        if not self.tree:
+            return
+        
+        # Get all children (items) in the table
+        children = self.tree.get_children()
+        
+        # Update position numbers sequentially
+        for index, child in enumerate(children, 1):
+            current_values = list(self.tree.item(child)['values'])
+            # Update the position number (first column)
+            current_values[0] = index
+            # Update the item with new values
+            self.tree.item(child, values=current_values)
     
     def get_selected_product(self):
         """Get data of the selected product for editing"""
@@ -125,15 +151,14 @@ class ProductTable:
             values = self.tree.item(selected_item)['values']
             if values:
                 # Convert values back to original format (remove commas from prices)
-                # Skip the DELETE column (last column)
-                product_id, product_name, unit, quantity, unit_price_display, total_display = values[:6]
+                # Skip the position number (first column) and DELETE column (last column)
+                position_number, product_name, unit, quantity, unit_price_display, total_display = values[:6]
                 
                 # Convert prices back to dot format for editing
                 unit_price = unit_price_display.replace(',', '.')
                 
                 return {
                     'item_id': selected_item,
-                    'product_id': str(product_id),
                     'product_name': str(product_name),
                     'unit': str(unit),
                     'quantity': str(quantity),
@@ -142,26 +167,35 @@ class ProductTable:
         return None
     
     def update_record(self, item_id, product_data):
-        """Update existing product record"""
-        product_id, product_name, unit, quantity, unit_price = product_data
+        """Update existing product record while preserving position number"""
+        # Extract data without product_id since position number is auto-managed
+        if len(product_data) == 5:
+            # Old format with product_id - ignore the first element
+            _, product_name, unit, quantity, unit_price = product_data
+        else:
+            # New format without product_id
+            product_name, unit, quantity, unit_price = product_data
         
-        if not all([product_id, product_name, unit, quantity, unit_price]):
+        if not all([product_name, unit, quantity, unit_price]):
             tkinter.messagebox.showinfo("WARNING", "Enter all the fields!")
             return False
         
         try:
-            product_id = int(product_id)
             quantity = int(quantity)
             unit_price = float(unit_price)
             total = quantity * unit_price
             
             if self.tree:
+                # Get current position number from the existing record
+                current_values = self.tree.item(item_id)['values']
+                position_number = current_values[0]  # Keep existing position number
+                
                 # Format numbers with comma for display
                 unit_price_display = format_currency(unit_price)
                 total_display = format_currency(total)
                 
                 # Update the record
-                self.tree.item(item_id, values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "❌"))
+                self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "❌"))
                 return True
             else:
                 print("Error: Table not initialized!")
@@ -194,13 +228,13 @@ class ProductTable:
             for child in self.tree.get_children():
                 item = self.tree.item(child)
                 if item['values']:
-                    # Extract values: pid, pname, unit, qty, unit_price, total (skip DELETE column)
+                    # Extract values: position, pname, unit, qty, unit_price, total (skip DELETE column)
                     values = item['values'][:6]  # Take only first 6 values, skip DELETE
-                    pid, pname, unit, qty, unit_price, total = values
+                    position, pname, unit, qty, unit_price, total = values
                     
                     # Create a row as list with formatted values (comma as decimal separator)
                     row = [
-                        str(pid),                           # Lp (pozycja)
+                        str(position),                      # Lp (pozycja) - auto-generated
                         str(pname),                         # Nazwa produktu
                         str(unit),                          # Jednostka miary
                         str(qty),                           # Ilość
@@ -373,6 +407,9 @@ class ProductTable:
                     if result:
                         # Delete the item
                         self.tree.delete(item)
+                        
+                        # Renumber all remaining items
+                        self.renumber_items()
                         
                         # Call delete callback if provided
                         if self.delete_callback:
