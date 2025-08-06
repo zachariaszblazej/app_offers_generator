@@ -38,7 +38,7 @@ class ProductAddWindow:
         ))
         
         # Title
-        title_label = Label(product_window, text="🛒 Dodaj nowy produkt do oferty", 
+        title_label = Label(product_window, text="Dodaj pozycję do oferty", 
                            font=("Arial", 18, "bold"),
                            bg='#f8f9fa', fg='#343a40')
         title_label.pack(pady=(30, 20), fill=X)
@@ -48,27 +48,27 @@ class ProductAddWindow:
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
         
         # Product ID
-        Label(form_frame, text="ID produktu:", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Lp.", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_id'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['product_id'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
         
         # Product name
-        Label(form_frame, text="Nazwa produktu:", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
         self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
         self.entries['product_name'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
         
         # Unit
-        Label(form_frame, text="Jednostka miary (j.m.):", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
         self.entries['unit'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
         
         # Quantity
-        Label(form_frame, text="Ilość:", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
         self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['quantity'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
         
         # Unit price
-        Label(form_frame, text="Cena jednostkowa:", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Cena jednostkowa netto [PLN]", font=("Arial", 11)).grid(row=4, column=0, sticky=W, padx=5, pady=12)
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['unit_price'].grid(row=4, column=1, padx=5, pady=12, sticky=W)
         

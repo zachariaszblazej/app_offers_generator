@@ -47,11 +47,11 @@ class ProductTable:
 
         # Configure headings
         self.tree.heading('PID', text='Lp.')
-        self.tree.heading('PNAME', text='Nazwa produktu')
+        self.tree.heading('PNAME', text='Nazwa')
         self.tree.heading('UNIT', text='j.m.')
-        self.tree.heading('QTY', text='Ilość')
-        self.tree.heading('U_PRICE', text='Cena jedn.')
-        self.tree.heading('TOTAL', text='Suma')
+        self.tree.heading('QTY', text='ilość')
+        self.tree.heading('U_PRICE', text='Cena jednostkowa netto [PLN]')
+        self.tree.heading('TOTAL', text='Wartość netto [PLN]')
         
         # Add scrollbar
         scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
