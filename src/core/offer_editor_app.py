@@ -112,9 +112,6 @@ class OfferEditorApp:
             # Set editor mode (read-only for certain fields)
             self.ui.set_editor_mode()
             
-            tkinter.messagebox.showinfo("Dane wczytane", 
-                f"Pomyślnie wczytano dane z kontekstu oferty:\\n{os.path.basename(self.offer_path)}")
-            
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", 
                 f"Nie udało się wczytać danych oferty:\\n{e}")
