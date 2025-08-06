@@ -82,6 +82,6 @@ TABLE_COLUMN_HEADERS = {
     'QTY': 'ilość',
     'U_PRICE': 'Cena\n jednostkowa\n netto [PLN]',
     'TOTAL': 'Wartość\n Netto\n [PLN]',
-    'EDIT': '✏️',
-    'DELETE': '❌'
+    'EDIT': 'Edytuj',
+    'DELETE': 'Usuń'
 }

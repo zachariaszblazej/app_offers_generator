@@ -96,16 +96,16 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
         self.suppliers_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.suppliers_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
-        self.suppliers_tree.heading('EDIT', text='✏️')
-        self.suppliers_tree.heading('DELETE', text='❌')
+        self.suppliers_tree.heading('EDIT', text='Edytuj')
+        self.suppliers_tree.heading('DELETE', text='Usuń')
         
         # Configure column widths
         self.suppliers_tree.column('NIP', width=100)
         self.suppliers_tree.column('Nazwa firmy', width=250)
         self.suppliers_tree.column('Adres 1', width=200)
         self.suppliers_tree.column('Adres 2', width=200)
-        self.suppliers_tree.column('EDIT', width=40, stretch=NO, anchor=CENTER)
-        self.suppliers_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
+        self.suppliers_tree.column('EDIT', width=70, stretch=NO, anchor=CENTER)
+        self.suppliers_tree.column('DELETE', width=70, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.suppliers_tree.yview)
@@ -263,8 +263,8 @@ class BrowseSuppliersFrame(Frame):
                 supplier['Nazwa firmy'], 
                 supplier['Adres 1'], 
                 supplier['Adres 2'],
-                "✏️",
-                "❌"
+                "Edytuj",
+                "Usuń"
             ))
     
     def sort_by_column(self, column):

@@ -47,8 +47,8 @@ class ProductTable:
         self.tree.column('QTY', minwidth=60, width=80, stretch=NO)
         self.tree.column('U_PRICE', minwidth=100, width=100, stretch=NO)
         self.tree.column('TOTAL', minwidth=100, width=100, stretch=NO)
-        self.tree.column('EDIT', minwidth=40, width=40, stretch=NO)
-        self.tree.column('DELETE', minwidth=40, width=40, stretch=NO)
+        self.tree.column('EDIT', minwidth=70, width=70, stretch=NO)
+        self.tree.column('DELETE', minwidth=70, width=70, stretch=NO)
 
         # Configure headings
         self.tree.heading('PID', text='Lp.')
@@ -57,8 +57,8 @@ class ProductTable:
         self.tree.heading('QTY', text='ilość')
         self.tree.heading('U_PRICE', text='Cena jednostkowa netto [PLN]')
         self.tree.heading('TOTAL', text='Wartość netto [PLN]')
-        self.tree.heading('EDIT', text='✏️')
-        self.tree.heading('DELETE', text='❌')
+        self.tree.heading('EDIT', text='Edytuj')
+        self.tree.heading('DELETE', text='Usuń')
         
         # Add scrollbar and keep reference
         self.scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
@@ -108,7 +108,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 self.tree.insert('', index=END, iid=self.count,
-                               values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "✏️", "❌"))
+                               values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "Edytuj", "Usuń"))
                 self.count += 1
                 return True
             else:
@@ -193,7 +193,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 # Update the record
-                self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "✏️", "❌"))
+                self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "Edytuj", "Usuń"))
                 return True
             else:
                 print("Error: Table not initialized!")

@@ -97,8 +97,8 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.clients_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
         self.clients_tree.heading('Alias', text='Alias', command=lambda: self.sort_by_column('Alias'))
-        self.clients_tree.heading('EDIT', text='✏️')
-        self.clients_tree.heading('DELETE', text='❌')
+        self.clients_tree.heading('EDIT', text='Edytuj')
+        self.clients_tree.heading('DELETE', text='Usuń')
         
         # Configure column widths
         self.clients_tree.column('NIP', width=100)
@@ -106,8 +106,8 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.column('Adres 1', width=150)
         self.clients_tree.column('Adres 2', width=150)
         self.clients_tree.column('Alias', width=80)
-        self.clients_tree.column('EDIT', width=40, stretch=NO, anchor=CENTER)
-        self.clients_tree.column('DELETE', width=40, stretch=NO, anchor=CENTER)
+        self.clients_tree.column('EDIT', width=70, stretch=NO, anchor=CENTER)
+        self.clients_tree.column('DELETE', width=70, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.clients_tree.yview)
@@ -270,8 +270,8 @@ class BrowseClientsFrame(Frame):
                 client['Adres 1'], 
                 client['Adres 2'], 
                 client['Alias'],
-                "✏️",
-                "❌"
+                "Edytuj",
+                "Usuń"
             ))
     
     def sort_by_column(self, column):

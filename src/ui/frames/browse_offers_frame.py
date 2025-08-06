@@ -78,15 +78,15 @@ class BrowseOffersFrame(Frame):
         # Configure columns
         self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
         self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
-        self.tree.heading('edit', text='✏️')
-        self.tree.heading('similar', text='📋')
-        self.tree.heading('delete', text='❌')
+        self.tree.heading('edit', text='Edytuj')
+        self.tree.heading('similar', text='Wczytaj do kreatora')
+        self.tree.heading('delete', text='Usuń')
         
         self.tree.column('filename', width=450, minwidth=350)
         self.tree.column('date', width=170, minwidth=150)
-        self.tree.column('edit', minwidth=40, width=40, stretch=NO, anchor=CENTER)
-        self.tree.column('similar', minwidth=40, width=40, stretch=NO, anchor=CENTER)
-        self.tree.column('delete', minwidth=40, width=40, stretch=NO, anchor=CENTER)
+        self.tree.column('edit', minwidth=70, width=70, stretch=NO, anchor=CENTER)
+        self.tree.column('similar', minwidth=160, width=160, stretch=NO, anchor=CENTER)
+        self.tree.column('delete', minwidth=70, width=70, stretch=NO, anchor=CENTER)
         
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(tree_frame, orient=VERTICAL, command=self.tree.yview)
@@ -117,7 +117,7 @@ class BrowseOffersFrame(Frame):
         refresh_btn.pack(side=LEFT, padx=(0, 10))
         
         # Open folder button
-        folder_btn = Button(buttons_frame, text="📁 Otwórz folder",
+        folder_btn = Button(buttons_frame, text="Otwórz folder",
                            font=("Arial", 12),
                            bg='#6c757d', fg='black',
                            padx=15, pady=8,
@@ -213,7 +213,7 @@ class BrowseOffersFrame(Frame):
                 file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
                 
                 # Add to treeview
-                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "✏️", "📋", "❌"))
+                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "Edytuj", "Wczytaj do kreatora", "Usuń"))
                 self.offers_list.append(file_info['filepath'])
             
             print(f"Loaded {len(file_info_list)} offers from database that exist in {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
@@ -371,9 +371,9 @@ class BrowseOffersFrame(Frame):
                 
                 # Check which action column was clicked
                 num_columns = len(self.tree['columns'])
-                edit_column_index = f"#{num_columns - 2}"      # Third from last (✏️)
-                similar_column_index = f"#{num_columns - 1}"   # Second from last (📋)
-                delete_column_index = f"#{num_columns}"        # Last column (❌)
+                edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
+                similar_column_index = f"#{num_columns - 1}"   # Second from last (Wczytaj do kreatora)
+                delete_column_index = f"#{num_columns}"        # Last column (Usuń)
                 
                 if column == edit_column_index:
                     # Edit offer
@@ -454,9 +454,9 @@ class BrowseOffersFrame(Frame):
             
             # Don't open if clicking on action columns (edit, similar, delete)
             num_columns = len(self.tree['columns'])
-            edit_column_index = f"#{num_columns - 2}"      # Third from last (✏️)
-            similar_column_index = f"#{num_columns - 1}"   # Second from last (📋)
-            delete_column_index = f"#{num_columns}"        # Last column (❌)
+            edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
+            similar_column_index = f"#{num_columns - 1}"   # Second from last (Wczytaj do kreatora)
+            delete_column_index = f"#{num_columns}"        # Last column (Usuń)
             
             if column not in [edit_column_index, similar_column_index, delete_column_index]:
                 # Get the item that was clicked

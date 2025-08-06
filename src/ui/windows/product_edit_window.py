@@ -42,7 +42,7 @@ class ProductEditWindow:
         ))
         
         # Title
-        title_label = Label(product_window, text="✏️ Edytuj pozycję w ofercie", 
+        title_label = Label(product_window, text="Edytuj pozycję w ofercie", 
                            font=("Arial", 18, "bold"),
                            bg='#f8f9fa', fg='#343a40')
         title_label.pack(pady=(30, 20), fill=X)
