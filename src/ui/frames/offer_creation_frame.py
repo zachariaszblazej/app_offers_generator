@@ -61,13 +61,49 @@ class OfferCreationFrame(Frame):
         self.content_container.bind('<Configure>', self.on_frame_configure)
         self.canvas.bind('<Configure>', self.on_canvas_configure)
         
-        # Bind mouse wheel events to canvas
-        self.canvas.bind("<MouseWheel>", self.on_mousewheel)
-        self.canvas.bind("<Button-4>", self.on_mousewheel)
-        self.canvas.bind("<Button-5>", self.on_mousewheel)
+        # Bind mouse wheel events to canvas and its parent
+        self.bind_mousewheel(self.canvas)
+        self.bind_mousewheel(self.canvas.master)
+        self.bind_mousewheel(self)
         
         # Make sure the canvas can receive focus for mouse wheel events
         self.canvas.focus_set()
+        
+        # Add enter/leave events to handle focus
+        self.canvas.bind("<Enter>", self.on_canvas_enter)
+        self.canvas.bind("<Leave>", self.on_canvas_leave)
+    
+    def on_canvas_enter(self, event):
+        """When mouse enters canvas, bind mousewheel events globally"""
+        self.canvas.focus_set()
+        
+    def on_canvas_leave(self, event):
+        """When mouse leaves canvas, we can keep the bindings active"""
+        pass
+    
+    def bind_mousewheel(self, widget):
+        """Bind mouse wheel events to a widget"""
+        # Bind mousewheel events for different platforms
+        widget.bind("<MouseWheel>", self.on_mousewheel)  # Windows and macOS
+        widget.bind("<Button-4>", self.on_mousewheel)    # Linux
+        widget.bind("<Button-5>", self.on_mousewheel)    # Linux
+        
+        # Additional macOS touchpad events
+        widget.bind("<Shift-MouseWheel>", self.on_mousewheel)
+        
+        # Try to bind to all child widgets as well for better coverage
+        for child in widget.winfo_children():
+            try:
+                self.bind_mousewheel(child)
+            except:
+                pass
+        
+    def unbind_mousewheel(self, widget):
+        """Unbind mouse wheel events from a widget"""
+        widget.unbind("<MouseWheel>")
+        widget.unbind("<Button-4>")
+        widget.unbind("<Button-5>")
+        widget.unbind("<Shift-MouseWheel>")
         
     def on_frame_configure(self, event):
         """Update scroll region when content changes"""
@@ -84,9 +120,16 @@ class OfferCreationFrame(Frame):
         """Handle mouse wheel scrolling"""
         # Check if we're on macOS or Windows/Linux
         if event.delta:
-            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            # Windows and macOS
+            delta = event.delta
+            # Normalize delta for different platforms
+            if abs(delta) >= 120:
+                scroll_amount = int(-1 * (delta / 120))
+            else:
+                scroll_amount = -1 if delta > 0 else 1
+            self.canvas.yview_scroll(scroll_amount, "units")
         else:
-            # For Linux
+            # Linux
             if event.num == 4:
                 self.canvas.yview_scroll(-1, "units")
             elif event.num == 5:
