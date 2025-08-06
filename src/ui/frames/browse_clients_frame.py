@@ -88,7 +88,7 @@ class BrowseClientsFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for clients list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias')
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias', 'DELETE')
         self.clients_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
         # Define headings with sorting commands
@@ -97,6 +97,7 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.clients_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
         self.clients_tree.heading('Alias', text='Alias', command=lambda: self.sort_by_column('Alias'))
+        self.clients_tree.heading('DELETE', text='❌')
         
         # Configure column widths
         self.clients_tree.column('NIP', width=100)
@@ -104,6 +105,7 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.column('Adres 1', width=150)
         self.clients_tree.column('Adres 2', width=150)
         self.clients_tree.column('Alias', width=80)
+        self.clients_tree.column('DELETE', width=40, stretch=NO)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.clients_tree.yview)
@@ -118,6 +120,9 @@ class BrowseClientsFrame(Frame):
         
         # Bind double-click for editing clients
         self.clients_tree.bind('<Double-Button-1>', self.on_client_double_click)
+        
+        # Bind single click for delete functionality
+        self.clients_tree.bind('<ButtonRelease-1>', self.on_client_single_click)
         
         # Edit/Delete buttons frame
         buttons_frame = Frame(list_frame, bg='#f0f0f0')
@@ -274,7 +279,8 @@ class BrowseClientsFrame(Frame):
                 client['Nazwa firmy'], 
                 client['Adres 1'], 
                 client['Adres 2'], 
-                client['Alias']
+                client['Alias'],
+                "—"
             ))
     
     def sort_by_column(self, column):
@@ -470,3 +476,36 @@ class BrowseClientsFrame(Frame):
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
+    
+    def on_client_single_click(self, event):
+        """Handle single-click on clients table to check for delete column clicks"""
+        # Get the region that was clicked
+        region = self.clients_tree.identify_region(event.x, event.y)
+        print(f"Client clicked region: {region}")
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.clients_tree.identify_column(event.x)
+            print(f"Client clicked column: {column}")
+            # DELETE column is the 6th column (index #6)
+            if column == "#6":  
+                # Get the item that was clicked
+                item = self.clients_tree.identify_row(event.y)
+                if item:
+                    # Get client data for confirmation
+                    values = self.clients_tree.item(item)['values']
+                    client_name = values[1]  # Company name
+                    client_nip = values[0]   # NIP
+                    
+                    # Ask for confirmation
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdź usunięcie", 
+                        f"Czy na pewno chcesz usunąć klienta '{client_name}' (NIP: {client_nip})?"
+                    )
+                    if result:
+                        # Delete from database
+                        success, message = delete_client_from_db(client_nip)
+                        if success:
+                            tkinter.messagebox.showinfo("Sukces", message)
+                            self.refresh_clients_list()
+                        else:
+                            tkinter.messagebox.showerror("Błąd", message)

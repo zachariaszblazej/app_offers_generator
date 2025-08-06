@@ -88,7 +88,7 @@ class BrowseSuppliersFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for suppliers list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2')
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'DELETE')
         self.suppliers_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
         # Define headings with sorting commands
@@ -96,12 +96,14 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
         self.suppliers_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.suppliers_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
+        self.suppliers_tree.heading('DELETE', text='❌')
         
         # Configure column widths
         self.suppliers_tree.column('NIP', width=100)
         self.suppliers_tree.column('Nazwa firmy', width=250)
         self.suppliers_tree.column('Adres 1', width=200)
         self.suppliers_tree.column('Adres 2', width=200)
+        self.suppliers_tree.column('DELETE', width=40, stretch=NO)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.suppliers_tree.yview)
@@ -116,6 +118,9 @@ class BrowseSuppliersFrame(Frame):
         
         # Bind double-click for editing suppliers
         self.suppliers_tree.bind('<Double-Button-1>', self.on_supplier_double_click)
+        
+        # Bind single click for delete functionality
+        self.suppliers_tree.bind('<ButtonRelease-1>', self.on_supplier_single_click)
         
         # Edit/Delete buttons frame
         buttons_frame = Frame(list_frame, bg='#f0f0f0')
@@ -267,7 +272,8 @@ class BrowseSuppliersFrame(Frame):
                 supplier['NIP'], 
                 supplier['Nazwa firmy'], 
                 supplier['Adres 1'], 
-                supplier['Adres 2']
+                supplier['Adres 2'],
+                "—"
             ))
     
     def sort_by_column(self, column):
@@ -438,3 +444,34 @@ class BrowseSuppliersFrame(Frame):
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
+    
+    def on_supplier_single_click(self, event):
+        """Handle single-click on suppliers table to check for delete column clicks"""
+        # Get the region that was clicked
+        region = self.suppliers_tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.suppliers_tree.identify_column(event.x)
+            # DELETE column is the 5th column (index #5)
+            if column == "#5":  
+                # Get the item that was clicked
+                item = self.suppliers_tree.identify_row(event.y)
+                if item:
+                    # Get supplier data for confirmation
+                    values = self.suppliers_tree.item(item)['values']
+                    supplier_name = values[1]  # Company name
+                    supplier_nip = values[0]   # NIP
+                    
+                    # Ask for confirmation
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdź usunięcie", 
+                        f"Czy na pewno chcesz usunąć dostawcę '{supplier_name}' (NIP: {supplier_nip})?"
+                    )
+                    if result:
+                        # Delete from database
+                        success, message = delete_supplier_from_db(supplier_nip)
+                        if success:
+                            tkinter.messagebox.showinfo("Sukces", message)
+                            self.refresh_suppliers_list()
+                        else:
+                            tkinter.messagebox.showerror("Błąd", message)

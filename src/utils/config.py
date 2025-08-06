@@ -55,12 +55,13 @@ APP_VERSION = "2.0"
 APP_TITLE = "Generator Ofert - System tworzenia ofert"
 
 # Table columns configuration
-TABLE_COLUMNS = ('PID', 'PNAME', 'UNIT', 'QTY', 'U_PRICE', 'TOTAL')
+TABLE_COLUMNS = ('PID', 'PNAME', 'UNIT', 'QTY', 'U_PRICE', 'TOTAL', 'DELETE')
 TABLE_COLUMN_HEADERS = {
     'PID': 'Lp.',
     'PNAME': 'Nazwa',
     'UNIT': 'j.m.',
     'QTY': 'ilość',
     'U_PRICE': 'Cena\n jednostkowa\n netto [PLN]',
-    'TOTAL': 'Wartość\n Netto\n [PLN]'
+    'TOTAL': 'Wartość\n Netto\n [PLN]',
+    'DELETE': '❌'
 }

@@ -37,7 +37,7 @@ class ProductTable:
         """Create the product table"""
         # Create and configure the treeview
         self.tree = ttk.Treeview(self.parent_window, columns=TABLE_COLUMNS, show='headings', height=10)
-        self.tree.place(x=50, y=410, width=900, height=300)
+        self.tree.place(x=50, y=410, width=950, height=300)
 
         # Configure columns
         self.tree.column('PID', minwidth=50, width=50, stretch=NO)
@@ -46,6 +46,7 @@ class ProductTable:
         self.tree.column('QTY', minwidth=60, width=80, stretch=NO)
         self.tree.column('U_PRICE', minwidth=100, width=100, stretch=NO)
         self.tree.column('TOTAL', minwidth=100, width=100, stretch=NO)
+        self.tree.column('DELETE', minwidth=40, width=40, stretch=NO)
 
         # Configure headings
         self.tree.heading('PID', text='Lp.')
@@ -54,10 +55,11 @@ class ProductTable:
         self.tree.heading('QTY', text='ilość')
         self.tree.heading('U_PRICE', text='Cena jednostkowa netto [PLN]')
         self.tree.heading('TOTAL', text='Wartość netto [PLN]')
+        self.tree.heading('DELETE', text='❌')
         
         # Add scrollbar and keep reference
         self.scrollbar_y = ttk.Scrollbar(self.parent_window, orient=VERTICAL, command=self.tree.yview)
-        self.scrollbar_y.place(x=950, y=410, height=300)
+        self.scrollbar_y.place(x=1000, y=410, height=300)
         self.tree.configure(yscrollcommand=self.scrollbar_y.set)
         
         # Bind mouse events for scroll conflict detection
@@ -73,6 +75,9 @@ class ProductTable:
         # Bind double-click for editing products
         if self.edit_callback:
             self.tree.bind("<Double-Button-1>", self.on_double_click)
+        
+        # Bind single click for delete functionality
+        self.tree.bind("<ButtonRelease-1>", self.on_single_click)
     
     def input_record(self, product_data):
         """Insert a new product record"""
@@ -96,7 +101,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 self.tree.insert('', index=END, iid=self.count,
-                               values=(product_id, product_name, unit, quantity, unit_price_display, total_display))
+                               values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "—"))
                 self.count += 1
                 print(f"Product added to table. Total items: {self.count}")
                 return True
@@ -120,7 +125,8 @@ class ProductTable:
             values = self.tree.item(selected_item)['values']
             if values:
                 # Convert values back to original format (remove commas from prices)
-                product_id, product_name, unit, quantity, unit_price_display, total_display = values
+                # Skip the DELETE column (last column)
+                product_id, product_name, unit, quantity, unit_price_display, total_display = values[:6]
                 
                 # Convert prices back to dot format for editing
                 unit_price = unit_price_display.replace(',', '.')
@@ -155,7 +161,7 @@ class ProductTable:
                 total_display = format_currency(total)
                 
                 # Update the record
-                self.tree.item(item_id, values=(product_id, product_name, unit, quantity, unit_price_display, total_display))
+                self.tree.item(item_id, values=(product_id, product_name, unit, quantity, unit_price_display, total_display, "—"))
                 print(f"Product updated: {product_id}, {product_name}, {unit}, {quantity}, {unit_price}, {total}")
                 return True
             else:
@@ -189,8 +195,9 @@ class ProductTable:
             for child in self.tree.get_children():
                 item = self.tree.item(child)
                 if item['values']:
-                    # Extract values: pid, pname, unit, qty, unit_price, total
-                    pid, pname, unit, qty, unit_price, total = item['values']
+                    # Extract values: pid, pname, unit, qty, unit_price, total (skip DELETE column)
+                    values = item['values'][:6]  # Take only first 6 values, skip DELETE
+                    pid, pname, unit, qty, unit_price, total = values
                     
                     # Create a row as list with formatted values (comma as decimal separator)
                     row = [
@@ -342,3 +349,28 @@ class ProductTable:
                 if selected_product:
                     # Call the edit callback with the selected product
                     self.edit_callback()
+    
+    def on_single_click(self, event):
+        """Handle single-click on table to check for delete column clicks"""
+        # Get the region that was clicked
+        region = self.tree.identify_region(event.x, event.y)
+        print(f"Clicked region: {region}")
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.tree.identify_column(event.x)
+            print(f"Clicked column: {column}")
+            # DELETE column is the 7th column (index #7)
+            if column == "#7":  
+                # Get the item that was clicked
+                item = self.tree.identify_row(event.y)
+                print(f"Clicked item: {item}")
+                if item:
+                    # Ask for confirmation
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdź usunięcie", 
+                        "Czy na pewno chcesz usunąć ten produkt z tabeli?"
+                    )
+                    if result:
+                        # Delete the item
+                        self.tree.delete(item)
+                        print(f"Deleted product with item ID: {item}")
