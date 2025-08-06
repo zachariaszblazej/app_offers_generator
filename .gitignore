@@ -1,9 +1,14 @@
 /generated_docs
 /.DS_Store
 **/__pycache__/
+*.pyc
 /*.db
 /old_files
 /build
 /dist
-/distribution
+/distribution*
 *.spec
+test_*.py
+build_*.py
+*.zip
+*.bat
