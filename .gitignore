@@ -3,3 +3,7 @@
 **/__pycache__/
 /*.db
 /old_files
+/build
+/dist
+/distribution
+*.spec
