@@ -29,6 +29,22 @@ def setup_error_logging():
     except:
         return lambda x: None  # Return dummy function if logging setup fails
 
+def safe_input(prompt="Press Enter to exit..."):
+    """Safe input that works in both console and windowed mode"""
+    try:
+        if hasattr(sys.stdin, 'read') and sys.stdin.readable():
+            return input(prompt)
+        else:
+            # In windowed mode, just wait a bit and continue
+            import time
+            time.sleep(2)
+            return ""
+    except (EOFError, OSError, RuntimeError):
+        # stdin not available (windowed mode)
+        import time
+        time.sleep(2)
+        return ""
+
 def main():
     """Main entry point"""
     log_error = setup_error_logging()
@@ -46,7 +62,7 @@ def main():
             error_msg = f"ERROR: src directory not found at {src_dir}"
             log_error(error_msg)
             print(error_msg)
-            input("Press Enter to exit...")
+            safe_input("Press Enter to exit...")
             sys.exit(1)
         
         log_error("Importing main application...")
@@ -70,7 +86,7 @@ def main():
         print(f"❌ Import Error: {e}")
         print(f"Current directory: {os.getcwd()}")
         print(f"Script location: {os.path.dirname(os.path.abspath(__file__))}")
-        input("Press Enter to exit...")
+        safe_input("Press Enter to exit...")
         sys.exit(1)
     except Exception as e:
         error_msg = f"Error starting application: {e}"
@@ -82,7 +98,7 @@ def main():
         print("\nFull error details:")
         print(traceback_str)
         print(f"\nError log saved to: {os.path.join(os.path.expanduser('~'), 'OfferGenerator_Logs')}")
-        input("Press Enter to exit...")
+        safe_input("Press Enter to exit...")
         sys.exit(1)
 
 if __name__ == "__main__":
