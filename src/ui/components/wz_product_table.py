@@ -132,18 +132,20 @@ class WzProductTable:
         self.tree.item(item_id, values=updated_values)
     
     def get_all_products(self):
-        """Get all products from table as list of dictionaries"""
+        """Get all products from table as list of lists (compatible with generator service)"""
         products = []
         for item in self.tree.get_children():
             values = self.tree.item(item, 'values')
             if len(values) >= 4:
-                product = {
-                    'pid': values[0],
-                    'name': values[1],
-                    'unit': values[2],
-                    'quantity': values[3]
-                }
-                products.append(product)
+                # Return as list (not dict) to match offer table format
+                # Format: [pid, name, unit, quantity] - without pricing for WZ
+                product_row = [
+                    str(values[0]),  # pid (Lp.)
+                    str(values[1]),  # name
+                    str(values[2]),  # unit
+                    str(values[3])   # quantity
+                ]
+                products.append(product_row)
         return products
     
     def clear_table(self):

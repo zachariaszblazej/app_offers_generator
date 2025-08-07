@@ -144,48 +144,32 @@ def prepare_wz_context(context_data):
     processed_products = []
     
     for i, product in enumerate(products):
-        if isinstance(product, (list, tuple)) and len(product) >= 6:
-            processed_product = {
-                'lp': i + 1,
-                'name': product[0] or '',
-                'unit': product[1] or '',
-                'quantity': product[2] or '0',
-                'price': product[3] or '0.00',
-                'tax': product[4] or '23%',
-                'total': product[5] or '0.00'
-            }
+        if isinstance(product, (list, tuple)) and len(product) >= 4:
+            # WZ products have 4 elements: [pid, name, unit, quantity]
+            # Keep as list for template compatibility with {{ row[0] }}, {{ row[1] }}, etc.
+            processed_product = [
+                str(i + 1),         # row[0] - Lp. (pozycja)
+                str(product[1]),    # row[1] - name
+                str(product[2]),    # row[2] - unit  
+                str(product[3])     # row[3] - quantity
+            ]
+            processed_products.append(processed_product)
+        elif isinstance(product, dict):
+            # Handle dict format as fallback
+            processed_product = [
+                str(i + 1),                           # row[0] - Lp.
+                str(product.get('name', '')),         # row[1] - name
+                str(product.get('unit', '')),         # row[2] - unit
+                str(product.get('quantity', '0'))     # row[3] - quantity
+            ]
             processed_products.append(processed_product)
     
     template_context['products'] = processed_products
     
-    # Calculate totals
-    total_net = 0
-    total_tax = 0
-    total_gross = 0
-    
-    try:
-        for product in processed_products:
-            quantity = float(product['quantity']) if product['quantity'] else 0
-            price = float(product['price']) if product['price'] else 0
-            net_value = quantity * price
-            
-            # Extract tax percentage
-            tax_str = product['tax'].replace('%', '')
-            tax_rate = float(tax_str) / 100 if tax_str else 0
-            
-            tax_value = net_value * tax_rate
-            gross_value = net_value + tax_value
-            
-            total_net += net_value
-            total_tax += tax_value
-            total_gross += gross_value
-            
-    except Exception as e:
-        print(f"Error calculating totals: {e}")
-    
-    template_context['total_net'] = f"{total_net:.2f}"
-    template_context['total_tax'] = f"{total_tax:.2f}"
-    template_context['total_gross'] = f"{total_gross:.2f}"
+    # WZ doesn't have pricing, so no totals calculation needed
+    template_context['total_net'] = ""
+    template_context['total_tax'] = ""
+    template_context['total_gross'] = ""
     
     return template_context
 
