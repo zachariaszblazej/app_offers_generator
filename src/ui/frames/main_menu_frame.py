@@ -97,7 +97,7 @@ class MainMenuFrame(Frame):
         # Exit button
         exit_btn = Button(self, text="Zamknij aplikację",
                          font=("Arial", 12),
-                         fg='red',
+                         fg='black',
                          padx=20, pady=8,
                          command=self.exit_application,
                          cursor='hand2')
