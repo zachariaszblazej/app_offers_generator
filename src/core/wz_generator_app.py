@@ -176,7 +176,10 @@ class WzGeneratorApp:
                 success, message = save_wz_to_db(wz_order_number, file_path, context_data)
                 
                 if success:
-                    tkinter.messagebox.showinfo("Sukces", f"WZ zostało wygenerowane:\n{file_path}")
+                    tkinter.messagebox.showinfo("Sukces", 
+                                              f"WZ zostało wygenerowane pomyślnie!\n"
+                                              f"Numer WZ: {wz_number}\n"
+                                              f"Plik zapisany w: {file_path}")
                     
                     # Ask if user wants to create another WZ
                     if tkinter.messagebox.askyesno("Kolejne WZ", "Czy chcesz utworzyć kolejne WZ?"):
@@ -191,7 +194,9 @@ class WzGeneratorApp:
                         else:
                             self.nav_manager.show_frame('main_menu')
                 else:
-                    tkinter.messagebox.showerror("Błąd", f"Nie udało się zapisać WZ do bazy danych:\n{message}")
+                    tkinter.messagebox.showerror("Błąd", f"WZ zostało wygenerowane, ale nie udało się zapisać do bazy danych:\n{message}")
+            else:
+                tkinter.messagebox.showerror("Błąd", "Nie udało się wygenerować pliku WZ.")
             
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Wystąpił błąd podczas generowania WZ:\n{e}")

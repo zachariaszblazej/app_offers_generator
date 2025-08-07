@@ -66,6 +66,15 @@ def get_offers_folder():
         # Fallback to default if settings not available
         return OFFERS_FOLDER
 
+def get_wz_folder():
+    """Get the current WZ folder from settings or return default"""
+    try:
+        from src.utils.settings import settings_manager
+        return settings_manager.get_app_setting('wz_folder')
+    except ImportError:
+        # Fallback to default if settings not available
+        return '../FakeHantechServer/WZ'
+
 # UI Configuration
 WINDOW_SIZE = "1600x1200"
 TAX_RATE = 0.18  # 18% VAT

@@ -13,7 +13,7 @@ import sys
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import TEMPLATE_PATH, get_offers_folder
+from src.utils.config import TEMPLATE_PATH, get_wz_folder
 from src.data.database_service import get_next_wz_number, save_wz_to_db
 
 
@@ -53,8 +53,8 @@ def generate_wz_document(context_data):
         wz_number = context_data.get('wz_number', 'WZ_1')
         output_filename = f"{wz_number}.docx"
         
-        # Get output directory (use same as offers for now)
-        output_dir = get_offers_folder()
+        # Get output directory (use WZ folder from settings)
+        output_dir = get_wz_folder()
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
         
