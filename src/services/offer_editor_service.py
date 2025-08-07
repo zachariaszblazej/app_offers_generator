@@ -42,23 +42,26 @@ def select_template_based_on_name_length(supplier_name, supplier_address1, clien
         return "offer_template.docx"
 
 
-def update_offer_document(offer_data, products, client_data, supplier_data):
+def update_offer_document(context_data, offer_file_path):
     """Update an existing offer document and database context"""
     try:
-        # Pobierz ścieżkę do istniejącego pliku
-        existing_file_path = offer_data.get('file_path')
-        if not existing_file_path or not os.path.exists(existing_file_path):
+        # Sprawdź czy plik istnieje
+        if not offer_file_path or not os.path.exists(offer_file_path):
             raise ValueError("Offer file not found")
         
-        # Przygotuj dane kontekstowe
-        context_data = {
-            'client_name': client_data.get('name', ''),
-            'client_address1': client_data.get('address1', ''),
-            'supplier_name': supplier_data.get('name', ''),
-            'supplier_address1': supplier_data.get('address1', ''),
-            'products': products,
-            'date': datetime.datetime.now()
+        # Wyodrębnij dane klienta i dostawcy z context_data
+        client_data = {
+            'name': context_data.get('client_name', ''),
+            'address1': context_data.get('client_address_1', ''),  # Uwaga: z podkreślnikiem
         }
+        
+        supplier_data = {
+            'name': context_data.get('supplier_name', ''),
+            'address1': context_data.get('supplier_address_1', ''),  # Uwaga: z podkreślnikiem
+        }
+        
+        # Pobierz produkty z context_data
+        products = context_data.get('products', [])
         
         # Wybierz odpowiedni szablon na podstawie długości nazw
         template_filename = select_template_based_on_name_length(
@@ -71,35 +74,46 @@ def update_offer_document(offer_data, products, client_data, supplier_data):
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
         
         # Create backup of original file
-        backup_path = existing_file_path + ".backup"
-        shutil.copy2(existing_file_path, backup_path)
+        backup_path = offer_file_path + ".backup"
+        shutil.copy2(offer_file_path, backup_path)
         
         # Load template
         doc = DocxTemplate(template_path)
         
-        # Convert date for display
-        context_data["date"] = convert_date(context_data["date"])
+        # Przygotuj pełne dane kontekstowe dla szablonu
+        template_context = context_data.copy()
+        template_context.update({
+            'client_name': client_data.get('name', ''),
+            'client_address1': client_data.get('address1', ''),
+            'supplier_name': supplier_data.get('name', ''),
+            'supplier_address1': supplier_data.get('address1', ''),
+            'products': products
+        })
+        
+        # Convert date for display if needed
+        if 'date' in template_context:
+            template_context["date"] = convert_date(template_context["date"])
         
         # Render template with new data
-        doc.render(context_data)
+        doc.render(template_context)
         
         # Save to the same location (overwrite)
-        doc.save(existing_file_path)
+        doc.save(offer_file_path)
         
         # Update context in database
-        update_offer_context_in_db(existing_file_path, context_data)
+        update_offer_context_in_db(offer_file_path, template_context)
         
         # Remove backup if successful
         if os.path.exists(backup_path):
             os.remove(backup_path)
         
-        print(f"Offer updated successfully: {existing_file_path}")
+        print(f"Offer updated successfully: {offer_file_path}")
         return True
         
     except Exception as e:
         # Restore backup if update failed
         if 'backup_path' in locals() and os.path.exists(backup_path):
-            shutil.copy2(backup_path, existing_file_path)
+            shutil.copy2(backup_path, offer_file_path)
             os.remove(backup_path)
         
         tkinter.messagebox.showerror("Błąd", 
