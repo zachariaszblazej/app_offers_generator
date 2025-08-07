@@ -493,13 +493,18 @@ class UIComponents:
             self.entries['client_nip'].config(state='readonly')
             self.entries['client_nip'].config(bg='#f0f0f0', fg='#666666')
         
-        # Make supplier fields editable with standard styling
-        supplier_editable_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
+        # Make supplier fields editable with standard styling (except NIP)
+        supplier_editable_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2']
         for field in supplier_editable_fields:
             if field in self.entries:
                 self.entries[field].config(state='normal')
                 # Standard white background, no special coloring
                 self.entries[field].config(bg='white', fg='black')
+        
+        # Keep supplier_nip read-only (same as in creation mode)
+        if 'supplier_nip' in self.entries:
+            self.entries['supplier_nip'].config(state='readonly')
+            self.entries['supplier_nip'].config(bg='#f0f0f0', fg='#666666')
         
         # Display offer number if available and field exists
         if self.offer_number and 'offer_number_display' in self.entries:
