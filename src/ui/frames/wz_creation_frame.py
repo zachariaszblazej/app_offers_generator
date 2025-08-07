@@ -259,15 +259,19 @@ class WzCreationFrame(Frame):
     def initialize_wz_app(self):
         """Initialize the WZ application components"""
         try:
-            if not self.wz_app_instance:
-                # Create a new WZ app for creation
-                from src.core.wz_generator_app import WzGeneratorApp
-                self.wz_app_instance = WzGeneratorApp(self, self.nav_manager)
-                # Update scroll region after content is loaded
-                self.after(100, self.update_scroll_region)
-                
-                # Start mouse position checking
-                self.start_mouse_position_checking()
+            # Always create a fresh WZ app instance
+            # This ensures clean state when re-entering the frame
+            from src.core.wz_generator_app import WzGeneratorApp
+            self.wz_app_instance = WzGeneratorApp(self, self.nav_manager)
+            
+            # Force GUI update to ensure proper rendering
+            self.update_idletasks()
+            
+            # Update scroll region after content is loaded
+            self.after(100, self.update_scroll_region)
+            
+            # Start mouse position checking
+            self.start_mouse_position_checking()
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować interfejsu tworzenia WZ: {e}")
             print(f"Detailed error: {e}")  # For debugging
@@ -281,8 +285,14 @@ class WzCreationFrame(Frame):
         """Return to main menu"""
         # Clean up any resources if needed
         if self.wz_app_instance:
-            # Perform any necessary cleanup
-            pass
+            try:
+                # Try to clean up the WZ app instance properly
+                if hasattr(self.wz_app_instance, 'cleanup'):
+                    self.wz_app_instance.cleanup()
+            except:
+                pass  # Ignore cleanup errors
+            self.wz_app_instance = None
+        
         self.nav_manager.show_frame('main_menu')
     
     def hide(self):
@@ -297,6 +307,25 @@ class WzCreationFrame(Frame):
         self.unbind_all("<Button-4>")
         self.unbind_all("<Button-5>")
         self.unbind_all("<Shift-MouseWheel>")
+        
+        # Clean up WZ app instance to force recreation on next show
+        if self.wz_app_instance:
+            try:
+                # Try to clean up the WZ app instance properly
+                if hasattr(self.wz_app_instance, 'cleanup'):
+                    self.wz_app_instance.cleanup()
+            except:
+                pass  # Ignore cleanup errors
+            self.wz_app_instance = None
+        
+        # Clear content container to ensure fresh start
+        if hasattr(self, 'content_container'):
+            for widget in self.content_container.winfo_children():
+                try:
+                    widget.destroy()
+                except:
+                    pass  # Ignore destruction errors
+        
         self.pack_forget()
     
     def show(self):
@@ -309,6 +338,5 @@ class WzCreationFrame(Frame):
         self.bind_all("<Button-5>", self.on_mousewheel)
         self.bind_all("<Shift-MouseWheel>", self.on_mousewheel)
         
-        # Ensure WZ app is initialized when frame is shown
-        if not self.wz_app_instance:
-            self.initialize_wz_app()
+        # Always initialize WZ app when frame is shown (ensure fresh instance)
+        self.initialize_wz_app()
