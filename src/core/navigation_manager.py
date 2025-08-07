@@ -67,6 +67,18 @@ class NavigationManager:
                         widget.destroy()
                 # Always create new instance with template_context=None
                 self.frames[frame_name].initialize_offer_app()
+            elif frame_name == 'wz_creation':
+                # Always create fresh instance for WZ creation to ensure clean state
+                # Clear existing content first
+                if hasattr(self.frames[frame_name], 'content_container'):
+                    for widget in self.frames[frame_name].content_container.winfo_children():
+                        widget.destroy()
+                # Always create new instance
+                self.frames[frame_name].initialize_wz_app()
+            elif frame_name == 'browse_wz':
+                # Refresh WZ list when showing browse frame
+                if hasattr(self.frames[frame_name], 'refresh_wz_list'):
+                    self.frames[frame_name].refresh_wz_list()
             
             self.frames[frame_name].show()
             self.current_frame = frame_name

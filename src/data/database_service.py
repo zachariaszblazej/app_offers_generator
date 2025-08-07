@@ -507,3 +507,154 @@ def get_all_offer_file_paths():
     except sqlite3.Error as e:
         print(f"Database error in get_all_offer_file_paths: {e}")
         return []
+
+
+# WZ (Wuzetka) related functions
+
+def get_next_wz_number():
+    """Get the next WZ order number from the database"""
+    try:
+        db_path = get_database_path()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT MAX(WzOrderNumber) FROM Wuzetkas")
+        result = cursor.fetchone()[0]
+        conn.close()
+        
+        # If no WZ exist, start with 1, otherwise increment
+        return 1 if result is None else result + 1
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return 1
+
+
+def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
+    """Save WZ information to the database"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # Convert context to JSON if provided
+        context_json = None
+        if wz_context:
+            context_json = json.dumps(wz_context)
+        
+        # Insert WZ record
+        cursor.execute("""
+            INSERT INTO Wuzetkas (WzOrderNumber, WzFilePath, WzContext) 
+            VALUES (?, ?, ?)
+        """, (wz_order_number, wz_file_path, context_json))
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "WZ zostało zapisane do bazy danych"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas zapisywania WZ do bazy: {e}"
+
+
+def get_all_wz():
+    """Get all WZ from database"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # Get WZ with extracted client info from context
+        cursor.execute("""
+            SELECT WzOrderNumber, WzFilePath, WzContext, WzOrderNumber as ID
+            FROM Wuzetkas 
+            ORDER BY WzOrderNumber DESC
+        """)
+        
+        wz_data = []
+        for row in cursor.fetchall():
+            wz_number = row[0]
+            file_path = row[1]
+            context_json = row[2]
+            wz_id = row[3]
+            
+            # Extract additional info from context
+            client_name = "N/A"
+            date = "N/A"
+            
+            if context_json:
+                try:
+                    context = json.loads(context_json)
+                    client_name = context.get('client_name', 'N/A')
+                    date = context.get('date', 'N/A')
+                except:
+                    pass
+            
+            # Generate WZ number format if not in proper format
+            if isinstance(wz_number, int):
+                import datetime
+                year = datetime.datetime.now().year
+                formatted_wz_number = f"WZ_{wz_number}_{year}"
+            else:
+                formatted_wz_number = str(wz_number)
+            
+            wz_data.append((wz_id, formatted_wz_number, date, client_name, "Utworzone", file_path))
+        
+        conn.close()
+        return wz_data
+        
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return []
+
+
+def delete_wz(wz_id):
+    """Delete WZ from database"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # Delete WZ by ID
+        cursor.execute("DELETE FROM Wuzetkas WHERE WzOrderNumber = ?", (wz_id,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "WZ nie zostało znalezione w bazie danych"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "WZ zostało usunięte z bazy danych"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas usuwania WZ z bazy: {e}"
+
+
+def get_all_wz_file_paths():
+    """Get all WZ file paths from database"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # Get all WZ file paths from database
+        cursor.execute("SELECT WzFilePath FROM Wuzetkas ORDER BY WzOrderNumber DESC")
+        results = cursor.fetchall()
+        conn.close()
+        
+        # Return list of file paths
+        return [result[0] for result in results] if results else []
+    except sqlite3.Error as e:
+        print(f"Database error in get_all_wz_file_paths: {e}")
+        return []
+
+
+class DatabaseService:
+    """Database service class for WZ operations"""
+    
+    def __init__(self):
+        self.db_path = get_database_path()
+    
+    def get_all_wz(self):
+        """Get all WZ from database"""
+        return get_all_wz()
+    
+    def delete_wz(self, wz_id):
+        """Delete WZ from database"""
+        success, message = delete_wz(wz_id)
+        if not success:
+            raise Exception(message)
+        return success

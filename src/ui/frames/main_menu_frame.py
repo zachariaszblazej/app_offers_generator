@@ -55,6 +55,26 @@ class MainMenuFrame(Frame):
                                 cursor='hand2')
         view_offers_btn.pack(pady=10)
         
+        # Create new WZ button
+        new_wz_btn = Button(buttons_frame, 
+                           text="Stwórz WZkę",
+                           font=("Arial", 16, "bold"),
+                           fg='black',
+                           padx=30, pady=15,
+                           command=self.open_new_wz,
+                           cursor='hand2')
+        new_wz_btn.pack(pady=15)
+        
+        # View WZ button
+        view_wz_btn = Button(buttons_frame, 
+                            text="Przeglądaj WZki",
+                            font=("Arial", 14),
+                            fg='black',
+                            padx=30, pady=10,
+                            command=self.view_wz,
+                            cursor='hand2')
+        view_wz_btn.pack(pady=10)
+        
         # Browse clients button (now includes adding new clients)
         browse_clients_btn = Button(buttons_frame, 
                                    text="Zarządzaj klientami",
@@ -126,6 +146,14 @@ class MainMenuFrame(Frame):
     def view_offers(self):
         """Navigate to browse offers screen"""
         self.nav_manager.show_frame('browse_offers')
+    
+    def open_new_wz(self):
+        """Navigate to WZ creation screen"""
+        self.nav_manager.show_frame('wz_creation')
+    
+    def view_wz(self):
+        """Navigate to browse WZ screen"""
+        self.nav_manager.show_frame('browse_wz')
     
     def browse_clients(self):
         """Navigate to browse clients screen"""

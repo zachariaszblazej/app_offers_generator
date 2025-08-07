@@ -14,11 +14,14 @@ from src.core.navigation_manager import NavigationManager
 from src.ui.frames.main_menu_frame import MainMenuFrame
 from src.ui.frames.offer_creation_frame import OfferCreationFrame
 from src.ui.frames.offer_editor_frame import OfferEditorFrame
+from src.ui.frames.wz_creation_frame import WzCreationFrame
+from src.ui.frames.browse_wz_frame import BrowseWzFrame
 from src.ui.frames.browse_clients_frame import BrowseClientsFrame
 from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
 from src.ui.frames.browse_offers_frame import BrowseOffersFrame
 from src.ui.frames.settings_frame import SettingsFrame
 from src.core.offer_generator_app import OfferGeneratorApp
+from src.core.wz_generator_app import WzGeneratorApp
 from src.services.sync_service import OfferSyncService
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 
@@ -76,6 +79,13 @@ class OfferGeneratorMainApp:
         
         # Offer editor frame
         self.nav_manager.add_frame('offer_editor', OfferEditorFrame, OfferGeneratorApp)
+        
+        # WZ creation frame
+        from src.core.wz_generator_app import WzGeneratorApp
+        self.nav_manager.add_frame('wz_creation', WzCreationFrame, WzGeneratorApp)
+        
+        # Browse WZ frame
+        self.nav_manager.add_frame('browse_wz', BrowseWzFrame)
         
         # Browse clients frame (now includes adding new clients)
         self.nav_manager.add_frame('browse_clients', BrowseClientsFrame)
