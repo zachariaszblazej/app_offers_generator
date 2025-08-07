@@ -335,6 +335,37 @@ class SettingsFrame(Frame):
         separator = Frame(inner_frame, height=1, bg='#dddddd')
         separator.pack(fill=X, pady=20)
         
+        # WZ folder
+        wz_folder_frame = Frame(inner_frame, bg='#ffffff')
+        wz_folder_frame.pack(fill=X, pady=5)
+        
+        # Label and description
+        label_frame = Frame(wz_folder_frame, bg='#ffffff')
+        label_frame.pack(fill=X, pady=(0, 5))
+        Label(label_frame, text="Folder WZ:", 
+              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane dokumenty WZ", 
+              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+        
+        # Entry and browse button
+        entry_frame = Frame(wz_folder_frame, bg='#ffffff')
+        entry_frame.pack(fill=X, pady=(5, 0))
+        
+        self.entries['wz_folder'] = Entry(entry_frame, width=50, font=("Arial", 11))
+        self.entries['wz_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+        
+        browse_btn = Button(entry_frame, text="Przeglądaj...",
+                           font=("Arial", 10),
+                           fg='white',
+                           padx=15, pady=5,
+                           command=self.browse_wz_folder,
+                           cursor='hand2')
+        browse_btn.pack(side=RIGHT)
+        
+        # Separator
+        separator2 = Frame(inner_frame, height=1, bg='#dddddd')
+        separator2.pack(fill=X, pady=20)
+        
         # Database path
         database_path_frame = Frame(inner_frame, bg='#ffffff')
         database_path_frame.pack(fill=X, pady=5)
@@ -378,6 +409,23 @@ class SettingsFrame(Frame):
         if folder_path:
             self.entries['offers_folder'].delete(0, END)
             self.entries['offers_folder'].insert(0, folder_path)
+    
+    def browse_wz_folder(self):
+        """Open folder browser for WZ folder"""
+        from tkinter import filedialog
+        
+        current_folder = self.entries['wz_folder'].get()
+        if not current_folder:
+            current_folder = self.settings_manager.get_app_setting('wz_folder')
+        
+        folder_path = filedialog.askdirectory(
+            title="Wybierz folder dla WZ",
+            initialdir=current_folder if os.path.exists(current_folder) else os.path.expanduser("~")
+        )
+        
+        if folder_path:
+            self.entries['wz_folder'].delete(0, END)
+            self.entries['wz_folder'].insert(0, folder_path)
     
     def browse_database_file(self):
         """Open file browser for database file"""
@@ -447,7 +495,7 @@ class SettingsFrame(Frame):
         
         # Load app settings data
         app_settings = self.settings_manager.get_all_app_settings()
-        app_fields = ['offers_folder', 'database_path']
+        app_fields = ['offers_folder', 'wz_folder', 'database_path']
         
         for field in app_fields:
             if field in self.entries:
@@ -478,7 +526,7 @@ class SettingsFrame(Frame):
         self.settings_manager.update_offer_details_settings(offer_details_settings)
         
         # Collect app settings and check if critical settings changed
-        app_fields = ['offers_folder', 'database_path']
+        app_fields = ['offers_folder', 'wz_folder', 'database_path']
         app_settings = {}
         offers_folder_changed = False
         database_path_changed = False

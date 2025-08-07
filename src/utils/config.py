@@ -24,6 +24,7 @@ DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData.db'
 # Default application settings
 DEFAULT_APP_SETTINGS = {
     'offers_folder': '../FakeHantechServer/Oferty',
+    'wz_folder': '../FakeHantechServer/WZ',
     'database_path': '../FakeHantechServer/DocumentsCreationData.db'
 }
 

@@ -21,6 +21,7 @@
     },
     "app_settings": {
         "offers_folder": "/Users/blzc/FakeHantechServer/Oferty",
-        "database_path": "/Users/blzc/FakeHantechServer/DocumentsCreationData.db"
+        "database_path": "/Users/blzc/FakeHantechServer/DocumentsCreationData.db",
+        "wz_folder": "/Users/blzc/FakeHantechServer/WZki"
     }
 }
