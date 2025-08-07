@@ -84,7 +84,7 @@ class ProductAddWindow:
         # Add button - make it very prominent and centered
         add_btn = Button(buttons_frame, text="✓ ZATWIERDŹ I DODAJ", 
                         font=("Arial", 16, "bold"),
-                        bg='#FF4500', fg='black',  # Orange color to make it very visible
+                        fg='black',  # Orange color to make it very visible
                         padx=40, pady=15,
                         command=lambda: self._add_product(product_window),
                         cursor='hand2',
@@ -95,7 +95,7 @@ class ProductAddWindow:
         # Cancel button
         cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
                            font=("Arial", 14),
-                           bg='#dc3545', fg='black',
+                           fg='black',
                            padx=25, pady=12,
                            command=product_window.destroy,
                            cursor='hand2')

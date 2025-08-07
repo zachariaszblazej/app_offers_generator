@@ -41,7 +41,7 @@ class SettingsFrame(Frame):
         # Return button
         return_btn = Button(header_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='black',
+                           fg='black',
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
@@ -325,7 +325,7 @@ class SettingsFrame(Frame):
         
         browse_btn = Button(entry_frame, text="Przeglądaj...",
                            font=("Arial", 10),
-                           bg='#007bff', fg='white',
+                           fg='white',
                            padx=15, pady=5,
                            command=self.browse_offers_folder,
                            cursor='hand2')
@@ -356,7 +356,7 @@ class SettingsFrame(Frame):
         
         browse_db_btn = Button(db_entry_frame, text="Przeglądaj...",
                               font=("Arial", 10),
-                              bg='#007bff', fg='white',
+                              fg='white',
                               padx=15, pady=5,
                               command=self.browse_database_file,
                               cursor='hand2')
@@ -417,7 +417,7 @@ class SettingsFrame(Frame):
         # Save button
         save_btn = Button(buttons_frame, text="Zapisz ustawienia",
                          font=("Arial", 14, "bold"),
-                         bg='#28a745', fg='black',
+                         fg='black',
                          padx=30, pady=15,
                          command=self.save_settings,
                          cursor='hand2')

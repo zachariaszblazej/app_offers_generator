@@ -598,8 +598,8 @@ class UIComponents:
         date_window.after(100, setup_calendar_focus)
         
         # OK and Cancel buttons
-        Button(btn_frame, text="OK", command=select_date, bg='#28a745', fg='black', padx=20, pady=5).pack(side=LEFT, padx=5)
-        Button(btn_frame, text="Anuluj", command=cancel, bg='#6c757d', fg='black', padx=20, pady=5).pack(side=LEFT, padx=5)
+        Button(btn_frame, text="OK", command=select_date, fg='black', padx=20, pady=5).pack(side=LEFT, padx=5)
+        Button(btn_frame, text="Anuluj", command=cancel, fg='black', padx=20, pady=5).pack(side=LEFT, padx=5)
         
         # Instructions label
         info_label = Label(date_window, text="Wybierz datę i kliknij OK", 

@@ -47,7 +47,7 @@ class BrowseOffersFrame(Frame):
         # Return button
         return_btn = Button(header_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='black',
+                           fg='black',
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
@@ -110,7 +110,7 @@ class BrowseOffersFrame(Frame):
         # Refresh button
         refresh_btn = Button(buttons_frame, text="🔄 Odśwież listę",
                             font=("Arial", 12),
-                            bg='#28a745', fg='black',
+                            fg='black',
                             padx=15, pady=8,
                             command=self.load_offers,
                             cursor='hand2')
@@ -119,7 +119,7 @@ class BrowseOffersFrame(Frame):
         # Open folder button
         folder_btn = Button(buttons_frame, text="Otwórz folder",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='black',
+                           fg='black',
                            padx=15, pady=8,
                            command=self.open_offers_folder,
                            cursor='hand2')

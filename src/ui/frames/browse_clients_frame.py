@@ -49,7 +49,7 @@ class BrowseClientsFrame(Frame):
         # Add new client button
         add_client_btn = Button(header_buttons_frame, text="Dodaj nowego klienta",
                                font=("Arial", 12),
-                               bg='#28a745', fg='black',
+                               fg='black',
                                padx=15, pady=8,
                                command=self.show_add_client_form,
                                cursor='hand2')
@@ -58,7 +58,7 @@ class BrowseClientsFrame(Frame):
         # Refresh button
         refresh_btn = Button(header_buttons_frame, text="Odśwież",
                             font=("Arial", 12),
-                            bg='#17a2b8', fg='black',
+                            fg='black',
                             padx=15, pady=8,
                             command=self.refresh_clients_list,
                             cursor='hand2')
@@ -67,7 +67,7 @@ class BrowseClientsFrame(Frame):
         # Return button
         return_btn = Button(header_buttons_frame, text="Powrót do menu głównego",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='black',
+                           fg='black',
                            padx=15, pady=8,
                            command=self.return_to_main_menu,
                            cursor='hand2')
@@ -208,7 +208,7 @@ class BrowseClientsFrame(Frame):
         save_text = "Zapisz klienta" if self.form_mode == 'add' else "Zapisz zmiany"
         save_btn = Button(form_buttons_frame, text=save_text,
                          font=("Arial", 12, "bold"),
-                         bg='#007bff', fg='black',
+                         fg='black',
                          padx=20, pady=10,
                          command=self.save_client,
                          cursor='hand2')
@@ -217,7 +217,7 @@ class BrowseClientsFrame(Frame):
         # Cancel button
         cancel_btn = Button(form_buttons_frame, text="Anuluj",
                            font=("Arial", 12),
-                           bg='#6c757d', fg='black',
+                           fg='black',
                            padx=20, pady=10,
                            command=self.hide_form,
                            cursor='hand2')

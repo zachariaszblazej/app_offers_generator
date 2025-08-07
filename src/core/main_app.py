@@ -198,7 +198,7 @@ class OfferGeneratorMainApp:
         save_btn = Button(buttons_frame, 
                          text="💾 Zapisz raport do pliku",
                          font=("Arial", 12),
-                         bg='#2196f3', fg='white',
+                         fg='white',
                          padx=20, pady=10,
                          command=lambda: self.save_sync_report(report),
                          cursor='hand2')
@@ -208,7 +208,7 @@ class OfferGeneratorMainApp:
         close_btn = Button(buttons_frame, 
                           text="❌ Zamknij aplikację",
                           font=("Arial", 12, "bold"),
-                          bg='#f44336', fg='white',
+                          fg='white',
                           padx=20, pady=10,
                           command=self.close_application,
                           cursor='hand2')
@@ -276,7 +276,7 @@ class OfferGeneratorMainApp:
         close_btn = Button(main_frame, 
                           text="❌ Zamknij aplikację",
                           font=("Arial", 12, "bold"),
-                          bg='#f44336', fg='white',
+                          fg='white',
                           padx=30, pady=10,
                           command=self.close_application,
                           cursor='hand2')

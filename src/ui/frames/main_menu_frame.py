@@ -39,7 +39,7 @@ class MainMenuFrame(Frame):
         new_offer_btn = Button(buttons_frame, 
                               text="Stwórz nową ofertę",
                               font=("Arial", 16, "bold"),
-                              bg='#4CAF50', fg='black',
+                              fg='black',
                               padx=30, pady=15,
                               command=self.open_new_offer,
                               cursor='hand2')
@@ -49,7 +49,7 @@ class MainMenuFrame(Frame):
         view_offers_btn = Button(buttons_frame, 
                                 text="Przeglądaj oferty",
                                 font=("Arial", 14),
-                                bg='#2196F3', fg='black',
+                                fg='black',
                                 padx=30, pady=10,
                                 command=self.view_offers,
                                 cursor='hand2')
@@ -59,7 +59,7 @@ class MainMenuFrame(Frame):
         browse_clients_btn = Button(buttons_frame, 
                                    text="Zarządzaj klientami",
                                    font=("Arial", 14),
-                                   bg='#3F51B5', fg='black',
+                                   fg='black',
                                    padx=30, pady=10,
                                    command=self.browse_clients,
                                    cursor='hand2')
@@ -69,7 +69,7 @@ class MainMenuFrame(Frame):
         browse_suppliers_btn = Button(buttons_frame, 
                                      text="Zarządzaj dostawcami",
                                      font=("Arial", 14),
-                                     bg='#FF5722', fg='black',
+                                     fg='black',
                                      padx=30, pady=10,
                                      command=self.browse_suppliers,
                                      cursor='hand2')
@@ -79,7 +79,7 @@ class MainMenuFrame(Frame):
         settings_btn = Button(buttons_frame, 
                              text="Ustawienia",
                              font=("Arial", 14),
-                             bg='#FF9800', fg='black',
+                             fg='black',
                              padx=30, pady=10,
                              command=self.open_settings,
                              cursor='hand2')
@@ -89,7 +89,7 @@ class MainMenuFrame(Frame):
         exit_btn = Button(buttons_frame, 
                          text="Zamknij aplikację",
                          font=("Arial", 12),
-                         bg='#f44336', fg='black',
+                         fg='black',
                          padx=20, pady=8,
                          command=self.exit_application,
                          cursor='hand2')

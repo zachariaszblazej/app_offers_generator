@@ -96,7 +96,7 @@ class ProductEditWindow:
         # Update button - make it very prominent and centered
         update_btn = Button(buttons_frame, text="✓ ZATWIERDŹ ZMIANY", 
                            font=("Arial", 16, "bold"),
-                           bg='#FF8C00', fg='black',  # Orange color to make it very visible
+                           fg='black',  # Orange color to make it very visible
                            padx=40, pady=15,
                            command=lambda: self._update_product(product_window),
                            cursor='hand2',
@@ -107,7 +107,7 @@ class ProductEditWindow:
         # Cancel button
         cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
                            font=("Arial", 14),
-                           bg='#dc3545', fg='black',
+                           fg='black',
                            padx=25, pady=12,
                            command=product_window.destroy,
                            cursor='hand2')
