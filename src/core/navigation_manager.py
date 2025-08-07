@@ -60,9 +60,13 @@ class NavigationManager:
                 if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
                     self.frames[frame_name].initialize_offer_app()
             elif frame_name == 'offer_creation':
-                # Regular offer creation - ensure it's initialized
-                if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
-                    self.frames[frame_name].initialize_offer_app()
+                # Always create fresh instance for offer creation to ensure clean state
+                # Clear existing content first
+                if hasattr(self.frames[frame_name], 'content_container'):
+                    for widget in self.frames[frame_name].content_container.winfo_children():
+                        widget.destroy()
+                # Always create new instance with template_context=None
+                self.frames[frame_name].initialize_offer_app()
             
             self.frames[frame_name].show()
             self.current_frame = frame_name

@@ -165,16 +165,17 @@ class OfferCreationFrame(Frame):
     def initialize_offer_app(self):
         """Initialize the offer application components"""
         try:
-            if not self.offer_app_instance:
-                self.offer_app_instance = self.offer_app_class(self, self.nav_manager)
-                # Update scroll region after content is loaded
-                self.after(100, self.update_scroll_region)
-                
-                # Update back button text based on source
-                self.update_back_button_text()
-                
-                # Start mouse position checking
-                self.start_mouse_position_checking()
+            # Always create new instance to ensure clean state
+            # Pass template_context=None explicitly to ensure client/supplier data is cleared
+            self.offer_app_instance = self.offer_app_class(self, self.nav_manager, template_context=None)
+            # Update scroll region after content is loaded
+            self.after(100, self.update_scroll_region)
+            
+            # Update back button text based on source
+            self.update_back_button_text()
+            
+            # Start mouse position checking
+            self.start_mouse_position_checking()
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować interfejsu tworzenia oferty: {e}")
     

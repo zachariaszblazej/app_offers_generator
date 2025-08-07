@@ -36,6 +36,10 @@ class OfferGeneratorApp:
         # Initialize components
         self.setup_ui()
         
+        # Clear client and supplier NIP fields if this is a new offer (no template context)
+        if not self.template_context:
+            self.clear_client_supplier_data()
+        
         # Initialize calculation variables
         self.count = 0
         
@@ -301,6 +305,43 @@ class OfferGeneratorApp:
             print(f"Error checking for unsaved changes: {e}")
             return False  # If error, assume no changes to avoid blocking user
     
+    def clear_client_supplier_data(self):
+        """Clear client and supplier data fields for new offers"""
+        try:
+            if hasattr(self, 'ui') and self.ui and hasattr(self.ui, 'entries'):
+                # Clear client data
+                client_fields = ['client_name', 'client_address_1', 'client_address_2']
+                for field_name in client_fields:
+                    if field_name in self.ui.entries:
+                        self.ui.entries[field_name].delete(0, 'end')
+                
+                # Clear client NIP (need to temporarily enable it)
+                if 'client_nip' in self.ui.entries:
+                    self.ui.entries['client_nip'].config(state='normal')
+                    self.ui.entries['client_nip'].delete(0, 'end')
+                    self.ui.entries['client_nip'].config(state='readonly')
+                
+                # Clear supplier data
+                supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2']
+                for field_name in supplier_fields:
+                    if field_name in self.ui.entries:
+                        self.ui.entries[field_name].delete(0, 'end')
+                
+                # Clear supplier NIP (need to temporarily enable it)
+                if 'supplier_nip' in self.ui.entries:
+                    self.ui.entries['supplier_nip'].config(state='normal')
+                    self.ui.entries['supplier_nip'].delete(0, 'end')
+                    self.ui.entries['supplier_nip'].config(state='readonly')
+                
+                # Clear selected client and supplier aliases
+                if hasattr(self.ui, 'selected_client_alias'):
+                    self.ui.selected_client_alias = None
+                if hasattr(self.ui, 'selected_supplier_alias'):
+                    self.ui.selected_supplier_alias = None
+            
+        except Exception as e:
+            print(f"Error clearing client/supplier data: {e}")
+
     def clear_all_data(self):
         """Clear all data from the form"""
         try:
