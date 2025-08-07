@@ -605,3 +605,28 @@ class UIComponents:
         info_label = Label(date_window, text="Wybierz datę i kliknij OK", 
                           font=("Arial", 9), fg='#666666')
         info_label.pack(pady=5)
+    
+    def load_default_supplier(self):
+        """Load default supplier 'HANTECH Grzegorz Cieśla' if available in database"""
+        try:
+            # Import database functions directly
+            from src.data.database_service import get_suppliers_from_db
+            
+            # Search for the default supplier by name (HANTECH Grzegorz Cieśla)
+            suppliers = get_suppliers_from_db()
+            
+            # Look for HANTECH by name to find the correct supplier
+            default_supplier = None
+            for supplier in suppliers:
+                # supplier format: (nip, company_name, address1, address2)
+                if len(supplier) >= 2 and "HANTECH" in str(supplier[1]):
+                    default_supplier = supplier
+                    break
+            
+            if default_supplier:
+                # Fill supplier data using existing method
+                self.fill_supplier_data(default_supplier)
+                
+        except Exception as e:
+            print(f"Error loading default supplier: {e}")
+            # If error occurs, supplier fields remain empty (which is the desired fallback)

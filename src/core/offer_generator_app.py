@@ -384,6 +384,10 @@ class OfferGeneratorApp:
             self.user_modifications_made = False
             self.template_context = None
             
+            # Load default supplier after clearing all data
+            if hasattr(self.ui, 'load_default_supplier'):
+                self.ui.load_default_supplier()
+            
             print("All data cleared from offer creator")
             
         except Exception as e:
