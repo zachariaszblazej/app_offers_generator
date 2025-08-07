@@ -52,7 +52,6 @@ class ClientSearchWindow:
         self.sort_var = StringVar(value="name")
         sort_options = [
             ("Nazwa firmy", "name"),
-            ("Alias", "alias"),
             ("NIP", "nip")
         ]
         
@@ -100,8 +99,6 @@ class ClientSearchWindow:
         # Sort clients based on selection
         if sort_by == "name":
             sorted_clients = sorted(clients, key=lambda x: x[1].lower() if x[1] else "")
-        elif sort_by == "alias":
-            sorted_clients = sorted(clients, key=lambda x: x[4].lower() if x[4] else "")
         elif sort_by == "nip":
             sorted_clients = sorted(clients, key=lambda x: x[0] if x[0] else "")
         else:
@@ -114,7 +111,7 @@ class ClientSearchWindow:
         listbox.delete(0, END)
         for client in sorted_clients:
             nip, company_name, address1, address2, alias = client
-            display_text = f"{alias} - {company_name} (NIP: {nip})"
+            display_text = f"{company_name} (NIP: {nip})"
             listbox.insert(END, display_text)
 
     def _on_client_select(self, event, search_window, client_listbox, clients):
