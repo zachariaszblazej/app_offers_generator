@@ -113,12 +113,12 @@ def prepare_wz_context(context_data):
     # Ensure all required fields have default values
     default_fields = {
         'town': '',
-        'address1': '',
-        'address2': '',
+        'address_1': '',
+        'address_2': '',
         'nip': '',
         'regon': '',
         'email': '',
-        'phone': '',
+        'phone_number': '',
         'bank_name': '',
         'account_number': '',
         'supplier_name': '',

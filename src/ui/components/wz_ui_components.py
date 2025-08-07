@@ -64,14 +64,14 @@ class WzUIComponents:
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data.get('address_1', ''))
-        self.entries['address1'] = Entry(self.window, width=17, textvariable=address1_value)
-        self.entries['address1'].place(x=110, y=118)
-        self.entries['address1'].bind('<KeyRelease>', self._on_field_modified)
+        self.entries['address_1'] = Entry(self.window, width=17, textvariable=address1_value)
+        self.entries['address_1'].place(x=110, y=118)
+        self.entries['address_1'].bind('<KeyRelease>', self._on_field_modified)
 
         address2_value = StringVar(self.window, value=self.text_data.get('address_2', ''))
-        self.entries['address2'] = Entry(self.window, width=17, textvariable=address2_value)
-        self.entries['address2'].place(x=110, y=148)
-        self.entries['address2'].bind('<KeyRelease>', self._on_field_modified)
+        self.entries['address_2'] = Entry(self.window, width=17, textvariable=address2_value)
+        self.entries['address_2'].place(x=110, y=148)
+        self.entries['address_2'].bind('<KeyRelease>', self._on_field_modified)
 
         nip_value = StringVar(self.window, value=self.text_data.get('nip', ''))
         self.entries['nip'] = Entry(self.window, width=15, textvariable=nip_value)
@@ -89,9 +89,9 @@ class WzUIComponents:
         self.entries['email'].bind('<KeyRelease>', self._on_field_modified)
 
         phone_value = StringVar(self.window, value=self.text_data.get('phone_number', ''))
-        self.entries['phone'] = Entry(self.window, width=15, textvariable=phone_value)
-        self.entries['phone'].place(x=485, y=148)
-        self.entries['phone'].bind('<KeyRelease>', self._on_field_modified)
+        self.entries['phone_number'] = Entry(self.window, width=15, textvariable=phone_value)
+        self.entries['phone_number'].place(x=485, y=148)
+        self.entries['phone_number'].bind('<KeyRelease>', self._on_field_modified)
 
         bank_name_value = StringVar(self.window, value=self.text_data.get('bank_name', ''))
         self.entries['bank_name'] = Entry(self.window, width=15, textvariable=bank_name_value)
@@ -346,7 +346,7 @@ class WzUIComponents:
     def clear_all_fields(self):
         """Clear all entry fields"""
         for key, entry in self.entries.items():
-            if key not in ['address1', 'address2', 'nip', 'regon', 'email', 'phone', 'bank_name', 'account_number']:
+            if key not in ['address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']:
                 if isinstance(entry, Entry) and entry['state'] != 'readonly':
                     entry.delete(0, END)
                 elif isinstance(entry, Text):
