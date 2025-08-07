@@ -234,10 +234,10 @@ class WzUIComponents:
 
     def fill_supplier_data(self, supplier_data):
         """Fill supplier entry fields with selected supplier data"""
-        nip, company_name, address1, address2, alias = supplier_data
+        nip, company_name, address1, address2 = supplier_data
         
-        # Store the alias for future use
-        self.selected_supplier_alias = alias
+        # For WZ, we don't store supplier alias separately
+        self.selected_supplier_alias = company_name  # Use company name as alias
         
         # Clear existing data
         self.entries['supplier_name'].delete(0, END)
