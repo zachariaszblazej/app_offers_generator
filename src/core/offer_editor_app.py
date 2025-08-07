@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from src.ui.components.ui_components import UIComponents
 from src.ui.windows.product_add_window import ProductAddWindow
 from src.ui.windows.product_edit_window import ProductEditWindow
+from src.ui.windows.supplier_search_window import SupplierSearchWindow
 from src.ui.components.product_table import ProductTable
 from src.services.offer_editor_service import update_offer_document
 from src.data.database_service import get_offer_context_from_db
@@ -64,6 +65,9 @@ class OfferEditorApp:
         self.product_add = ProductAddWindow(self.window, self.insert_product)
         self.product_edit = ProductEditWindow(self.window, self.update_product)
         
+        # Create supplier search window (for editing existing offers)
+        self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
+        
         # Create UI sections
         self.ui.create_upper_section(show_offer_number=True)  # Show offer number in editor
         self.ui.create_offer_section()
@@ -75,6 +79,14 @@ class OfferEditorApp:
     
     def create_buttons(self):
         """Create all buttons for editor mode"""
+        # Supplier search button (like in creator)
+        search_supplier_button = Button(self.window, text="Szukaj dostawcy", 
+                                      font=("Arial", 10),
+                                      fg='black',
+                                      command=self.supplier_search.open_supplier_search,
+                                      cursor='hand2')
+        search_supplier_button.place(x=300, y=360)
+        
         # Product management buttons
         Button(self.window, text="DODAJ POZYCJĘ", 
                font=("Arial", 12, "bold"),

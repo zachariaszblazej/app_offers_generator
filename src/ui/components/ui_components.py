@@ -457,10 +457,13 @@ class UIComponents:
         """Set fields to read-only mode for offer editing"""
         # Fields that should be read-only in editor mode
         readonly_fields = [
-            'address1', 'address2', 'nip', 'regon', 'email', 'phone', 
-            'bank_name', 'account_number',
-            'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
-            'client_name', 'client_address_1', 'client_address_2', 'client_nip'
+            # Company data is now editable - removed from readonly_fields
+            # 'address1', 'address2', 'nip', 'regon', 'email', 'phone', 
+            # 'bank_name', 'account_number',
+            # Supplier fields become editable via search
+            # 'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
+            # Client fields become manually editable (no search but editable)
+            # 'client_name', 'client_address_1', 'client_address_2', 'client_nip'
         ]
         
         for field in readonly_fields:
@@ -468,6 +471,35 @@ class UIComponents:
                 self.entries[field].config(state='readonly')
                 # Add visual indication for read-only fields
                 self.entries[field].config(bg='#f0f0f0', fg='#666666')
+        
+        # Make company data fields editable with standard styling
+        company_editable_fields = ['address1', 'address2', 'nip', 'regon', 'email', 'phone', 'bank_name', 'account_number']
+        for field in company_editable_fields:
+            if field in self.entries:
+                self.entries[field].config(state='normal')
+                # Standard white background, no special coloring
+                self.entries[field].config(bg='white', fg='black')
+        
+        # Make client fields editable with standard styling
+        client_editable_fields = ['client_name', 'client_address_1', 'client_address_2']
+        for field in client_editable_fields:
+            if field in self.entries:
+                self.entries[field].config(state='normal')
+                # Standard white background, no special coloring
+                self.entries[field].config(bg='white', fg='black')
+        
+        # Keep client_nip read-only (typically not edited manually)
+        if 'client_nip' in self.entries:
+            self.entries['client_nip'].config(state='readonly')
+            self.entries['client_nip'].config(bg='#f0f0f0', fg='#666666')
+        
+        # Make supplier fields editable with standard styling
+        supplier_editable_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
+        for field in supplier_editable_fields:
+            if field in self.entries:
+                self.entries[field].config(state='normal')
+                # Standard white background, no special coloring
+                self.entries[field].config(bg='white', fg='black')
         
         # Display offer number if available and field exists
         if self.offer_number and 'offer_number_display' in self.entries:
