@@ -9,12 +9,12 @@ import os
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.ui.components.ui_components import UIComponents
+from src.ui.components.wz_ui_components import WzUIComponents
 from src.ui.windows.client_search_window import ClientSearchWindow
 from src.ui.windows.supplier_search_window import SupplierSearchWindow
-from src.ui.windows.product_add_window import ProductAddWindow
-from src.ui.windows.product_edit_window import ProductEditWindow
-from src.ui.components.product_table import ProductTable
+from src.ui.windows.wz_product_add_window import WzProductAddWindow
+from src.ui.windows.wz_product_edit_window import WzProductEditWindow
+from src.ui.components.wz_product_table import WzProductTable
 from src.services.wz_generator_service import generate_wz_document
 from src.data.database_service import get_next_wz_number, save_wz_to_db
 
@@ -43,11 +43,9 @@ class WzGeneratorApp:
         # Initialize calculation variables
         self.count = 0
         
-        # Load template data if provided
-        if self.template_context:
-            self.load_template_context()
-            # Reset modification flag after template load
-            self.user_modifications_made = False
+        # For WZ, we don't need to load template context
+        # Reset modification flag
+        self.user_modifications_made = False
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
@@ -65,54 +63,24 @@ class WzGeneratorApp:
             # If background image fails, use a clean professional color
             self.window.configure(bg='#f5f5f5')
         
-        # Initialize UI components (same as offer generator)
+        # Initialize UI components (WZ version)
         # Create product table with edit and delete callbacks
-        self.product_table = ProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
-        self.ui = UIComponents(self.window, self.product_table)
+        self.product_table = WzProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
+        self.ui = WzUIComponents(self.window, self.product_table)
         
         # Set modification callback so UI components can notify about user changes
         self.ui.set_modification_callback(self.mark_as_modified)
         
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
-        self.product_add = ProductAddWindow(self.window, self.insert_product)
-        self.product_edit = ProductEditWindow(self.window, self.update_product)
+        self.product_add = WzProductAddWindow(self.window, self.insert_product)
+        self.product_edit = WzProductEditWindow(self.window, self.update_product)
         
-        # Create all UI sections (same layout as offers, but for WZ)
-        self.ui.create_upper_section(show_offer_number=True)  # Show WZ number instead of offer number
-        self.ui.create_offer_section()  # This creates supplier/client sections
-        self.ui.create_offer_details_section()  # This creates date and other details
-        self.ui.create_totals_section()  # This creates totals
-        
-        # Override offer number field to show WZ number
-        wz_number = get_next_wz_number()
-        if 'offer_number_display' in self.ui.entries:
-            self.ui.entries['offer_number_display'].config(state='normal')
-            self.ui.entries['offer_number_display'].delete(0, END)
-            self.ui.entries['offer_number_display'].insert(0, f"WZ_{wz_number}")
-            self.ui.entries['offer_number_display'].config(state='readonly')
-        
-        # Create action buttons (adapted for WZ)
-        self.create_wz_action_buttons()
-        
-        # Load UI data
-        self.ui.load_context_for_new_offer()
-    
-    def create_wz_action_buttons(self):
-        """Create action buttons specific to WZ"""
-        # Generate WZ button (replaces "Generate Offer")
-        generate_btn = Button(self.window, text="Generuj WZ", 
-                            bg='#2196F3', fg='white', font=("Arial", 14, "bold"),
-                            padx=30, pady=10,
-                            command=self.generate_wz, cursor='hand2')
-        generate_btn.place(x=850, y=650)
-        
-        # Clear form button
-        clear_btn = Button(self.window, text="Wyczyść formularz", 
-                         bg='#9E9E9E', fg='black', font=("Arial", 12),
-                         padx=20, pady=8,
-                         command=self.clear_form, cursor='hand2')
-        clear_btn.place(x=650, y=655)
+        # Connect search buttons to search windows
+        self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
+        self.ui.client_search_btn.config(command=self.client_search.open_client_search)
+        self.ui.add_product_btn.config(command=self.product_add.show)
+        self.ui.generate_btn.config(command=self.generate_wz)
     
     def mark_as_modified(self):
         """Mark that user has made modifications"""
@@ -140,59 +108,27 @@ class WzGeneratorApp:
     
     def insert_product(self, product_data):
         """Insert product data into table"""
-        self.product_table.add_product(product_data)
+        self.product_table.insert_product(product_data)
     
     def update_product(self, item_id, product_data):
         """Update product in table"""
         self.product_table.update_product(item_id, product_data)
     
-    def edit_product(self):
+    def edit_product(self, item_id):
         """Edit selected product"""
-        selected_item = self.product_table.tree.selection()
-        if not selected_item:
+        if not item_id:
             tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać produkt do edycji.")
             return
         
         # Get product data
-        item_values = self.product_table.tree.item(selected_item[0])['values']
-        self.product_edit.open_product_edit(item_values, selected_item[0])
+        product_data = self.product_table.get_product_data(item_id)
+        
+        # Show edit window
+        self.product_edit.show(item_id, product_data)
     
     def on_product_deleted(self):
-        """Handle product deletion"""
-        # Update totals when product is deleted
-        self.calculate_totals()
-    
-    def calculate_totals(self):
-        """Calculate and update totals"""
-        total = self.product_table.calculate_total()
-        self.ui.suma_var.set(f"{total:.2f}")
-    
-    def load_template_context(self):
-        """Load template context data into form"""
-        if not self.template_context:
-            return
-        
-        # Load all context data into UI components
-        for key, value in self.template_context.items():
-            if key in self.ui.entries:
-                self.ui.set_field_value(key, value)
-    
-    def clear_form(self):
-        """Clear all form data"""
-        if tkinter.messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz wyczyścić formularz?"):
-            # Clear all entries
-            for entry in self.ui.entries.values():
-                if entry['state'] != 'readonly':
-                    entry.delete(0, END)
-            
-            # Clear product table
-            self.product_table.clear_table()
-            
-            # Reset totals
-            self.ui.suma_var.set("0")
-            
-            # Reset modification flag
-            self.user_modifications_made = False
+        """Handle product deletion - for WZ we don't need to calculate totals"""
+        pass
     
     def generate_wz(self):
         """Generate WZ document"""
@@ -244,7 +180,10 @@ class WzGeneratorApp:
                     
                     # Ask if user wants to create another WZ
                     if tkinter.messagebox.askyesno("Kolejne WZ", "Czy chcesz utworzyć kolejne WZ?"):
-                        self.clear_form()
+                        # Clear form for next WZ
+                        self.ui.clear_all_fields()
+                        self.product_table.clear_table()
+                        self.user_modifications_made = False
                     else:
                         # Return to main menu or browse WZ
                         if self.source_frame == 'browse_wz':
