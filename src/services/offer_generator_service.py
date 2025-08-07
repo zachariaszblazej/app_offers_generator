@@ -1,6 +1,35 @@
 """
-Service for generating offer documents
+Service for generating offers with template selection based on name length
 """
+import os
+from docx import Document
+from datetime import datetime
+
+
+def select_template_based_on_name_length(supplier_name, supplier_address1, client_name, client_address1):
+    """
+    Wybiera szablon na podstawie długości nazw i adresów
+    
+    Args:
+        supplier_name: Nazwa dostawcy
+        supplier_address1: Adres 1 dostawcy  
+        client_name: Nazwa klienta
+        client_address1: Adres 1 klienta
+        
+    Returns:
+        str: Nazwa pliku szablonu do użycia
+    """
+    # Sprawdź długość nazwy i adresu dostawcy
+    supplier_total_length = len(supplier_name or "") + len(supplier_address1 or "")
+    
+    # Sprawdź długość nazwy i adresu klienta
+    client_total_length = len(client_name or "") + len(client_address1 or "")
+    
+    # Jeśli któraś z sum przekracza lub równa się 95 znaków, użyj długiego szablonu
+    if supplier_total_length >= 95 or client_total_length >= 95:
+        return "offer_template_long_names.docx"
+    else:
+        return "offer_template.docx"
 from docxtpl import DocxTemplate
 import tkinter.messagebox
 import datetime
@@ -120,8 +149,21 @@ def generate_offer_document(context_data):
         # This can be directly used in Word template as table rows
         # Headers are available in context['product_headers']
         
+        # Wybierz odpowiedni szablon na podstawie długości nazw
+        supplier_name = context_data.get('supplier_name', '')
+        supplier_address1 = context_data.get('supplier_address_1', '')
+        client_name = context_data.get('client_name', '')
+        client_address1 = context_data.get('client_address_1', '')
+        
+        template_filename = select_template_based_on_name_length(
+            supplier_name, supplier_address1, client_name, client_address1
+        )
+        
+        # Utwórz ścieżkę do wybranego szablonu
+        template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
+        
         # Generate document
-        doc = DocxTemplate(TEMPLATE_PATH)
+        doc = DocxTemplate(template_path)
         doc.render(context_data)
         
         # Ensure output directory exists
