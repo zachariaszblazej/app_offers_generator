@@ -60,12 +60,11 @@ def get_clients_from_db():
 
 
 def get_suppliers_from_db():
-    """Fetch all suppliers from the database"""
+    """Get all suppliers from the database"""
     try:
-        db_path = get_database_path()
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers ORDER BY CompanyName")
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, COALESCE(IsDefault, 0) FROM Suppliers ORDER BY CompanyName")
         suppliers = cursor.fetchall()
         conn.close()
         return suppliers
@@ -351,7 +350,7 @@ def get_supplier_by_nip(nip):
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2 FROM Suppliers WHERE Nip = ?", (nip,))
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, COALESCE(IsDefault, 0) FROM Suppliers WHERE Nip = ?", (nip,))
         supplier = cursor.fetchone()
         conn.close()
         return supplier
@@ -391,6 +390,13 @@ def delete_supplier_from_db(nip):
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
+        # Check if supplier is default supplier
+        cursor.execute("SELECT IsDefault FROM Suppliers WHERE Nip = ?", (nip,))
+        result = cursor.fetchone()
+        if result and result[0] == 1:
+            conn.close()
+            return False, "Nie można usunąć domyślnego dostawcy. Najpierw ustaw innego dostawcę jako domyślny."
+        
         # For suppliers, we could check if they have any related data
         # For now, we'll allow deletion (suppliers don't appear in offer file names)
         
@@ -407,6 +413,44 @@ def delete_supplier_from_db(nip):
         return True, "Dostawca został usunięty z bazy"
     except sqlite3.Error as e:
         return False, f"Błąd podczas usuwania dostawcy: {e}"
+
+
+def set_default_supplier(nip):
+    """Set supplier as default (only one can be default at a time)"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # First, remove default status from all suppliers
+        cursor.execute("UPDATE Suppliers SET IsDefault = 0")
+        
+        # Then set the specified supplier as default
+        cursor.execute("UPDATE Suppliers SET IsDefault = 1 WHERE Nip = ?", (nip,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "Dostawca nie został znaleziony"
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "Dostawca został ustawiony jako domyślny"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas ustawiania domyślnego dostawcy: {e}"
+
+
+def get_default_supplier():
+    """Get the current default supplier"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, IsDefault FROM Suppliers WHERE IsDefault = 1")
+        supplier = cursor.fetchone()
+        conn.close()
+        return supplier
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return None
 
 
 def delete_offer_from_db(offer_file_path):

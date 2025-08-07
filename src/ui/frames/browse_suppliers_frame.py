@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from src.data.database_service import (
     get_suppliers_from_db, add_supplier_to_db, get_supplier_by_nip,
-    update_supplier_in_db, delete_supplier_from_db
+    update_supplier_in_db, delete_supplier_from_db, set_default_supplier
 )
 
 
@@ -88,7 +88,7 @@ class BrowseSuppliersFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for suppliers list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'EDIT', 'DELETE')
+        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Domyślny', 'EDIT', 'DELETE', 'DEFAULT')
         self.suppliers_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
         
         # Define headings with sorting commands
@@ -96,16 +96,20 @@ class BrowseSuppliersFrame(Frame):
         self.suppliers_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
         self.suppliers_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.suppliers_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
+        self.suppliers_tree.heading('Domyślny', text='Domyślny', command=lambda: self.sort_by_column('Domyślny'))
         self.suppliers_tree.heading('EDIT', text='Edytuj')
         self.suppliers_tree.heading('DELETE', text='Usuń')
+        self.suppliers_tree.heading('DEFAULT', text='Ustaw domyślny')
         
         # Configure column widths
         self.suppliers_tree.column('NIP', width=100)
-        self.suppliers_tree.column('Nazwa firmy', width=250)
-        self.suppliers_tree.column('Adres 1', width=200)
-        self.suppliers_tree.column('Adres 2', width=200)
+        self.suppliers_tree.column('Nazwa firmy', width=200)
+        self.suppliers_tree.column('Adres 1', width=150)
+        self.suppliers_tree.column('Adres 2', width=150)
+        self.suppliers_tree.column('Domyślny', width=80, stretch=NO, anchor=CENTER)
         self.suppliers_tree.column('EDIT', width=70, stretch=NO, anchor=CENTER)
         self.suppliers_tree.column('DELETE', width=70, stretch=NO, anchor=CENTER)
+        self.suppliers_tree.column('DEFAULT', width=120, stretch=NO, anchor=CENTER)
         
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.suppliers_tree.yview)
@@ -239,12 +243,13 @@ class BrowseSuppliersFrame(Frame):
         
         # Convert to list of dictionaries for easier sorting
         for supplier in suppliers:
-            nip, company_name, address1, address2 = supplier
+            nip, company_name, address1, address2, is_default = supplier
             self.suppliers_data.append({
                 'NIP': nip,
                 'Nazwa firmy': company_name,
                 'Adres 1': address1,
-                'Adres 2': address2
+                'Adres 2': address2,
+                'Domyślny': '✓' if is_default == 1 else ''
             })
         
         # Display the data
@@ -263,8 +268,10 @@ class BrowseSuppliersFrame(Frame):
                 supplier['Nazwa firmy'], 
                 supplier['Adres 1'], 
                 supplier['Adres 2'],
+                supplier['Domyślny'],
                 "Edytuj",
-                "Usuń"
+                "Usuń",
+                "Ustaw domyślny"
             ))
     
     def sort_by_column(self, column):
@@ -287,7 +294,7 @@ class BrowseSuppliersFrame(Frame):
     
     def update_column_headers(self):
         """Update column headers to show current sort direction"""
-        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2']
+        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Domyślny']
         
         # Reset all headers
         for col in columns:
@@ -377,7 +384,7 @@ class BrowseSuppliersFrame(Frame):
         
         supplier = get_supplier_by_nip(self.current_editing_nip)
         if supplier:
-            nip, company_name, address1, address2 = supplier
+            nip, company_name, address1, address2, is_default = supplier
             
             # Temporarily enable readonly fields for setting values
             self.form_entries['nip'].config(state='normal')
@@ -447,13 +454,13 @@ class BrowseSuppliersFrame(Frame):
                 supplier_name = values[1]  # Company name
                 supplier_nip = values[0]   # NIP
                 
-                # EDIT column is the 5th column (index #5)
-                if column == "#5":  
+                # EDIT column is the 6th column (index #6)
+                if column == "#6":  
                     # Open edit form for this supplier
                     self.open_edit_supplier_form(supplier_nip, values)
                     
-                # DELETE column is the 6th column (index #6)
-                elif column == "#6":  
+                # DELETE column is the 7th column (index #7)
+                elif column == "#7":  
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
                         "Potwierdź usunięcie", 
@@ -466,6 +473,20 @@ class BrowseSuppliersFrame(Frame):
                             self.refresh_suppliers_list()
                         else:
                             tkinter.messagebox.showerror("Błąd", message)
+                            
+                # DEFAULT column is the 8th column (index #8)
+                elif column == "#8":  
+                    # Set as default supplier
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdź ustawienie domyślnego", 
+                        f"Czy na pewno chcesz ustawić '{supplier_name}' jako domyślnego dostawcę?"
+                    )
+                    if result:
+                        success, message = self.set_default_supplier(supplier_nip)
+                        if success:
+                            self.refresh_suppliers_list()
+                        else:
+                            tkinter.messagebox.showerror("Błąd", message)
 
     def open_edit_supplier_form(self, supplier_nip, supplier_values):
         """Open edit form for a specific supplier"""
@@ -473,3 +494,8 @@ class BrowseSuppliersFrame(Frame):
         self.form_mode = 'edit'
         self.create_supplier_form()
         self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+
+    def set_default_supplier(self, supplier_nip):
+        """Set supplier as default"""
+        from src.data.database_service import set_default_supplier
+        return set_default_supplier(supplier_nip)
