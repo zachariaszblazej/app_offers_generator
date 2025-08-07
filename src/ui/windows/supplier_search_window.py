@@ -49,7 +49,7 @@ class SupplierSearchWindow:
         
         # Populate listbox with supplier data
         for supplier in suppliers:
-            nip, company_name, address1, address2 = supplier
+            nip, company_name, address1, address2, is_default = supplier
             display_text = f"{company_name} (NIP: {nip})"
             supplier_listbox.insert(END, display_text)
         
@@ -72,5 +72,7 @@ class SupplierSearchWindow:
         selection = supplier_listbox.curselection()
         if selection:
             selected_supplier = suppliers[selection[0]]
-            self.supplier_fill_callback(selected_supplier)
+            # Pass only the first 4 fields (exclude IsDefault) to maintain compatibility
+            supplier_data = selected_supplier[:4]  # nip, company_name, address1, address2
+            self.supplier_fill_callback(supplier_data)
             search_window.destroy()
