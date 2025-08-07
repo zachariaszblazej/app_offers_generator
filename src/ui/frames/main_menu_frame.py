@@ -76,24 +76,48 @@ class MainMenuFrame(Frame):
         browse_suppliers_btn.pack(pady=10)
         
         # Settings button (placeholder for future functionality)
-        settings_btn = Button(buttons_frame, 
-                             text="Ustawienia",
+        # Settings frame
+        settings_btn = Button(self, text="Ustawienia",
                              font=("Arial", 14),
                              fg='black',
-                             padx=30, pady=10,
-                             command=self.open_settings,
+                             padx=20, pady=10,
+                             command=lambda: self.nav_manager.show_frame('settings'),
                              cursor='hand2')
         settings_btn.pack(pady=10)
         
+        # About button
+        about_btn = Button(self, text="O programie",
+                          font=("Arial", 14),
+                          fg='black',
+                          padx=20, pady=10,
+                          command=self.show_about,
+                          cursor='hand2')
+        about_btn.pack(pady=10)
+        
         # Exit button
-        exit_btn = Button(buttons_frame, 
-                         text="Zamknij aplikację",
+        exit_btn = Button(self, text="Zamknij aplikację",
                          font=("Arial", 12),
-                         fg='black',
+                         fg='red',
                          padx=20, pady=8,
                          command=self.exit_application,
                          cursor='hand2')
         exit_btn.pack(pady=(30, 10))
+
+    def show_about(self):
+        """Show about dialog with version information"""
+        import tkinter.messagebox
+        try:
+            from src.utils.version import get_full_version_info
+            version_info = get_full_version_info()
+            tkinter.messagebox.showinfo(
+                "O programie", 
+                f"Kreator Dokumentów Hantech\n\n{version_info}"
+            )
+        except ImportError:
+            tkinter.messagebox.showinfo(
+                "O programie", 
+                "Kreator Dokumentów Hantech\n\n© 2025 HANTECH Grzegorz Cieśla"
+            )
     
     def open_new_offer(self):
         """Navigate to offer creation screen"""

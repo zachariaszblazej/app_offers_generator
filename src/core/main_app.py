@@ -38,7 +38,13 @@ class OfferGeneratorMainApp:
         
         # Create main window
         self.window = Tk()
-        self.window.title(APP_TITLE)
+        # Include version in window title
+        try:
+            from src.utils.version import get_version_string
+            version_str = get_version_string()
+            self.window.title(f"{APP_TITLE} - {version_str}")
+        except ImportError:
+            self.window.title(APP_TITLE)
         self.window.geometry(WINDOW_SIZE)
         
         # Initialize navigation manager
