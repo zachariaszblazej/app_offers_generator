@@ -176,6 +176,21 @@ class WzUIComponents:
                                     cursor='hand2')
         self.add_product_btn.place(x=50, y=730)
 
+        # Product movement buttons (same as in offers)
+        self.move_up_btn = Button(self.window, text="▲", anchor='center',
+                                font=("Arial", 16, "bold"),
+                                bg='#6c757d', fg='black',
+                                width=3, height=1,
+                                cursor='hand2')
+        self.move_up_btn.place(x=250, y=730)
+        
+        self.move_down_btn = Button(self.window, text="▼", anchor='center',
+                                  font=("Arial", 16, "bold"),
+                                  bg='#6c757d', fg='black',
+                                  width=3, height=1,
+                                  cursor='hand2')
+        self.move_down_btn.place(x=320, y=730)
+
         # Generate WZ button (only show in creator, not in editor)
         if self.show_generate_button:
             self.generate_btn = Button(self.window,

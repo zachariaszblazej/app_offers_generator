@@ -83,26 +83,15 @@ class WzEditorApp:
         # Setup product add button command
         self.ui.add_product_btn.config(command=self.product_add.show)
         
+        # Connect move buttons to move methods (use buttons from UI)
+        self.ui.move_up_btn.config(command=self.move_product_up)
+        self.ui.move_down_btn.config(command=self.move_product_down)
+        
         # Create buttons (modified for editor)
         self.create_buttons()
     
     def create_buttons(self):
         """Create all buttons for editor mode"""
-        # Product movement buttons
-        Button(self.window, text="▲", anchor='center',
-               font=("Arial", 16, "bold"),
-               bg='#6c757d', fg='black',
-               width=3, height=1,
-               command=self.move_product_up,
-               cursor='hand2').place(x=250, y=740)
-        
-        Button(self.window, text="▼", anchor='center',
-               font=("Arial", 16, "bold"),
-               bg='#6c757d', fg='black',
-               width=3, height=1,
-               command=self.move_product_down,
-               cursor='hand2').place(x=320, y=740)
-        
         # Update WZ button (instead of generate)
         update_wz_button = Button(self.window, text="Zapisz zmiany", 
                                 font=("Arial", 12, "bold"),

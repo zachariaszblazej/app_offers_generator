@@ -80,6 +80,11 @@ class WzGeneratorApp:
         self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
         self.ui.client_search_btn.config(command=self.client_search.open_client_search)
         self.ui.add_product_btn.config(command=self.product_add.show)
+        
+        # Connect move buttons to move methods
+        self.ui.move_up_btn.config(command=self.move_product_up)
+        self.ui.move_down_btn.config(command=self.move_product_down)
+        
         if hasattr(self.ui, 'generate_btn'):
             self.ui.generate_btn.config(command=self.generate_wz)
     
@@ -226,3 +231,17 @@ class WzGeneratorApp:
             return False
         
         return True
+
+    def move_product_up(self):
+        """Move selected product up in the table"""
+        if self.product_table.move_product_up():
+            # Mark user modifications
+            self.user_modifications_made = True
+            # No need to recalculate total as order change doesn't affect sums
+
+    def move_product_down(self):
+        """Move selected product down in the table"""
+        if self.product_table.move_product_down():
+            # Mark user modifications
+            self.user_modifications_made = True
+            # No need to recalculate total as order change doesn't affect sums

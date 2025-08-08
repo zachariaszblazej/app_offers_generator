@@ -206,12 +206,9 @@ class WzProductTable:
         self.count = 0
     
     def update_product_numbers(self):
-        """Update product numbers after deletion"""
+        """Update product numbers after deletion - use renumber_items for consistency"""
+        self.renumber_items()
         items = self.tree.get_children()
-        for i, item in enumerate(items, 1):
-            values = list(self.tree.item(item, 'values'))
-            values[0] = i  # Update PID
-            self.tree.item(item, values=values)
         self.count = len(items)
     
     def get_product_data(self, item_id):
@@ -235,3 +232,77 @@ class WzProductTable:
         """Get currently selected item"""
         selection = self.tree.selection()
         return selection[0] if selection else None
+
+    def move_product_up(self):
+        """Move selected product up in the table"""
+        if not self.tree or not self.tree.selection():
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do przesunięcia!")
+            return False
+        
+        selected_item = self.tree.selection()[0]
+        all_children = self.tree.get_children()
+        
+        # Find current index
+        current_index = all_children.index(selected_item)
+        
+        # Check if can move up (not already at top)
+        if current_index == 0:
+            tkinter.messagebox.showinfo("Informacja", "Produkt jest już na górze tabeli!")
+            return False
+        
+        # Move current item before previous item
+        self.tree.move(selected_item, '', current_index - 1)
+        
+        # Renumber all items to maintain sequential order
+        self.renumber_items()
+        
+        # Keep selection on moved item
+        self.tree.selection_set(selected_item)
+        self.tree.focus(selected_item)
+        
+        return True
+    
+    def move_product_down(self):
+        """Move selected product down in the table"""
+        if not self.tree or not self.tree.selection():
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do przesunięcia!")
+            return False
+        
+        selected_item = self.tree.selection()[0]
+        all_children = self.tree.get_children()
+        
+        # Find current index
+        current_index = all_children.index(selected_item)
+        
+        # Check if can move down (not already at bottom)
+        if current_index == len(all_children) - 1:
+            tkinter.messagebox.showinfo("Informacja", "Produkt jest już na dole tabeli!")
+            return False
+        
+        # Move current item after next item
+        self.tree.move(selected_item, '', current_index + 1)
+        
+        # Renumber all items to maintain sequential order
+        self.renumber_items()
+        
+        # Keep selection on moved item
+        self.tree.selection_set(selected_item)
+        self.tree.focus(selected_item)
+        
+        return True
+
+    def renumber_items(self):
+        """Renumber all items in the table to maintain sequential order"""
+        if not self.tree:
+            return
+        
+        # Get all children (items) in the table
+        children = self.tree.get_children()
+        
+        # Update position numbers sequentially
+        for index, child in enumerate(children, 1):
+            current_values = list(self.tree.item(child)['values'])
+            # Update the position number (first column)
+            current_values[0] = index
+            # Update the item with new values
+            self.tree.item(child, values=current_values)
