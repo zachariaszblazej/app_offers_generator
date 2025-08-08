@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.ui.components.wz_ui_components import WzUIComponents
 from src.ui.components.wz_product_table import WzProductTable
-from src.ui.windows.product_add_window import ProductAddWindow
+from src.ui.windows.wz_product_add_window import WzProductAddWindow
 from src.ui.windows.product_edit_window import ProductEditWindow
 from src.ui.windows.client_search_window import ClientSearchWindow
 from src.ui.windows.supplier_search_window import SupplierSearchWindow
@@ -77,7 +77,7 @@ class WzEditorApp:
         # Create product table with edit and delete callbacks
         self.product_table = WzProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
         self.ui = WzUIComponents(self.window, self.product_table)
-        self.product_add = ProductAddWindow(self.window, self.insert_product)
+        self.product_add = WzProductAddWindow(self.window, self.insert_product)
         self.product_edit = ProductEditWindow(self.window, self.update_product)
         
         # Initialize search windows
@@ -92,6 +92,9 @@ class WzEditorApp:
         # Setup search button commands after UI creation
         self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
         self.ui.client_search_btn.config(command=self.client_search.open_client_search)
+        
+        # Setup product add button command
+        self.ui.add_product_btn.config(command=self.product_add.show)
         
         # Create buttons (modified for editor)
         self.create_buttons()
@@ -284,7 +287,20 @@ class WzEditorApp:
     
     def insert_product(self, product_data):
         """Insert a new product into the table"""
-        if self.product_table.input_record(product_data):
+        # Convert dict format from WzProductAddWindow to list format expected by input_record
+        if isinstance(product_data, dict):
+            # WzProductAddWindow sends dict: {'name': ..., 'unit': ..., 'quantity': ...}
+            # Convert to list format: [name, unit, quantity]
+            product_list = [
+                product_data.get('name', ''),
+                product_data.get('unit', ''),
+                product_data.get('quantity', '')
+            ]
+        else:
+            # Already in list format
+            product_list = product_data
+            
+        if self.product_table.input_record(product_list):
             return True
         return False
     
