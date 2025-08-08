@@ -173,18 +173,32 @@ class WzEditorApp:
                 self.ui.entries['wz_number_display'].config(state='readonly')
             
             # Load client data
-            client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_phone_number', 'client_nip']
+            client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_phone_number']
             for field in client_fields:
                 if field in context_data and field in self.ui.entries:
                     self.ui.entries[field].delete(0, END)
                     self.ui.entries[field].insert(0, context_data.get(field, ''))
             
+            # Load client NIP separately (needs temporary unlock)
+            if 'client_nip' in context_data and 'client_nip' in self.ui.entries:
+                self.ui.entries['client_nip'].config(state='normal')
+                self.ui.entries['client_nip'].delete(0, END)
+                self.ui.entries['client_nip'].insert(0, context_data.get('client_nip', ''))
+                self.ui.entries['client_nip'].config(state='readonly')
+            
             # Load supplier data
-            supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_phone_number', 'supplier_nip']
+            supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_phone_number']
             for field in supplier_fields:
                 if field in context_data and field in self.ui.entries:
                     self.ui.entries[field].delete(0, END)
                     self.ui.entries[field].insert(0, context_data.get(field, ''))
+            
+            # Load supplier NIP separately (needs temporary unlock)
+            if 'supplier_nip' in context_data and 'supplier_nip' in self.ui.entries:
+                self.ui.entries['supplier_nip'].config(state='normal')
+                self.ui.entries['supplier_nip'].delete(0, END)
+                self.ui.entries['supplier_nip'].insert(0, context_data.get('supplier_nip', ''))
+                self.ui.entries['supplier_nip'].config(state='readonly')
             
             # Load town
             if 'town' in context_data and 'town' in self.ui.entries:
