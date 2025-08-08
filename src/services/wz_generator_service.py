@@ -22,12 +22,13 @@ def convert_date(date: datetime.datetime) -> str:
     return date.strftime("%d %B %Y")
 
 
-def generate_wz_document(context_data):
+def generate_wz_document(context_data, custom_output_path=None):
     """
     Generate WZ document using template and provided data
     
     Args:
         context_data: Dictionary containing all form data
+        custom_output_path: Optional custom path for output file (for editing existing WZ)
         
     Returns:
         str: Path to generated WZ file, or None if failed
@@ -49,17 +50,22 @@ def generate_wz_document(context_data):
         # Render document
         doc.render(template_context)
         
-        # Generate output filename
-        wz_number = context_data.get('wz_number', 'WZ_1')
-        output_filename = f"{wz_number}.docx"
-        
-        # Get output directory (use WZ folder from settings)
-        output_dir = get_wz_folder()
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir, exist_ok=True)
-        
-        # Full output path
-        output_path = os.path.join(output_dir, output_filename)
+        # Determine output path
+        if custom_output_path:
+            # Use provided path (for editing existing WZ)
+            output_path = custom_output_path
+        else:
+            # Generate new filename and path
+            wz_number = context_data.get('wz_number', 'WZ_1')
+            output_filename = f"{wz_number}.docx"
+            
+            # Get output directory (use WZ folder from settings)
+            output_dir = get_wz_folder()
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+            
+            # Full output path
+            output_path = os.path.join(output_dir, output_filename)
         
         # Save document
         doc.save(output_path)

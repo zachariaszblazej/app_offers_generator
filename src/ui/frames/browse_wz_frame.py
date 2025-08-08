@@ -255,10 +255,10 @@ class BrowseWzFrame(Frame):
                 delete_column_index = f"#{num_columns}"        # Last column (Usuń)
                 
                 if column == edit_column_index:
-                    # Edit WZ - navigate to WZ editor (if exists) or open file
+                    # Edit WZ - navigate to WZ editor
                     wz_path = os.path.join(get_wz_folder(), filename)
                     self.wz_tree.selection_set(item)
-                    self.open_selected_wz()
+                    self.nav_manager.show_frame('wz_editor', wz_path=wz_path)
                     
                 elif column == load_column_index:
                     # Load to WZ creator

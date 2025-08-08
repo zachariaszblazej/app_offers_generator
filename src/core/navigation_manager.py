@@ -38,6 +38,17 @@ class NavigationManager:
                         widget.destroy()
                 # Initialize with new offer path
                 self.frames[frame_name].initialize_offer_app(kwargs['offer_path'])
+            elif frame_name == 'wz_editor' and 'wz_path' in kwargs:
+                # Initialize WZ editor with WZ path using frame's method
+                self.frames[frame_name].wz_path = kwargs['wz_path']
+                # Clear existing instance to force recreation
+                self.frames[frame_name].wz_app_instance = None
+                # Clear existing content
+                if hasattr(self.frames[frame_name], 'content_container'):
+                    for widget in self.frames[frame_name].content_container.winfo_children():
+                        widget.destroy()
+                # Initialize with new WZ path
+                self.frames[frame_name].initialize_wz_app(kwargs['wz_path'])
             elif frame_name == 'offer_generator' and 'template_context' in kwargs:
                 # Create new generator instance with template context
                 from src.core.offer_generator_app import OfferGeneratorApp

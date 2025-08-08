@@ -98,6 +98,57 @@ class WzProductTable:
                     if self.delete_callback:
                         self.delete_callback()
     
+    def input_record(self, product_data):
+        """Insert a new product record with auto-generated position number (compatible with offer table format)"""
+        try:
+            # Handle different input formats
+            if len(product_data) == 4:
+                # WZ format: [pid, name, unit, quantity]
+                _, product_name, unit, quantity = product_data
+            elif len(product_data) == 3:
+                # Format without pid: [name, unit, quantity]
+                product_name, unit, quantity = product_data
+            else:
+                print(f"Unexpected product_data format: {product_data}")
+                return False
+            
+            if not all([product_name, unit, quantity]):
+                tkinter.messagebox.showinfo("WARNING", "Enter all the fields!")
+                return False
+            
+            try:
+                quantity = int(quantity)
+            except ValueError:
+                tkinter.messagebox.showinfo("WARNING", "Enter valid quantity!")
+                return False
+            
+            # Auto-generate position number (1-based)
+            position_number = len(self.tree.get_children()) + 1
+            
+            print(f"Adding WZ product: {position_number}, {product_name}, {unit}, {quantity}")
+            
+            if self.tree:
+                item_data = (
+                    position_number,  # PID
+                    product_name,     # PNAME
+                    unit,            # UNIT
+                    quantity,        # QTY
+                    'EDYTUJ',        # EDIT
+                    'USUŃ'           # DELETE
+                )
+                
+                self.tree.insert('', index=END, iid=self.count, values=item_data)
+                self.count += 1
+                return True
+            else:
+                print("Error: WZ Table not initialized!")
+                return False
+                
+        except Exception as e:
+            print(f"Error in input_record: {e}")
+            tkinter.messagebox.showinfo("WARNING", f"Error adding product: {e}")
+            return False
+
     def insert_product(self, product_data):
         """Insert product into table"""
         self.count += 1

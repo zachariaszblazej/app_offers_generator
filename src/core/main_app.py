@@ -15,6 +15,7 @@ from src.ui.frames.main_menu_frame import MainMenuFrame
 from src.ui.frames.offer_creation_frame import OfferCreationFrame
 from src.ui.frames.offer_editor_frame import OfferEditorFrame
 from src.ui.frames.wz_creation_frame import WzCreationFrame
+from src.ui.frames.wz_editor_frame import WzEditorFrame
 from src.ui.frames.browse_wz_frame import BrowseWzFrame
 from src.ui.frames.browse_clients_frame import BrowseClientsFrame
 from src.ui.frames.browse_suppliers_frame import BrowseSuppliersFrame
@@ -83,6 +84,10 @@ class OfferGeneratorMainApp:
         # WZ creation frame
         from src.core.wz_generator_app import WzGeneratorApp
         self.nav_manager.add_frame('wz_creation', WzCreationFrame, WzGeneratorApp)
+        
+        # WZ editor frame
+        from src.core.wz_editor_app import WzEditorApp
+        self.nav_manager.add_frame('wz_editor', WzEditorFrame, WzEditorApp)
         
         # Browse WZ frame
         self.nav_manager.add_frame('browse_wz', BrowseWzFrame)

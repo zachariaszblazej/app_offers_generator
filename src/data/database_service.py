@@ -151,6 +151,46 @@ def update_offer_context_in_db(offer_file_path, offer_context):
         return False
 
 
+def get_wz_context_from_db(wz_file_path):
+    """Get WZ context from database by file path"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT WzContext FROM Wuzetkas WHERE WzFilePath = ?", (wz_file_path,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result and result[0]:
+            # Parse JSON context
+            return json.loads(result[0])
+        return None
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error retrieving WZ context: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        tkinter.messagebox.showerror("Data Error", f"Error parsing WZ context: {e}")
+        return None
+
+
+def update_wz_context_in_db(wz_file_path, wz_context):
+    """Update WZ context in database"""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        
+        # Convert context to JSON
+        context_json = json.dumps(wz_context, default=str, ensure_ascii=False)
+        
+        cursor.execute("UPDATE Wuzetkas SET WzContext = ? WHERE WzFilePath = ?", 
+                      (context_json, wz_file_path))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error updating WZ context: {e}")
+        return False
+
+
 def validate_nip(nip):
     """Validate NIP format and uniqueness"""
     # Check if NIP has exactly 10 digits

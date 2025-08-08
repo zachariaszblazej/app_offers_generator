@@ -25,6 +25,7 @@ class WzUIComponents:
         self.modification_callback = None
         self.selected_client_alias = None
         self.selected_supplier_alias = None
+        self.wz_number = None  # Initialize WZ number attribute
         
         # Load default data
         self.suppliers_data = get_suppliers_from_db() or []
@@ -46,8 +47,17 @@ class WzUIComponents:
         self.create_offer_section()
         self.create_action_buttons()
     
-    def create_upper_section(self, show_offer_number=False):
+    def create_upper_section(self, show_wz_number=False):
         """Create the upper section with date and company info"""
+        # WZ number display (only in editor mode)
+        if show_wz_number:
+            wz_number_label = Label(self.window, text="Numer WZ:", font=("Arial", 10, "bold"))
+            wz_number_label.place(x=50, y=50)
+            
+            self.entries['wz_number_display'] = Entry(self.window, width=20, state='readonly',
+                                                     bg='#f0f0f0', fg='#666666')
+            self.entries['wz_number_display'].place(x=150, y=50)
+        
         # Town entry
         self.entries['town'] = Entry(self.window, width=10)
         self.entries['town'].place(x=640, y=90)
@@ -121,6 +131,10 @@ class WzUIComponents:
         self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
+        self.entries['supplier_phone_number'] = Entry(self.window, width=25)
+        self.entries['supplier_phone_number'].place(x=60, y=390)
+        self.entries['supplier_phone_number'].bind('<KeyRelease>', self._on_field_modified)
+
         # Client entries
         self.entries['client_name'] = Entry(self.window, width=25)
         self.entries['client_name'].place(x=660, y=270)
@@ -136,6 +150,10 @@ class WzUIComponents:
 
         self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
+
+        self.entries['client_phone_number'] = Entry(self.window, width=25)
+        self.entries['client_phone_number'].place(x=660, y=390)
+        self.entries['client_phone_number'].bind('<KeyRelease>', self._on_field_modified)
         
         # Add search buttons for supplier and client
         self.supplier_search_btn = Button(self.window, 
@@ -164,15 +182,6 @@ class WzUIComponents:
                                     padx=15, pady=8,
                                     cursor='hand2')
         self.add_product_btn.place(x=50, y=730)
-        
-        # Generate WZ button
-        self.generate_btn = Button(self.window,
-                                 text="GENERUJ WZ",
-                                 font=("Arial", 14, "bold"),
-                                 bg='#f44336', fg='white',
-                                 padx=20, pady=10,
-                                 cursor='hand2')
-        self.generate_btn.place(x=450, y=750)
     
     def set_modification_callback(self, callback):
         """Set callback for field modifications"""
@@ -358,3 +367,78 @@ class WzUIComponents:
         # Clear aliases
         self.selected_client_alias = None
         self.selected_supplier_alias = None
+    
+    def set_editor_mode(self):
+        """Set fields to read-only mode for WZ editing"""
+        # Fields that should be read-only in editor mode
+        readonly_fields = [
+            # WZ number should be read-only in editor
+            'wz_number_display'
+        ]
+        
+        for field in readonly_fields:
+            if field in self.entries:
+                self.entries[field].config(state='readonly')
+                # Add visual indication for read-only fields
+                self.entries[field].config(bg='#f0f0f0', fg='#666666')
+        
+        # Make company data fields editable with standard styling
+        company_editable_fields = ['address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
+        for field in company_editable_fields:
+            if field in self.entries:
+                self.entries[field].config(state='normal')
+                # Standard white background, no special coloring
+    
+    def get_context_data(self):
+        """Get all form data as context for WZ document generation"""
+        # Parse date with multiple format support
+        date_str = self.date_var.get()
+        try:
+            # Try parsing with the expected format first
+            parsed_date = datetime.strptime(date_str, "%d %m %Y").date()
+        except ValueError:
+            try:
+                # Try parsing with month name format (Polish)
+                parsed_date = datetime.strptime(date_str, "%d %B %Y").date()
+            except ValueError:
+                try:
+                    # Try parsing with month name format (English)
+                    parsed_date = datetime.strptime(date_str, "%d %B %Y").date()
+                except ValueError:
+                    # If all parsing fails, use current date
+                    print(f"Warning: Could not parse date '{date_str}', using current date")
+                    parsed_date = datetime.now().date()
+        
+        context = {
+            'town': self.entries['town'].get(),
+            'address_1': self.entries['address_1'].get(),
+            'address_2': self.entries['address_2'].get(),
+            'nip': self.entries['nip'].get(),
+            'regon': self.entries['regon'].get(),
+            'email': self.entries['email'].get(),
+            'phone_number': self.entries['phone_number'].get(),
+            'bank_name': self.entries['bank_name'].get(),
+            'account_number': self.entries['account_number'].get(),
+            'date': parsed_date,
+            'supplier_name': self.entries['supplier_name'].get(),
+            'supplier_address_1': self.entries['supplier_address_1'].get(),
+            'supplier_address_2': self.entries['supplier_address_2'].get(),
+            'supplier_phone_number': self.entries['supplier_phone_number'].get(),
+            'supplier_nip': self.entries['supplier_nip'].get(),
+            'client_name': self.entries['client_name'].get(),
+            'client_address_1': self.entries['client_address_1'].get(),
+            'client_address_2': self.entries['client_address_2'].get(),
+            'client_phone_number': self.entries['client_phone_number'].get(),
+            'client_nip': self.entries['client_nip'].get(),
+            'client_alias': self.selected_client_alias,  # Add client alias
+            'supplier_alias': self.selected_supplier_alias,  # Add supplier alias
+            'uwagi': self.entries['uwagi'].get("1.0", "end-1c"),  # Get text from Text widget
+            'wz_number': self.wz_number,  # Preserve original WZ number
+            'products': []  # Initialize empty products list
+        }
+        
+        # Add products from product table if available
+        if self.product_table and hasattr(self.product_table, 'get_all_products'):
+            context['products'] = self.product_table.get_all_products()
+        
+        return context
