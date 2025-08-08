@@ -18,9 +18,10 @@ from src.utils.settings import settings_manager
 class WzUIComponents:
     """Handles WZ UI creation and data management - simplified version"""
     
-    def __init__(self, window, product_table):
+    def __init__(self, window, product_table, show_generate_button=True):
         self.window = window
         self.product_table = product_table
+        self.show_generate_button = show_generate_button  # Control generate button visibility
         self.entries = {}
         self.modification_callback = None
         self.selected_client_alias = None
@@ -175,14 +176,15 @@ class WzUIComponents:
                                     cursor='hand2')
         self.add_product_btn.place(x=50, y=730)
 
-        # Generate WZ button
-        self.generate_btn = Button(self.window,
-                                 text="GENERUJ WZ",
-                                 font=("Arial", 14, "bold"),
-                                 bg='#f44336', fg='white',
-                                 padx=20, pady=10,
-                                 cursor='hand2')
-        self.generate_btn.place(x=450, y=750)
+        # Generate WZ button (only show in creator, not in editor)
+        if self.show_generate_button:
+            self.generate_btn = Button(self.window,
+                                     text="GENERUJ WZ",
+                                     font=("Arial", 14, "bold"),
+                                     bg='#f44336', fg='white',
+                                     padx=20, pady=10,
+                                     cursor='hand2')
+            self.generate_btn.place(x=450, y=750)
     
     def set_modification_callback(self, callback):
         """Set callback for field modifications"""

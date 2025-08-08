@@ -219,6 +219,7 @@ class WzProductTable:
         values = self.tree.item(item_id, 'values')
         if len(values) >= 4:
             return {
+                'item_id': item_id,  # Add item_id to data
                 'name': values[1],
                 'unit': values[2],
                 'quantity': values[3]

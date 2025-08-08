@@ -80,7 +80,8 @@ class WzGeneratorApp:
         self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
         self.ui.client_search_btn.config(command=self.client_search.open_client_search)
         self.ui.add_product_btn.config(command=self.product_add.show)
-        self.ui.generate_btn.config(command=self.generate_wz)
+        if hasattr(self.ui, 'generate_btn'):
+            self.ui.generate_btn.config(command=self.generate_wz)
     
     def mark_as_modified(self):
         """Mark that user has made modifications"""

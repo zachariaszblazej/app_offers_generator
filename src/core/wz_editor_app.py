@@ -6,6 +6,7 @@ from tkinter import ttk
 import tkinter.messagebox
 import sys
 import os
+import json
 from datetime import datetime
 
 # Add project root to Python path  
@@ -14,25 +15,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from src.ui.components.wz_ui_components import WzUIComponents
 from src.ui.components.wz_product_table import WzProductTable
 from src.ui.windows.wz_product_add_window import WzProductAddWindow
-from src.ui.windows.product_edit_window import ProductEditWindow
+from src.ui.windows.wz_product_edit_window import WzProductEditWindow
 from src.ui.windows.client_search_window import ClientSearchWindow
 from src.ui.windows.supplier_search_window import SupplierSearchWindow
 from src.data.database_service import get_wz_context_from_db
 from src.services.wz_editor_service import update_wz_document
-from tkinter import *
-import tkinter.messagebox
-import sys
-import os
-import json
-from datetime import datetime
-
-# Add project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-from src.ui.components.wz_ui_components import WzUIComponents
-from src.ui.windows.product_add_window import ProductAddWindow
-from src.ui.windows.product_edit_window import ProductEditWindow
-from src.ui.components.wz_product_table import WzProductTable
 from src.services.wz_editor_service import update_wz_document
 from src.data.database_service import get_wz_context_from_db
 from src.utils.config import BACKGROUND_IMAGE
@@ -76,9 +63,9 @@ class WzEditorApp:
         # Initialize UI components
         # Create product table with edit and delete callbacks
         self.product_table = WzProductTable(self.window, self.parent_frame, self.edit_product, self.on_product_deleted)
-        self.ui = WzUIComponents(self.window, self.product_table)
+        self.ui = WzUIComponents(self.window, self.product_table, show_generate_button=False)  # Hide generate button in editor
         self.product_add = WzProductAddWindow(self.window, self.insert_product)
-        self.product_edit = ProductEditWindow(self.window, self.update_product)
+        self.product_edit = WzProductEditWindow(self.window, self.update_product)
         
         # Initialize search windows
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
@@ -325,7 +312,7 @@ class WzEditorApp:
             # Get product data from the table using item_id
             product_data = self.product_table.get_product_data(item_id)
             if product_data:
-                self.product_edit.open_product_edit_window(product_data, item_id)
+                self.product_edit.show(item_id, product_data)
             else:
                 tkinter.messagebox.showwarning("Uwaga", "Nie można pobrać danych produktu!")
         except Exception as e:
@@ -334,9 +321,8 @@ class WzEditorApp:
     
     def update_product(self, item_id, product_data):
         """Update existing product in the table"""
-        if self.product_table.update_record(item_id, product_data):
-            return True
-        return False
+        self.product_table.update_product(item_id, product_data)
+        return True
     
     def update_wz(self):
         """Update the existing WZ document"""
