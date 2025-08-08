@@ -2,6 +2,7 @@
 Service for generating WZ documents
 """
 import os
+import locale
 from docx import Document
 from datetime import datetime
 from docxtpl import DocxTemplate
@@ -18,8 +19,26 @@ from src.data.database_service import get_next_wz_number, save_wz_to_db
 
 
 def convert_date(date: datetime.datetime) -> str:
-    """Convert datetime to formatted string"""
-    return date.strftime("%d %B %Y")
+    """Convert datetime to formatted string with Polish locale"""
+    try:
+        # Temporarily set Polish locale for date formatting
+        current_locale = locale.getlocale()
+        locale.setlocale(locale.LC_TIME, 'pl_PL.UTF-8')
+        formatted = date.strftime("%d %B %Y")
+        # Restore original locale
+        locale.setlocale(locale.LC_TIME, current_locale)
+        return formatted
+    except:
+        # Fallback to manual Polish months if locale fails
+        polish_months = {
+            1: "stycznia", 2: "lutego", 3: "marca", 4: "kwietnia",
+            5: "maja", 6: "czerwca", 7: "lipca", 8: "sierpnia",
+            9: "września", 10: "października", 11: "listopada", 12: "grudnia"
+        }
+        day = date.day
+        month = polish_months[date.month]
+        year = date.year
+        return f"{day} {month} {year}"
 
 
 def generate_wz_document(context_data, custom_output_path=None):
@@ -92,29 +111,35 @@ def prepare_wz_context(context_data):
     # Start with the original context
     template_context = context_data.copy()
     
-    # Format date if needed
-    date_str = context_data.get('date', '')
-    if date_str:
+    # Format date if needed - use same approach as offers
+    date_value = context_data.get('date', '')
+    if date_value:
         try:
-            # Parse date in format "DD MM YYYY"
-            date_parts = date_str.split()
-            if len(date_parts) == 3:
-                day, month, year = date_parts
-                # Convert month number to Polish month name
-                month_names = {
-                    '01': 'stycznia', '02': 'lutego', '03': 'marca',
-                    '04': 'kwietnia', '05': 'maja', '06': 'czerwca',
-                    '07': 'lipca', '08': 'sierpnia', '09': 'września',
-                    '10': 'października', '11': 'listopada', '12': 'grudnia'
-                }
-                month_name = month_names.get(month.zfill(2), month)
-                template_context['formatted_date'] = f"{day} {month_name} {year}"
+            # Check if date is already a datetime object
+            if isinstance(date_value, (datetime.datetime, datetime.date)):
+                # Convert datetime object to formatted string
+                template_context['date'] = convert_date(date_value)
+                template_context['formatted_date'] = convert_date(date_value)
             else:
-                template_context['formatted_date'] = date_str
+                # Parse date string and convert to datetime, then format
+                date_parts = str(date_value).split()
+                if len(date_parts) == 3:
+                    day, month, year = date_parts
+                    # Create datetime object and use convert_date function
+                    date_obj = datetime.datetime(int(year), int(month), int(day))
+                    template_context['date'] = convert_date(date_obj)
+                    template_context['formatted_date'] = convert_date(date_obj)
+                else:
+                    template_context['date'] = str(date_value)
+                    template_context['formatted_date'] = str(date_value)
         except:
-            template_context['formatted_date'] = date_str
+            template_context['date'] = str(date_value)
+            template_context['formatted_date'] = str(date_value)
     else:
-        template_context['formatted_date'] = datetime.datetime.now().strftime("%d %B %Y")
+        # Use current date like offers do
+        current_date = datetime.datetime.now()
+        template_context['date'] = convert_date(current_date)
+        template_context['formatted_date'] = convert_date(current_date)
     
     # Ensure all required fields have default values
     default_fields = {
