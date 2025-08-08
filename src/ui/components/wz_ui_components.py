@@ -433,7 +433,6 @@ class WzUIComponents:
             'client_nip': self.entries['client_nip'].get(),
             'client_alias': self.selected_client_alias,  # Add client alias
             'supplier_alias': self.selected_supplier_alias,  # Add supplier alias
-            'uwagi': self.entries['uwagi'].get("1.0", "end-1c"),  # Get text from Text widget
             'wz_number': self.wz_number,  # Preserve original WZ number
             'products': []  # Initialize empty products list
         }

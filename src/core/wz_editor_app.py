@@ -195,11 +195,6 @@ class WzEditorApp:
                 self.ui.entries['town'].delete(0, END)
                 self.ui.entries['town'].insert(0, context_data.get('town', ''))
             
-            # Load notes (Text widget, not Entry)
-            if 'uwagi' in context_data and 'uwagi' in self.ui.entries:
-                self.ui.entries['uwagi'].delete(1.0, END)
-                self.ui.entries['uwagi'].insert(1.0, context_data.get('uwagi', ''))
-            
             # Load date
             if 'date' in context_data:
                 try:
