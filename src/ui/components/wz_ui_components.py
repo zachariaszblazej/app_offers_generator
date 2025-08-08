@@ -131,10 +131,6 @@ class WzUIComponents:
         self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
-        self.entries['supplier_phone_number'] = Entry(self.window, width=25)
-        self.entries['supplier_phone_number'].place(x=60, y=390)
-        self.entries['supplier_phone_number'].bind('<KeyRelease>', self._on_field_modified)
-
         # Client entries
         self.entries['client_name'] = Entry(self.window, width=25)
         self.entries['client_name'].place(x=660, y=270)
@@ -150,10 +146,6 @@ class WzUIComponents:
 
         self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
-
-        self.entries['client_phone_number'] = Entry(self.window, width=25)
-        self.entries['client_phone_number'].place(x=660, y=390)
-        self.entries['client_phone_number'].bind('<KeyRelease>', self._on_field_modified)
         
         # Add search buttons for supplier and client
         self.supplier_search_btn = Button(self.window, 
@@ -423,12 +415,10 @@ class WzUIComponents:
             'supplier_name': self.entries['supplier_name'].get(),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),
-            'supplier_phone_number': self.entries['supplier_phone_number'].get(),
             'supplier_nip': self.entries['supplier_nip'].get(),
             'client_name': self.entries['client_name'].get(),
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
-            'client_phone_number': self.entries['client_phone_number'].get(),
             'client_nip': self.entries['client_nip'].get(),
             'client_alias': self.selected_client_alias,  # Add client alias
             'supplier_alias': self.selected_supplier_alias,  # Add supplier alias
