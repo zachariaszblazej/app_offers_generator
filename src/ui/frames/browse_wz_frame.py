@@ -6,11 +6,15 @@ from tkinter import ttk
 import tkinter.messagebox
 import sys
 import os
+import subprocess
+import platform
+from datetime import datetime
 
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from src.data.database_service import DatabaseService
+from src.utils.config import get_wz_folder
 
 
 class BrowseWzFrame(Frame):
@@ -20,90 +24,77 @@ class BrowseWzFrame(Frame):
         super().__init__(parent)
         self.nav_manager = nav_manager
         self.db = DatabaseService()
+        self.wz_list = []
+        self.sort_by = 'date'  # default sort by date
+        self.sort_reverse = True  # newest first
         self.create_ui()
     
     def create_ui(self):
         """Create the WZ browsing UI"""
         # Set background color
-        self.configure(bg='white')
+        self.configure(bg='#f0f0f0')
         
         # Header frame
-        header_frame = Frame(self, bg='white', height=60)
-        header_frame.pack(fill=X, padx=20, pady=10)
-        header_frame.pack_propagate(False)
-        
-        # Back button
-        back_btn = Button(header_frame, 
-                         text="← Powrót do menu głównego",
-                         font=("Arial", 12),
-                         bg='#9E9E9E', fg='black',
-                         padx=15, pady=5,
-                         command=self.return_to_main_menu,
-                         cursor='hand2')
-        back_btn.pack(side=LEFT)
+        header_frame = Frame(self, bg='#f0f0f0')
+        header_frame.pack(fill=X, padx=20, pady=20)
         
         # Title
         title_label = Label(header_frame, 
-                           text="PRZEGLĄDAJ WZ",
+                           text="Przeglądaj WZ",
                            font=("Arial", 20, "bold"),
-                           bg='white', fg='#333333')
-        title_label.pack(side=RIGHT, padx=20)
+                           bg='#f0f0f0', fg='#333333')
+        title_label.pack(side=LEFT)
+        
+        # Back button
+        back_btn = Button(header_frame, 
+                         text="Powrót do menu głównego",
+                         font=("Arial", 12),
+                         fg='black',
+                         padx=15, pady=8,
+                         command=self.return_to_main_menu,
+                         cursor='hand2')
+        back_btn.pack(side=RIGHT)
         
         # Content frame
-        content_frame = Frame(self, bg='white')
-        content_frame.pack(fill=BOTH, expand=True, padx=20, pady=10)
+        content_frame = Frame(self, bg='#f0f0f0')
+        content_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
         
-        # Buttons frame
-        buttons_frame = Frame(content_frame, bg='white')
-        buttons_frame.pack(fill=X, pady=(0, 10))
+        # WZ list frame
+        list_frame = Frame(content_frame, bg='white', relief=RIDGE, bd=2)
+        list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
         
-        # Refresh button
-        refresh_btn = Button(buttons_frame,
-                           text="Odśwież listę",
-                           font=("Arial", 11),
-                           bg='#4CAF50', fg='white',
-                           padx=20, pady=8,
-                           command=self.refresh_wz_list,
-                           cursor='hand2')
-        refresh_btn.pack(side=LEFT, padx=(0, 10))
+        # List header
+        list_header = Label(list_frame, 
+                           text="Lista WZ", 
+                           font=("Arial", 14, "bold"), 
+                           bg='white', fg='#333333')
+        list_header.pack(pady=15)
         
-        # Create new WZ button
-        new_wz_btn = Button(buttons_frame,
-                           text="Utwórz nowe WZ",
-                           font=("Arial", 11),
-                           bg='#2196F3', fg='white',
-                           padx=20, pady=8,
-                           command=self.create_new_wz,
-                           cursor='hand2')
-        new_wz_btn.pack(side=LEFT, padx=(0, 10))
-        
-        # WZ list frame with scrollbar
-        list_frame = Frame(content_frame, bg='white')
-        list_frame.pack(fill=BOTH, expand=True)
+        # Treeview frame
+        tree_frame = Frame(list_frame, bg='white')
+        tree_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
         
         # Create Treeview for WZ list
-        columns = ('ID', 'Numer WZ', 'Data', 'Klient', 'Status', 'Ścieżka pliku')
-        self.wz_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+        columns = ('filename', 'date', 'edit', 'load_to_creator', 'delete')
+        self.wz_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
         
         # Define column headings and widths
-        self.wz_tree.heading('ID', text='ID')
-        self.wz_tree.heading('Numer WZ', text='Numer WZ')
-        self.wz_tree.heading('Data', text='Data')
-        self.wz_tree.heading('Klient', text='Klient')
-        self.wz_tree.heading('Status', text='Status')
-        self.wz_tree.heading('Ścieżka pliku', text='Ścieżka pliku')
+        self.wz_tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
+        self.wz_tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
+        self.wz_tree.heading('edit', text='Edytuj')
+        self.wz_tree.heading('load_to_creator', text='Wczytaj do kreatora')
+        self.wz_tree.heading('delete', text='Usuń')
         
         # Set column widths
-        self.wz_tree.column('ID', width=50, minwidth=30)
-        self.wz_tree.column('Numer WZ', width=150, minwidth=100)
-        self.wz_tree.column('Data', width=100, minwidth=80)
-        self.wz_tree.column('Klient', width=200, minwidth=150)
-        self.wz_tree.column('Status', width=100, minwidth=80)
-        self.wz_tree.column('Ścieżka pliku', width=300, minwidth=200)
+        self.wz_tree.column('filename', width=450, minwidth=350)
+        self.wz_tree.column('date', width=170, minwidth=150)
+        self.wz_tree.column('edit', minwidth=70, width=70, stretch=NO, anchor=CENTER)
+        self.wz_tree.column('load_to_creator', minwidth=160, width=160, stretch=NO, anchor=CENTER)
+        self.wz_tree.column('delete', minwidth=70, width=70, stretch=NO, anchor=CENTER)
         
         # Create scrollbars
-        v_scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, command=self.wz_tree.yview)
-        h_scrollbar = ttk.Scrollbar(list_frame, orient=HORIZONTAL, command=self.wz_tree.xview)
+        v_scrollbar = ttk.Scrollbar(tree_frame, orient=VERTICAL, command=self.wz_tree.yview)
+        h_scrollbar = ttk.Scrollbar(tree_frame, orient=HORIZONTAL, command=self.wz_tree.xview)
         self.wz_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
         # Pack treeview and scrollbars
@@ -111,139 +102,265 @@ class BrowseWzFrame(Frame):
         v_scrollbar.pack(side=RIGHT, fill=Y)
         h_scrollbar.pack(side=BOTTOM, fill=X)
         
-        # Bind double-click event
-        self.wz_tree.bind('<Double-1>', self.on_wz_double_click)
+        # Bind single click for action buttons
+        self.wz_tree.bind("<ButtonRelease-1>", self.on_single_click)
+        # Bind double click to open WZ
+        self.wz_tree.bind("<Double-1>", self.on_double_click)
         
-        # Context menu for right-click
-        self.create_context_menu()
-        self.wz_tree.bind('<Button-3>', self.show_context_menu)  # Right-click
+        # Buttons frame (placed below the list)
+        buttons_frame = Frame(content_frame, bg='#f0f0f0')
+        buttons_frame.pack(fill=X, pady=10)
+        
+        # Refresh button
+        refresh_btn = Button(buttons_frame,
+                           text="🔄 Odśwież listę",
+                           font=("Arial", 12),
+                           fg='black',
+                           padx=15, pady=8,
+                           command=self.refresh_wz_list,
+                           cursor='hand2')
+        refresh_btn.pack(side=LEFT, padx=(0, 10))
+        
+        # Open folder button
+        folder_btn = Button(buttons_frame, 
+                           text="Otwórz folder",
+                           font=("Arial", 12),
+                           fg='black',
+                           padx=15, pady=8,
+                           command=self.open_wz_folder,
+                           cursor='hand2')
+        folder_btn.pack(side=LEFT, padx=(0, 10))
         
         # Load WZ list on creation
         self.refresh_wz_list()
     
-    def create_context_menu(self):
-        """Create context menu for WZ operations"""
-        self.context_menu = Menu(self, tearoff=0)
-        self.context_menu.add_command(label="Otwórz WZ", command=self.open_selected_wz)
-        self.context_menu.add_command(label="Edytuj WZ", command=self.edit_selected_wz)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="Usuń WZ", command=self.delete_selected_wz)
+    def sort_by_column(self, column):
+        """Sort by clicking on column header"""
+        if self.sort_by == column:
+            # If already sorting by this column, toggle order
+            self.sort_reverse = not self.sort_reverse
+        else:
+            # New column, start with descending
+            self.sort_by = column
+            self.sort_reverse = True
+        
+        # Update column headers and reload
+        self.update_column_headers()
+        self.refresh_wz_list()
     
-    def show_context_menu(self, event):
-        """Show context menu at cursor position"""
-        # Select the item under cursor
-        item = self.wz_tree.identify_row(event.y)
-        if item:
-            self.wz_tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
+    def update_column_headers(self):
+        """Update column headers to show current sort direction"""
+        # Reset all headers
+        self.wz_tree.heading('filename', text='Nazwa pliku')
+        self.wz_tree.heading('date', text='Data utworzenia')
+        
+        # Add sort indicator to current sort column
+        arrow = " ↓" if self.sort_reverse else " ↑"
+        if self.sort_by == 'filename':
+            self.wz_tree.heading('filename', text=f'Nazwa pliku{arrow}')
+        else:  # sort by date
+            self.wz_tree.heading('date', text=f'Data utworzenia{arrow}')
     
     def refresh_wz_list(self):
         """Refresh the WZ list from database"""
         try:
+            # Update column headers first
+            self.update_column_headers()
+            
             # Clear existing items
             for item in self.wz_tree.get_children():
                 self.wz_tree.delete(item)
             
+            # Clear wz_list
+            self.wz_list = []
+            
             # Get WZ list from database
-            wz_list = self.db.get_all_wz()
+            wz_data = self.db.get_all_wz()
             
-            # Populate treeview
-            for wz in wz_list:
+            # Convert to file info list with proper paths
+            wz_folder = get_wz_folder()
+            file_info_list = []
+            
+            for wz in wz_data:
                 # wz should be a tuple: (id, wz_number, date, client_name, status, file_path, ...)
-                self.wz_tree.insert('', 'end', values=(
-                    wz[0],  # ID
-                    wz[1],  # WZ Number
-                    wz[2],  # Date
-                    wz[3] if len(wz) > 3 else 'N/A',  # Client name
-                    wz[4] if len(wz) > 4 else 'Utworzone',  # Status
-                    wz[5] if len(wz) > 5 else ''  # File path
-                ))
+                if len(wz) > 5 and wz[5]:  # Has file path
+                    file_path = wz[5]
+                    if os.path.exists(file_path):
+                        # Get file stats
+                        stat = os.stat(file_path)
+                        filename = os.path.basename(file_path)
+                        
+                        file_info_list.append({
+                            'filename': filename,
+                            'filepath': file_path,
+                            'mtime': stat.st_mtime,
+                            'wz_data': wz
+                        })
             
-            print(f"Loaded {len(wz_list)} WZ documents")
+            # Sort based on selected criteria
+            if self.sort_by == 'filename':
+                file_info_list.sort(key=lambda x: x['filename'], reverse=self.sort_reverse)
+            else:  # sort by date
+                file_info_list.sort(key=lambda x: x['mtime'], reverse=self.sort_reverse)
+            
+            # Add sorted files to treeview
+            for file_info in file_info_list:
+                file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
+                
+                # Add to treeview
+                self.wz_tree.insert('', 'end', values=(
+                    file_info['filename'], 
+                    file_date, 
+                    "Edytuj", 
+                    "Wczytaj do kreatora", 
+                    "Usuń"
+                ))
+                self.wz_list.append(file_info['filepath'])
+            
+            print(f"Loaded {len(file_info_list)} WZ documents from database that exist in {wz_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
             
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować listy WZ: {e}")
             print(f"Error loading WZ list: {e}")
     
-    def on_wz_double_click(self, event):
-        """Handle double-click on WZ item"""
-        self.open_selected_wz()
+    def get_selected_wz_path(self):
+        """Get the full path of the selected WZ"""
+        selected = self.wz_tree.selection()
+        if not selected:
+            return None
+        
+        item = self.wz_tree.item(selected[0])
+        filename = item['values'][0]
+        return os.path.join(get_wz_folder(), filename)
+    
+    def on_single_click(self, event):
+        """Handle single-click on table to check for action column clicks"""
+        # Get the region that was clicked
+        region = self.wz_tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.wz_tree.identify_column(event.x)
+            
+            # Get the item that was clicked
+            item = self.wz_tree.identify_row(event.y)
+            if item:
+                # Get filename from the selected item
+                item_values = self.wz_tree.item(item)['values']
+                filename = item_values[0]
+                
+                # Check which action column was clicked
+                num_columns = len(self.wz_tree['columns'])
+                edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
+                load_column_index = f"#{num_columns - 1}"      # Second from last (Wczytaj do kreatora)
+                delete_column_index = f"#{num_columns}"        # Last column (Usuń)
+                
+                if column == edit_column_index:
+                    # Edit WZ - navigate to WZ editor (if exists) or open file
+                    wz_path = os.path.join(get_wz_folder(), filename)
+                    self.wz_tree.selection_set(item)
+                    self.open_selected_wz()
+                    
+                elif column == load_column_index:
+                    # Load to WZ creator
+                    wz_path = os.path.join(get_wz_folder(), filename)
+                    self.wz_tree.selection_set(item)
+                    
+                    # Navigate to WZ creation with this file as template
+                    # For now, just navigate to WZ creation - later we can add template loading
+                    self.nav_manager.show_frame('wz_creation')
+                    
+                elif column == delete_column_index:
+                    # Delete WZ
+                    result = tkinter.messagebox.askyesno(
+                        "Potwierdzenie usunięcia", 
+                        f"Czy na pewno chcesz usunąć WZ:\n{filename}\n\nTej operacji nie można cofnąć!"
+                    )
+                    if result:
+                        self.delete_wz_by_filename(filename)
+    
+    def on_double_click(self, event):
+        """Handle double-click to open WZ"""
+        # Get the region that was clicked
+        region = self.wz_tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # Get the column that was clicked
+            column = self.wz_tree.identify_column(event.x)
+            
+            # Don't open if clicking on action columns
+            num_columns = len(self.wz_tree['columns'])
+            edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
+            load_column_index = f"#{num_columns - 1}"      # Second from last (Wczytaj do kreatora)
+            delete_column_index = f"#{num_columns}"        # Last column (Usuń)
+            
+            if column not in [edit_column_index, load_column_index, delete_column_index]:
+                # Get the item that was clicked
+                item = self.wz_tree.identify_row(event.y)
+                if item:
+                    # Select the clicked item and open it
+                    self.wz_tree.selection_set(item)
+                    self.open_selected_wz()
+    
+    def delete_wz_by_filename(self, filename):
+        """Delete WZ by filename"""
+        try:
+            wz_path = os.path.join(get_wz_folder(), filename)
+            
+            # Find WZ in database by file path
+            wz_data = self.db.get_all_wz()
+            wz_id = None
+            for wz in wz_data:
+                if len(wz) > 5 and wz[5] == wz_path:
+                    wz_id = wz[0]  # ID is first element
+                    break
+            
+            # Delete from database if found
+            if wz_id:
+                self.db.delete_wz(wz_id)
+            
+            # Delete file if it exists
+            if os.path.exists(wz_path):
+                os.remove(wz_path)
+            
+            # Refresh the list
+            self.refresh_wz_list()
+            
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć WZ: {e}")
+    
+    def open_wz_folder(self):
+        """Open the WZ folder in file explorer"""
+        try:
+            wz_folder = get_wz_folder()
+            if platform.system() == 'Darwin':  # macOS
+                subprocess.call(['open', wz_folder])
+            elif platform.system() == 'Windows':
+                os.startfile(wz_folder)
+            else:  # Linux
+                subprocess.call(['xdg-open', wz_folder])
+                
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć folderu: {e}")
     
     def open_selected_wz(self):
         """Open the selected WZ document"""
-        selection = self.wz_tree.selection()
-        if not selection:
-            tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać WZ z listy.")
+        wz_path = self.get_selected_wz_path()
+        if not wz_path:
+            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz WZ do otwarcia!")
             return
         
-        item = self.wz_tree.item(selection[0])
-        file_path = item['values'][5]  # File path column
-        
-        if file_path and os.path.exists(file_path):
+        if os.path.exists(wz_path):
             try:
                 # Open file with default application
-                import subprocess
-                import platform
-                
                 if platform.system() == 'Darwin':  # macOS
-                    subprocess.call(['open', file_path])
+                    subprocess.call(['open', wz_path])
                 elif platform.system() == 'Windows':
-                    os.startfile(file_path)
+                    os.startfile(wz_path)
                 else:  # Linux
-                    subprocess.call(['xdg-open', file_path])
+                    subprocess.call(['xdg-open', wz_path])
             except Exception as e:
                 tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć pliku: {e}")
         else:
             tkinter.messagebox.showerror("Błąd", "Plik WZ nie istnieje lub ścieżka jest nieprawidłowa.")
-    
-    def edit_selected_wz(self):
-        """Edit the selected WZ document"""
-        selection = self.wz_tree.selection()
-        if not selection:
-            tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać WZ z listy.")
-            return
-        
-        item = self.wz_tree.item(selection[0])
-        file_path = item['values'][5]  # File path column
-        
-        # Navigate to WZ editor with the selected file
-        self.nav_manager.show_frame('wz_editor', wz_path=file_path)
-    
-    def delete_selected_wz(self):
-        """Delete the selected WZ document"""
-        selection = self.wz_tree.selection()
-        if not selection:
-            tkinter.messagebox.showwarning("Uwaga", "Proszę wybrać WZ z listy.")
-            return
-        
-        item = self.wz_tree.item(selection[0])
-        wz_id = item['values'][0]  # ID column
-        wz_number = item['values'][1]  # WZ Number column
-        file_path = item['values'][5]  # File path column
-        
-        # Confirm deletion
-        if tkinter.messagebox.askyesno("Potwierdzenie", 
-                                      f"Czy na pewno chcesz usunąć WZ {wz_number}?\n\n"
-                                      "Ta operacja usunie zarówno rekord z bazy danych jak i plik z dysku."):
-            try:
-                # Delete from database
-                self.db.delete_wz(wz_id)
-                
-                # Delete file if it exists
-                if file_path and os.path.exists(file_path):
-                    os.remove(file_path)
-                
-                # Refresh the list
-                self.refresh_wz_list()
-                
-                tkinter.messagebox.showinfo("Sukces", f"WZ {wz_number} zostało usunięte.")
-                
-            except Exception as e:
-                tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć WZ: {e}")
-    
-    def create_new_wz(self):
-        """Navigate to WZ creation screen"""
-        self.nav_manager.show_frame('wz_creation')
     
     def return_to_main_menu(self):
         """Return to main menu"""
