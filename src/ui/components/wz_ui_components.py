@@ -174,6 +174,15 @@ class WzUIComponents:
                                     padx=15, pady=8,
                                     cursor='hand2')
         self.add_product_btn.place(x=50, y=730)
+
+        # Generate WZ button
+        self.generate_btn = Button(self.window,
+                                 text="GENERUJ WZ",
+                                 font=("Arial", 14, "bold"),
+                                 bg='#f44336', fg='white',
+                                 padx=20, pady=10,
+                                 cursor='hand2')
+        self.generate_btn.place(x=450, y=750)
     
     def set_modification_callback(self, callback):
         """Set callback for field modifications"""
