@@ -265,15 +265,33 @@ class BrowseWzFrame(Frame):
                     wz_path = os.path.join(get_wz_folder(), filename)
                     self.wz_tree.selection_set(item)
                     
-                    # Navigate to WZ creation with this file as template
-                    # For now, just navigate to WZ creation - later we can add template loading
-                    self.nav_manager.show_frame('wz_creation')
+                    # Load context from selected WZ
+                    from src.data.database_service import get_wz_context_from_db
+                    context_data = get_wz_context_from_db(wz_path)
+                    
+                    if not context_data:
+                        # For older WZs without context, show warning
+                        result = tkinter.messagebox.askyesno(
+                            "Brak kontekstu", 
+                            f"WZ-ka '{filename}' nie ma zapisanego kontekstu." +
+                            "Czy chcesz przejść do kreatora WZ z niewypełnionymi polami?"
+                        )
+                        if result:
+                            self.nav_manager.show_frame('wz_generator')
+                        return
+
+                    # Remove wz_number from context (it will be generated anew)
+                    if 'wz_number' in context_data:
+                        del context_data['wz_number']
+
+                    # Pass context to WZ creator with source frame information
+                    self.nav_manager.show_frame('wz_generator', template_context=context_data, source_frame='browse_wz')
                     
                 elif column == delete_column_index:
                     # Delete WZ
                     result = tkinter.messagebox.askyesno(
                         "Potwierdzenie usunięcia", 
-                        f"Czy na pewno chcesz usunąć WZ:\n{filename}\n\nTej operacji nie można cofnąć!"
+                        f"Czy na pewno chcesz usunąć WZ: {filename}? Tej operacji nie można cofnąć!"
                     )
                     if result:
                         self.delete_wz_by_filename(filename)

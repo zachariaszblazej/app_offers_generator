@@ -43,9 +43,11 @@ class WzGeneratorApp:
         # Initialize calculation variables
         self.count = 0
         
-        # For WZ, we don't need to load template context
-        # Reset modification flag
-        self.user_modifications_made = False
+       # Load template data if provided
+        if self.template_context:
+            self.load_template_context()
+            # Reset modification flag after template load
+            self.user_modifications_made = False
     
     def setup_ui(self):
         """Setup all UI components within the parent frame"""
@@ -245,3 +247,23 @@ class WzGeneratorApp:
             # Mark user modifications
             self.user_modifications_made = True
             # No need to recalculate total as order change doesn't affect sums
+
+    def load_template_context(self):
+        """Load data from template context for creating similar WZ"""
+        try:
+            if self.template_context:
+                # Load data into UI (without WZ number)
+                success = self.ui.load_context_for_new_wz(self.template_context)
+                
+                if not success:
+                    import tkinter.messagebox
+                    tkinter.messagebox.showwarning("Błąd ładowania", 
+                        "Wystąpił problem podczas ładowania danych z szablonu.")
+            else:
+                import tkinter.messagebox
+                tkinter.messagebox.showwarning("Brak danych", 
+                    "Nie znaleziono danych kontekstu dla wybranej WZ-ki.")
+                    
+        except Exception as e:
+            import tkinter.messagebox
+            tkinter.messagebox.showerror("Błąd", f"Wystąpił błąd podczas ładowania danych: {e}")

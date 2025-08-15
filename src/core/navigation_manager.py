@@ -78,6 +78,27 @@ class NavigationManager:
                         widget.destroy()
                 # Always create new instance with template_context=None
                 self.frames[frame_name].initialize_offer_app()
+            elif frame_name == 'wz_generator' and 'template_context' in kwargs:
+                # Create new generator instance with template context
+                from src.core.wz_generator_app import WzGeneratorApp
+                # Clear existing content
+                for widget in self.frames[frame_name].content_container.winfo_children():
+                    widget.destroy()
+                # Create new generator app with template context and source frame information
+                source_frame = kwargs.get('source_frame', None)
+                self.frames[frame_name].wz_app_instance = WzGeneratorApp(
+                    self.frames[frame_name], 
+                    self, 
+                    template_context=kwargs['template_context'],
+                    source_frame=source_frame
+                )
+                # Update back button text
+                if hasattr(self.frames[frame_name], 'update_back_button_text'):
+                    self.frames[frame_name].update_back_button_text()
+            elif frame_name == 'wz_generator':
+                # Regular generator without template - ensure it's initialized
+                if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
+                    self.frames[frame_name].initialize_offer_app()
             elif frame_name == 'wz_creation':
                 # Always create fresh instance for WZ creation to ensure clean state
                 # Clear existing content first

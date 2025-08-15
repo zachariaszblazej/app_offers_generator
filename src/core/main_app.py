@@ -84,6 +84,9 @@ class OfferGeneratorMainApp:
         # WZ creation frame
         from src.core.wz_generator_app import WzGeneratorApp
         self.nav_manager.add_frame('wz_creation', WzCreationFrame, WzGeneratorApp)
+
+        # Alias for offer_generator (same as offer_creation but different name for template functionality)
+        self.nav_manager.add_frame('wz_generator', WzCreationFrame, WzGeneratorApp)
         
         # WZ editor frame
         from src.core.wz_editor_app import WzEditorApp
