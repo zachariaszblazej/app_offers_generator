@@ -1,0 +1,70 @@
+name: Cleanup Windows Build Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pokaż co zostałoby usunięte (true) lub usuń naprawdę (false)'
+        required: false
+        default: 'false'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List and delete artifacts from Build Windows Executable workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const dryRun = (core.getInput('dry_run') || 'false').toLowerCase() === 'true';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            let page = 1;
+            let deleted = 0;
+            let kept = 0;
+            const targets = [];
+            core.info(`Dry run: ${dryRun}`);
+            while (true) {
+              const { data } = await github.rest.actions.listArtifactsForRepo({ owner, repo, per_page: 100, page });
+              if (!data.artifacts.length) break;
+              for (const art of data.artifacts) {
+                const name = art.name || '';
+                const runName = art.workflow_run ? art.workflow_run.name : '';
+                const match = runName === 'Build Windows Executable' || name.startsWith('OfferGenerator-Windows');
+                if (match) {
+                  targets.push({ id: art.id, name, size: art.size_in_bytes, runName });
+                } else {
+                  kept++;
+                }
+              }
+              if (data.artifacts.length < 100) break;
+              page++;
+            }
+            core.info(`Znaleziono ${targets.length} artefaktów do usunięcia.`);
+            for (const t of targets) {
+              if (dryRun) {
+                core.info(`[DRY-RUN] Usunąłbym: ${t.name} (id=${t.id}, run='${t.runName}')`);
+              } else {
+                try {
+                  await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: t.id });
+                  deleted++;
+                  core.info(`Usunięto: ${t.name} (id=${t.id})`);
+                } catch (e) {
+                  core.warning(`Nie udało się usunąć ${t.name}: ${e.message}`);
+                }
+              }
+            }
+            core.summary
+              .addHeading('Podsumowanie czyszczenia artefaktów')
+              .addRaw(`Tryb: ${dryRun ? 'DRY-RUN (bez usuwania)' : 'REAL'}`)
+              .addRaw(`\nPlanowane/Usunięte: ${dryRun ? targets.length : deleted}`)
+              .addRaw(`\nPozostawione (niepasujące): ${kept}`)
+              .addRaw(`\nŁącznie wykrytych do usunięcia: ${targets.length}`)
+              .write();
+            if (!dryRun) core.setOutput('deleted', deleted);
+      - name: Finished
+        run: echo "Czyszczenie zakończone."
