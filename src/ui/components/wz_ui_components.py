@@ -65,7 +65,7 @@ class WzUIComponents:
         if show_wz_number:
             self.entries['wz_number_display'] = Entry(self.window, width=20, state='readonly',
                                                      bg='#f0f0f0', fg='#666666')
-            self.entries['wz_number_display'].place(x=400, y=20)
+            self.entries['wz_number_display'].place(x=400, y=200)
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data.get('address_1', ''))
@@ -146,9 +146,9 @@ class WzUIComponents:
         """Create action buttons for WZ operations"""
         # Add product button
         self.add_product_btn = Button(self.window,
-                                    text="DODAJ PRODUKT",
+                                    text="DODAJ POZYCJĘ",
                                     font=("Arial", 12, "bold"),
-                                    bg='#FF9800', fg='white',
+                                    bg='#FF9800', fg='black',
                                     padx=15, pady=8,
                                     cursor='hand2')
         self.add_product_btn.place(x=50, y=730)

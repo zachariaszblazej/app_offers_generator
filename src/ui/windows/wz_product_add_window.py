@@ -69,13 +69,13 @@ class WzProductAddWindow:
         
         # Add button
         add_btn = Button(buttons_frame, text="Dodaj produkt", 
-                        font=("Arial", 12, "bold"), bg="#4CAF50", fg="white",
+                        font=("Arial", 12, "bold"), fg="black",
                         padx=20, pady=5, command=self.add_product)
         add_btn.pack(side=LEFT, padx=10)
         
         # Cancel button
         cancel_btn = Button(buttons_frame, text="Anuluj", 
-                           font=("Arial", 12), bg="#f44336", fg="white",
+                           font=("Arial", 12), fg="black",
                            padx=20, pady=5, command=self.close)
         cancel_btn.pack(side=LEFT, padx=10)
         

@@ -116,7 +116,7 @@ class WzEditorApp:
                                 font=("Arial", 12, "bold"),
                                 bg='#ff6600', fg='black',
                                 command=self.update_wz)
-        update_wz_button.place(x=700, y=980)
+        update_wz_button.place(x=700, y=740)
     
     def load_wz_data(self):
         """Load data from existing WZ context stored in database"""

@@ -129,7 +129,7 @@ class WzGeneratorApp:
         generate_offer_button = Button(self.window, text="Generuj WZ", 
                                      font=("Arial", 12, "bold"),
                                      command=self.generate_wz)
-        generate_offer_button.place(x=700, y=980)
+        generate_offer_button.place(x=700, y=740)
         
         if hasattr(self.ui, 'generate_btn'):
             self.ui.generate_btn.config(command=self.generate_wz)
