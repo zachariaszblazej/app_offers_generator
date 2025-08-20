@@ -227,28 +227,24 @@ class WzGeneratorApp:
             products_data = self.product_table.get_all_products()
             context_data['products'] = products_data
             
-            # Generate WZ number in proper format
-            wz_order_number = get_next_wz_number()
+            # Determine year (current or from date field if parseable)
             date_str = context_data.get('date', '')
+            from datetime import datetime as _dt
+            year_val = None
+            if isinstance(date_str, str):
+                parts = date_str.split()
+                # Expect patterns like 'DD <month_name> YYYY' after formatting
+                if len(parts) >= 3 and parts[-1].isdigit() and len(parts[-1]) == 4:
+                    year_val = parts[-1]
+            if year_val is None:
+                year_val = str(_dt.now().year)
+
+            # Get next year-scoped WZ sequence
+            wz_order_number = get_next_wz_number(int(year_val))
             client_alias = self.ui.selected_client_alias or 'KLIENT'
-            
-            # Extract year from date
-            try:
-                from datetime import datetime
-                if date_str:
-                    # Parse date in format "DD MM YYYY" 
-                    date_parts = date_str.split()
-                    if len(date_parts) == 3:
-                        year = date_parts[2]
-                    else:
-                        year = str(datetime.now().year)
-                else:
-                    year = str(datetime.now().year)
-            except:
-                year = str(datetime.now().year)
-            
-            # Format WZ number: WZ_{number}_{year}_{alias}
-            wz_number = f"WZ_{wz_order_number}_{year}_{client_alias}"
+
+            # Format WZ number: WZ_{seq}_{year}_{alias}
+            wz_number = f"WZ_{wz_order_number}_{year_val}_{client_alias}"
             context_data['wz_number'] = wz_number
             
             # Generate document

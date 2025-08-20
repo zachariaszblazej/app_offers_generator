@@ -92,59 +92,23 @@ def get_next_offer_number():
         return 1
 
 def get_next_offer_number_for_year(year: int):
-    """Get next offer sequential number limited to a specific year.
-    Strategy: scan OfferContext JSON for entries whose 'date' belongs to given year.
-    If schema grows, consider adding explicit Year column for efficiency.
+    """Get next offer sequential number for a given year (requires OfferYearNumber column).
+    Legacy fallback removed intentionally – database must be migrated.
     """
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        # Fast path: if OfferYearNumber column exists use SQL aggregate
         cursor.execute("PRAGMA table_info(Offers)")
         cols = [r[1] for r in cursor.fetchall()]
-        if 'OfferYearNumber' in cols:
-            cursor.execute("SELECT MAX(OfferOrderNumber) FROM Offers WHERE OfferYearNumber = ?", (year,))
-            result = cursor.fetchone()[0]
+        if 'OfferYearNumber' not in cols:
             conn.close()
-            return 1 if result is None else result + 1
-
-        # Legacy fallback path (pre-migration)
-        cursor.execute("SELECT OfferOrderNumber, OfferContext FROM Offers")
-        max_number = 0
-        import re as _re
-        for order_no, context_json in cursor.fetchall():
-            if not context_json:
-                continue
-            try:
-                ctx = json.loads(context_json)
-                date_val = ctx.get('date')
-                if not date_val:
-                    continue
-                yr = None
-                if isinstance(date_val, str):
-                    if len(date_val) >= 4 and date_val[:4].isdigit():
-                        yr = int(date_val[:4])
-                    else:
-                        m = _re.search(r'(19|20)\d{2}', date_val)
-                        if m:
-                            yr = int(m.group(0))
-                if yr == year:
-                    off_num = ctx.get('offer_number')
-                    seq = None
-                    if isinstance(off_num, str):
-                        m2 = _re.match(r'(\d+)[/_-]OF[/_-](%d)' % year, off_num)
-                        if m2:
-                            seq = int(m2.group(1))
-                    if seq is None:
-                        seq = order_no
-                    if seq > max_number:
-                        max_number = seq
-            except Exception:
-                continue
+            raise RuntimeError("Missing OfferYearNumber column – migrate database first")
+        cursor.execute("SELECT MAX(OfferOrderNumber) FROM Offers WHERE OfferYearNumber = ?", (year,))
+        result = cursor.fetchone()[0]
         conn.close()
-        return max_number + 1 if max_number >= 0 else 1
-    except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return 1 if result is None else result + 1
+    except Exception as e:
+        tkinter.messagebox.showerror("Database Error", f"Offer yearly numbering error: {e}")
         return 1
 
 
@@ -629,43 +593,59 @@ def get_all_offer_file_paths():
 
 # WZ (Wuzetka) related functions
 
-def get_next_wz_number():
-    """Get the next WZ order number from the database"""
+def get_next_wz_number(year: int):
+    """Get next WZ sequential number for a given year (requires WzYearNumber column)."""
     try:
-        db_path = get_database_path()
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT MAX(WzOrderNumber) FROM Wuzetkas")
+        cursor.execute("PRAGMA table_info(Wuzetkas)")
+        cols = [r[1] for r in cursor.fetchall()]
+        if 'WzYearNumber' not in cols:
+            conn.close()
+            raise RuntimeError("Missing WzYearNumber column – migrate database first")
+        cursor.execute("SELECT MAX(WzOrderNumber) FROM Wuzetkas WHERE WzYearNumber = ?", (year,))
         result = cursor.fetchone()[0]
         conn.close()
-        
-        # If no WZ exist, start with 1, otherwise increment
         return 1 if result is None else result + 1
-    except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+    except Exception as e:
+        tkinter.messagebox.showerror("Database Error", f"WZ yearly numbering error: {e}")
         return 1
 
 
 def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
-    """Save WZ information to the database"""
+    """Save WZ (assumes WzYearNumber column exists after migration)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        
-        # Convert context to JSON if provided
+        cursor.execute("PRAGMA table_info(Wuzetkas)")
+        cols = [r[1] for r in cursor.fetchall()]
+
+        # Determine year
+        wz_year = None
+        if wz_context:
+            d = wz_context.get('date')
+            if isinstance(d, str) and len(d) >= 4 and d[-4:].isdigit():
+                # try parse last 4 digits as year (format might differ)
+                import re as _re
+                m = _re.search(r'(19|20)\d{2}', d)
+                if m:
+                    wz_year = int(m.group(0))
+        if wz_year is None:
+            import datetime as _dt
+            wz_year = _dt.datetime.now().year
+
         context_json = None
         if wz_context:
-            context_json = json.dumps(wz_context)
-        
-        # Insert WZ record
-        cursor.execute("""
-            INSERT INTO Wuzetkas (WzOrderNumber, WzFilePath, WzContext) 
-            VALUES (?, ?, ?)
-        """, (wz_order_number, wz_file_path, context_json))
-        
+            context_json = json.dumps(wz_context, ensure_ascii=False)
+
+        if 'WzYearNumber' in cols:
+            cursor.execute("INSERT INTO Wuzetkas (WzYearNumber, WzOrderNumber, WzFilePath, WzContext) VALUES (?, ?, ?, ?)",
+                           (wz_year, wz_order_number, wz_file_path, context_json))
+        else:
+            cursor.execute("INSERT INTO Wuzetkas (WzOrderNumber, WzFilePath, WzContext) VALUES (?, ?, ?)",
+                           (wz_order_number, wz_file_path, context_json))
         conn.commit()
         conn.close()
-        
         return True, "WZ zostało zapisane do bazy danych"
     except sqlite3.Error as e:
         return False, f"Błąd podczas zapisywania WZ do bazy: {e}"
