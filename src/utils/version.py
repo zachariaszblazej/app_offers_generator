@@ -1,72 +1,30 @@
-"""
-Version and build information for the application
-"""
+"""Unified versioning: always 1.0.0.<short_commit_hash>"""
+import subprocess
 import os
-import json
-from datetime import datetime
 
-# Default version info (will be overridden by build process)
-DEFAULT_VERSION_INFO = {
-    "version": "2.1.0",
-    "build_number": "dev",
-    "commit_hash": "unknown",
-    "build_date": "development",
-    "branch": "local",
-    "github_run_id": None,
-    "github_run_number": None
-}
+BASE_VERSION = "1.0.0"
 
-def get_version_info():
-    """Get version information from build file or return defaults"""
+def _get_git_commit_hash():
+    """Return short commit hash or 'unknown' if not a git repo."""
     try:
-        # Try to read build info from generated file
-        build_info_path = os.path.join(os.path.dirname(__file__), '..', '..', 'build_info.json')
-        if os.path.exists(build_info_path):
-            with open(build_info_path, 'r', encoding='utf-8') as f:
-                build_info = json.load(f)
-                return build_info
-    except Exception as e:
-        print(f"Could not read build info: {e}")
-    
-    # Fallback to default version info
-    return DEFAULT_VERSION_INFO
+        # Try environment first (CI systems often expose this)
+        for env_var in ("GITHUB_SHA", "CI_COMMIT_SHA"):
+            if env_var in os.environ and os.environ[env_var]:
+                return os.environ[env_var][:8]
+        # Fallback to git command
+        result = subprocess.run([
+            'git','rev-parse','--short','HEAD'
+        ], capture_output=True, text=True, check=True)
+        return result.stdout.strip()
+    except Exception:
+        return "unknown"
 
 def get_version_string():
-    """Get formatted version string for display"""
-    info = get_version_info()
-    
-    if info["build_number"] == "dev":
-        return f"v{info['version']} (Development)"
-    elif info["github_run_number"]:
-        return f"v{info['version']} (Build #{info['github_run_number']})"
-    else:
-        return f"v{info['version']} (Build {info['build_number']})"
+    commit = _get_git_commit_hash()
+    return f"{BASE_VERSION}.{commit}" if commit != "unknown" else f"{BASE_VERSION}.dev"
 
 def get_full_version_info():
-    """Get detailed version information for about dialog"""
-    info = get_version_info()
-    
-    lines = [
-        f"Wersja: {info['version']}",
-    ]
-    
-    if info["build_number"] != "dev":
-        lines.append(f"Build: {info['build_number']}")
-    
-    if info["github_run_number"]:
-        lines.append(f"GitHub Build: #{info['github_run_number']}")
-        
-    if info["commit_hash"] != "unknown":
-        short_hash = info["commit_hash"][:8] if len(info["commit_hash"]) > 8 else info["commit_hash"]
-        lines.append(f"Commit: {short_hash}")
-    
-    if info["branch"] != "local":
-        lines.append(f"Branch: {info['branch']}")
-        
-    if info["build_date"] != "development":
-        lines.append(f"Data buildu: {info['build_date']}")
-    
-    return "\n".join(lines)
+    commit = _get_git_commit_hash()
+    return f"Wersja: {get_version_string()}"
 
-# Export the current version for backward compatibility
 APP_VERSION = get_version_string()
