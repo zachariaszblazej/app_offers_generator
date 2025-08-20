@@ -251,13 +251,8 @@ class BrowseOffersFrame(Frame):
         vals = self.tree.item(item)['values']
         if not vals:
             return
-        filename = vals[0]
-        if isinstance(filename, str) and filename.startswith('📁 '):
-            year = filename.replace('📁', '').strip()
-            self.current_year_folder = year
-            if not self.up_btn.winfo_ismapped():
-                self.up_btn.pack(side=LEFT, padx=(10, 0))
-            self.load_offers()
+        # Ignore folder rows on single click (no navigation here anymore)
+        if isinstance(vals[0], str) and vals[0].startswith('📁 '):
             return
         n = len(self.tree['columns'])
         edit_idx = f'#{n - 2}'
@@ -283,6 +278,14 @@ class BrowseOffersFrame(Frame):
             return
         item = self.tree.identify_row(event.y)
         if item:
+            vals = self.tree.item(item)['values']
+            if vals and isinstance(vals[0], str) and vals[0].startswith('📁 '):
+                year = vals[0].replace('📁', '').strip()
+                self.current_year_folder = year
+                if not self.up_btn.winfo_ismapped():
+                    self.up_btn.pack(side=LEFT, padx=(10, 0))
+                self.load_offers()
+                return
             self.tree.selection_set(item)
             self.open_selected_offer()
 

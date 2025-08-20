@@ -197,13 +197,7 @@ class BrowseWzFrame(Frame):
                 load_column_index = f"#{num_columns - 1}"      # Second from last (Wczytaj do kreatora)
                 delete_column_index = f"#{num_columns}"        # Last column (Usuń)
                 
-                if isinstance(filename, str) and filename.startswith('📁 '):
-                    year = filename.replace('📁', '').strip()
-                    self.current_year_folder = year
-                    if not self.up_btn.winfo_ismapped():
-                        self.up_btn.pack(side=LEFT, padx=(10, 0))
-                    self.refresh_wz_list()
-                    return
+                # Folder navigation moved to double-click only
 
                 path = self.get_selected_wz_path()
                 if not path:
