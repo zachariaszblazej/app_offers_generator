@@ -631,6 +631,15 @@ def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
                 if m:
                     wz_year = int(m.group(0))
         if wz_year is None:
+            # Try to derive from year subfolder in path ( .../<year>/WZ_seq_year_alias.docx )
+            import re as _re
+            m2 = _re.search(r'[\\/](19|20)\d{2}[\\/]', wz_file_path)
+            if m2:
+                try:
+                    wz_year = int(m2.group(0).strip('/\\'))
+                except ValueError:
+                    wz_year = None
+        if wz_year is None:
             import datetime as _dt
             wz_year = _dt.datetime.now().year
 

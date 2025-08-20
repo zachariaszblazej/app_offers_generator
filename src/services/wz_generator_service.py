@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import TEMPLATE_PATH, get_wz_folder
 from src.data.database_service import get_next_wz_number, save_wz_to_db
+import re
 
 
 def convert_date(date: datetime.datetime) -> str:
@@ -71,20 +72,22 @@ def generate_wz_document(context_data, custom_output_path=None):
         
         # Determine output path
         if custom_output_path:
-            # Use provided path (for editing existing WZ)
+            # Editing existing WZ – keep original path
             output_path = custom_output_path
         else:
-            # Generate new filename and path
+            # New WZ: ensure year-scoped directory just like offers
             wz_number = context_data.get('wz_number', 'WZ_1')
+            # Extract year from wz_number pattern WZ_<seq>_<year>_... ; fallback to current year
+            year_match = re.search(r'^WZ_\d+_(\d{4})', wz_number)
+            if year_match:
+                year = year_match.group(1)
+            else:
+                year = str(datetime.datetime.now().year)
+            # Build filesystem-safe filename (already safe – wz_number has no slashes)
             output_filename = f"{wz_number}.docx"
-            
-            # Get output directory (use WZ folder from settings)
-            output_dir = get_wz_folder()
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir, exist_ok=True)
-            
-            # Full output path
-            output_path = os.path.join(output_dir, output_filename)
+            year_dir = os.path.join(get_wz_folder(), year)
+            os.makedirs(year_dir, exist_ok=True)
+            output_path = os.path.join(year_dir, output_filename)
         
         # Save document
         doc.save(output_path)
