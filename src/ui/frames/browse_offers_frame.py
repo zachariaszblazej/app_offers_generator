@@ -29,51 +29,53 @@ class BrowseOffersFrame(Frame):
 
     # UI --------------------------------------------------------------
     def _build_ui(self):
-        self.configure(bg='#f0f0f0')
-        header = Frame(self, bg='#f0f0f0')
-        header.pack(fill=X, padx=20, pady=20)
-        Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
-               command=self.return_to_main_menu, cursor='hand2').pack(side=LEFT)
+     self.configure(bg='#f0f0f0')
+     header = Frame(self, bg='#f0f0f0')
+     header.pack(fill=X, padx=20, pady=20)
+     self.back_btn = Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
+                   command=self.return_to_main_menu, cursor='hand2')
+     self.back_btn.pack(side=LEFT)
+     # Up (year) button placed next to back button, hidden initially
+     self.up_btn = Button(header, text='⬆ Foldery z latami', font=('Arial', 12), fg='black', padx=15, pady=8,
+                 command=self.navigate_up, cursor='hand2')
+     self.up_btn.pack(side=LEFT, padx=(10, 0))
+     self.up_btn.forget()
 
-        content = Frame(self, bg='#f0f0f0')
-        content.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
-        list_frame = Frame(content, bg='white', relief=RIDGE, bd=2)
-        list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
-        Label(list_frame, text='Lista zapytań ofertowych', font=('Arial', 14, 'bold'), bg='white', fg='#333').pack(pady=15)
+     content = Frame(self, bg='#f0f0f0')
+     content.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
+     list_frame = Frame(content, bg='white', relief=RIDGE, bd=2)
+     list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
+     Label(list_frame, text='Lista zapytań ofertowych', font=('Arial', 14, 'bold'), bg='white', fg='#333').pack(pady=15)
 
-        tree_wrap = Frame(list_frame, bg='white')
-        tree_wrap.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
-        cols = ('filename', 'date', 'edit', 'similar', 'delete')
-        self.tree = ttk.Treeview(tree_wrap, columns=cols, show='headings', height=15)
-        self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
-        self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
-        self.tree.heading('edit', text='Edytuj')
-        self.tree.heading('similar', text='Wczytaj do kreatora')
-        self.tree.heading('delete', text='Usuń')
-        self.tree.column('filename', width=450, minwidth=350)
-        self.tree.column('date', width=170, minwidth=150)
-        self.tree.column('edit', width=70, stretch=NO, anchor=CENTER)
-        self.tree.column('similar', width=160, stretch=NO, anchor=CENTER)
-        self.tree.column('delete', width=70, stretch=NO, anchor=CENTER)
-        vs = ttk.Scrollbar(tree_wrap, orient=VERTICAL, command=self.tree.yview)
-        hs = ttk.Scrollbar(tree_wrap, orient=HORIZONTAL, command=self.tree.xview)
-        self.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
-        self.tree.pack(side=LEFT, fill=BOTH, expand=True)
-        vs.pack(side=RIGHT, fill=Y)
-        hs.pack(side=BOTTOM, fill=X)
-        self.tree.bind('<ButtonRelease-1>', self.on_single_click)
-        self.tree.bind('<Double-1>', self.on_double_click)
+     tree_wrap = Frame(list_frame, bg='white')
+     tree_wrap.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
+     cols = ('filename', 'date', 'edit', 'similar', 'delete')
+     self.tree = ttk.Treeview(tree_wrap, columns=cols, show='headings', height=15)
+     self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
+     self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
+     self.tree.heading('edit', text='Edytuj')
+     self.tree.heading('similar', text='Wczytaj do kreatora')
+     self.tree.heading('delete', text='Usuń')
+     self.tree.column('filename', width=450, minwidth=350)
+     self.tree.column('date', width=170, minwidth=150)
+     self.tree.column('edit', width=70, stretch=NO, anchor=CENTER)
+     self.tree.column('similar', width=160, stretch=NO, anchor=CENTER)
+     self.tree.column('delete', width=70, stretch=NO, anchor=CENTER)
+     vs = ttk.Scrollbar(tree_wrap, orient=VERTICAL, command=self.tree.yview)
+     hs = ttk.Scrollbar(tree_wrap, orient=HORIZONTAL, command=self.tree.xview)
+     self.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
+     self.tree.pack(side=LEFT, fill=BOTH, expand=True)
+     vs.pack(side=RIGHT, fill=Y)
+     hs.pack(side=BOTTOM, fill=X)
+     self.tree.bind('<ButtonRelease-1>', self.on_single_click)
+     self.tree.bind('<Double-1>', self.on_double_click)
 
-        buttons = Frame(content, bg='#f0f0f0')
-        buttons.pack(fill=X, pady=10)
-        self.up_btn = Button(buttons, text='⬆ Rok', font=('Arial', 12), fg='black', padx=15, pady=8,
-                              command=self.navigate_up, cursor='hand2')
-        self.up_btn.pack(side=LEFT, padx=(0, 10))
-        self.up_btn.forget()
-        Button(buttons, text='🔄 Odśwież listę', font=('Arial', 12), fg='black', padx=15, pady=8,
-               command=self.load_offers, cursor='hand2').pack(side=LEFT, padx=(0, 10))
-        Button(buttons, text='Otwórz folder', font=('Arial', 12), fg='black', padx=15, pady=8,
-               command=self.open_offers_folder, cursor='hand2').pack(side=LEFT, padx=(0, 10))
+     buttons = Frame(content, bg='#f0f0f0')
+     buttons.pack(fill=X, pady=10)
+     Button(buttons, text='🔄 Odśwież listę', font=('Arial', 12), fg='black', padx=15, pady=8,
+         command=self.load_offers, cursor='hand2').pack(side=LEFT, padx=(0, 10))
+     Button(buttons, text='Otwórz folder', font=('Arial', 12), fg='black', padx=15, pady=8,
+         command=self.open_offers_folder, cursor='hand2').pack(side=LEFT, padx=(0, 10))
 
     # Sorting ----------------------------------------------------------
     def sort_by_column(self, column: str):
@@ -253,7 +255,8 @@ class BrowseOffersFrame(Frame):
         if isinstance(filename, str) and filename.startswith('📁 '):
             year = filename.replace('📁', '').strip()
             self.current_year_folder = year
-            self.up_btn.pack(side=LEFT, padx=(0, 10))
+            if not self.up_btn.winfo_ismapped():
+                self.up_btn.pack(side=LEFT, padx=(10, 0))
             self.load_offers()
             return
         n = len(self.tree['columns'])

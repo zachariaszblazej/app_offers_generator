@@ -34,8 +34,13 @@ class BrowseWzFrame(Frame):
      self.configure(bg='#f0f0f0')
      header = Frame(self, bg='#f0f0f0')
      header.pack(fill=X, padx=20, pady=20)
-     Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
-         command=self.return_to_main_menu, cursor='hand2').pack(side=LEFT)
+     self.back_btn = Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
+                   command=self.return_to_main_menu, cursor='hand2')
+     self.back_btn.pack(side=LEFT)
+     self.up_btn = Button(header, text='⬆ Foldery z latami', font=('Arial', 12), fg='black', padx=15, pady=8,
+                 command=self.navigate_up, cursor='hand2')
+     self.up_btn.pack(side=LEFT, padx=(10, 0))
+     self.up_btn.forget()
 
      content = Frame(self, bg='#f0f0f0')
      content.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
@@ -68,10 +73,6 @@ class BrowseWzFrame(Frame):
 
      buttons = Frame(content, bg='#f0f0f0')
      buttons.pack(fill=X, pady=10)
-     self.up_btn = Button(buttons, text='⬆ Rok', font=('Arial', 12), fg='black', padx=15, pady=8,
-                  command=self.navigate_up, cursor='hand2')
-     self.up_btn.pack(side=LEFT, padx=(0, 10))
-     self.up_btn.forget()
      Button(buttons, text='🔄 Odśwież listę', font=('Arial', 12), fg='black', padx=15, pady=8,
          command=self.refresh_wz_list, cursor='hand2').pack(side=LEFT, padx=(0, 10))
      Button(buttons, text='Otwórz folder', font=('Arial', 12), fg='black', padx=15, pady=8,
@@ -199,7 +200,8 @@ class BrowseWzFrame(Frame):
                 if isinstance(filename, str) and filename.startswith('📁 '):
                     year = filename.replace('📁', '').strip()
                     self.current_year_folder = year
-                    self.up_btn.pack(side=LEFT, padx=(0, 10))
+                    if not self.up_btn.winfo_ismapped():
+                        self.up_btn.pack(side=LEFT, padx=(10, 0))
                     self.refresh_wz_list()
                     return
 
@@ -246,7 +248,8 @@ class BrowseWzFrame(Frame):
                         # treat double click on folder same as single select
                         year = vals[0].replace('📁', '').strip()
                         self.current_year_folder = year
-                        self.up_btn.pack(side=LEFT, padx=(0, 10))
+                        if not self.up_btn.winfo_ismapped():
+                            self.up_btn.pack(side=LEFT, padx=(10, 0))
                         self.refresh_wz_list()
                         return
                     self.wz_tree.selection_set(item)
