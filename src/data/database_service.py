@@ -731,6 +731,22 @@ def delete_wz(wz_id):
         return False, f"Błąd podczas usuwania WZ z bazy: {e}"
 
 
+def delete_wz_by_file_path(wz_file_path: str):
+    """Delete a single WZ row using its unique file path (safer with year-based numbering)."""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Wuzetkas WHERE WzFilePath = ?", (wz_file_path,))
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "WZ nie zostało znalezione w bazie (po ścieżce)"
+        conn.commit()
+        conn.close()
+        return True, "WZ zostało usunięte z bazy danych"
+    except sqlite3.Error as e:
+        return False, f"Błąd podczas usuwania WZ (po ścieżce): {e}"
+
+
 def get_all_wz_file_paths():
     """Get all WZ file paths from database"""
     try:
@@ -762,6 +778,13 @@ class DatabaseService:
     def delete_wz(self, wz_id):
         """Delete WZ from database"""
         success, message = delete_wz(wz_id)
+        if not success:
+            raise Exception(message)
+        return success
+
+    def delete_wz_by_file_path(self, wz_file_path: str):
+        """Delete WZ using its file path (preferred)."""
+        success, message = delete_wz_by_file_path(wz_file_path)
         if not success:
             raise Exception(message)
         return success

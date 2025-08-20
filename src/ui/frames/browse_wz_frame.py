@@ -258,17 +258,13 @@ class BrowseWzFrame(Frame):
     
     def delete_wz_by_path(self, wz_path: str):
         try:
-            # Find WZ in database by exact file path
-            wz_data = self.db.get_all_wz()
-            wz_id = None
-            for wz in wz_data:
-                if len(wz) > 5 and wz[5] == wz_path:
-                    wz_id = wz[0]
-                    break
-            if wz_id:
-                self.db.delete_wz(wz_id)
+            # Delete using unique file path to avoid removing same order numbers in other years
+            self.db.delete_wz_by_file_path(wz_path)
             if os.path.exists(wz_path):
-                os.remove(wz_path)
+                try:
+                    os.remove(wz_path)
+                except OSError as fe:
+                    print(f"Ostrzeżenie: nie udało się usunąć pliku z dysku: {fe}")
             self.refresh_wz_list()
         except Exception as e:  # noqa: BLE001
             tkinter.messagebox.showerror('Błąd', f'Nie udało się usunąć WZ: {e}')
