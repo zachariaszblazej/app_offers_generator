@@ -56,6 +56,7 @@ DEFAULT_OFFER_DETAILS = {
 TEMPLATE_PATH = get_resource_path('templates/offer_template.docx')
 OFFERS_FOLDER = '../FakeHantechServer/Oferty'  # Fallback default
 BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
+WZ_BACKGROUND_IMAGE = get_resource_path('background_wz_1.png')
 
 def get_offers_folder():
     """Get the current offers folder from settings or return default"""

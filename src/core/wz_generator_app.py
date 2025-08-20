@@ -17,7 +17,7 @@ from src.ui.windows.wz_product_edit_window import WzProductEditWindow
 from src.ui.components.wz_product_table import WzProductTable
 from src.services.wz_generator_service import generate_wz_document
 from src.data.database_service import get_next_wz_number, save_wz_to_db
-from src.utils.resources import get_resource_path
+from src.utils.config import WZ_BACKGROUND_IMAGE
 
 
 class WzGeneratorApp:
@@ -59,17 +59,13 @@ class WzGeneratorApp:
         
         # Set background - use WZ background
         try:
-            wz_bg_path = get_resource_path('background_wz_1.png')
-            if os.path.exists(wz_bg_path):
-                bg = PhotoImage(file=wz_bg_path)
-                label_BG = Label(self.window, image=bg)
-                label_BG.place(x=0, y=0)
-                label_BG.image = bg  # Keep a reference
-            else:
-                raise FileNotFoundError(wz_bg_path)
+            bg = PhotoImage(file=WZ_BACKGROUND_IMAGE)
+            label_BG = Label(self.window, image=bg)
+            label_BG.place(x=0, y=0)
+            label_BG.image = bg
         except Exception as e:
             print(f"Could not load WZ background image: {e}")
-            self.window.configure(bg='#f5f5f5')  # Fallback color
+            self.window.configure(bg='#f5f5f5')
         
         # Initialize UI components (WZ version)
         # Create product table with edit and delete callbacks
