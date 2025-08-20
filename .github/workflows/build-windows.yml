@@ -89,32 +89,12 @@ jobs:
           echo "Version: $version" > build_info.txt
           git rev-parse HEAD 2>$null >> build_info.txt
           Write-Host "Listing repository root contents before spec build:"; Get-ChildItem -Force
-          $specTarget = 'offer_generator.spec'
-          if (-not (Test-Path $specTarget)) {
-            Write-Host "Custom spec $specTarget not found – generating new spec via PyInstaller (fallback)."
-            pyinstaller --noconfirm --name OfferGenerator --noconsole `
-              --add-data "src;src" `
-              --add-data "templates;templates" `
-              --add-data "background_offer_1.png;." `
-              --add-data "background_wz_1.png;." `
-              --add-data "app_settings.json;." `
-              --hidden-import tkcalendar `
-              --hidden-import babel.numbers `
-              main.py --log-level WARN
-            # Generated spec will be OfferGenerator.spec – modify to inject version
-            if (Test-Path OfferGenerator.spec) {
-              $specContent = Get-Content OfferGenerator.spec -Raw
-              if ($specContent -notmatch 'version=') {
-                $specContent = $specContent -replace 'EXE\(', "EXE(`n    version='$version',"
-                Set-Content OfferGenerator.spec $specContent
-              }
-              $specTarget = 'OfferGenerator.spec'
-            } else {
-              throw "Failed to generate fallback spec file."
-            }
+          if (-not (Test-Path ./offer_generator.spec)) {
+            Write-Host "Spec file not found in current directory. Searching..."
+            Get-ChildItem -Recurse -Filter offer_generator.spec | Select-Object FullName | ForEach-Object { Write-Host "Found: $_" }
+            if (-not (Get-ChildItem -Recurse -Filter offer_generator.spec)) { throw "offer_generator.spec not found" }
           }
-          Write-Host "Using spec file: $specTarget"
-          pyinstaller $specTarget --noconfirm
+          pyinstaller offer_generator.spec --noconfirm
           if ( (Test-Path build_info.txt) -and (Test-Path dist/OfferGenerator) ) { Copy-Item build_info.txt dist/OfferGenerator/ }
 
       - name: Upload executable (Debug version)
