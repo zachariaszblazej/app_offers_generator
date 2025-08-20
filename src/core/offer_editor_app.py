@@ -209,6 +209,22 @@ class OfferEditorApp:
             if 'town' in context_data and 'town' in self.ui.entries:
                 self.ui.entries['town'].delete(0, END)
                 self.ui.entries['town'].insert(0, context_data.get('town', ''))
+
+            # Load company (supplier self) header data from context instead of settings (editor mode requirement)
+            company_map = {
+                'address1': 'address_1',
+                'address2': 'address_2',
+                'nip': 'nip',
+                'regon': 'regon',
+                'email': 'email',
+                'phone': 'phone_number',
+                'bank_name': 'bank_name',
+                'account_number': 'account_number',
+            }
+            for entry_key, ctx_key in company_map.items():
+                if entry_key in self.ui.entries:
+                    self.ui.entries[entry_key].delete(0, END)
+                    self.ui.entries[entry_key].insert(0, context_data.get(ctx_key, ''))
             
             # Load notes (Text widget, not Entry)
             if 'uwagi' in context_data and 'uwagi' in self.ui.entries:

@@ -202,6 +202,13 @@ class WzEditorApp:
             if 'town' in context_data and 'town' in self.ui.entries:
                 self.ui.entries['town'].delete(0, END)
                 self.ui.entries['town'].insert(0, context_data.get('town', ''))
+
+            # Load company header fields from context (editor mode) overriding settings
+            company_keys = ['address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
+            for key in company_keys:
+                if key in self.ui.entries:
+                    self.ui.entries[key].delete(0, END)
+                    self.ui.entries[key].insert(0, context_data.get(key, ''))
             
             # Load date
             if 'date' in context_data:
