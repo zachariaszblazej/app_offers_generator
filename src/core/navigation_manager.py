@@ -97,8 +97,11 @@ class NavigationManager:
                     self.frames[frame_name].update_back_button_text()
             elif frame_name == 'wz_generator':
                 # Regular generator without template - ensure it's initialized
-                if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
-                    self.frames[frame_name].initialize_offer_app()
+                # Use wz_app_instance analogous to offer_app_instance for offers
+                if not hasattr(self.frames[frame_name], 'wz_app_instance') or not self.frames[frame_name].wz_app_instance:
+                    # Initialize WZ app inside creation frame
+                    if hasattr(self.frames[frame_name], 'initialize_wz_app'):
+                        self.frames[frame_name].initialize_wz_app()
             elif frame_name == 'wz_creation':
                 # Always create fresh instance for WZ creation to ensure clean state
                 # Clear existing content first

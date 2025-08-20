@@ -338,5 +338,10 @@ class WzCreationFrame(Frame):
         self.bind_all("<Button-5>", self.on_mousewheel)
         self.bind_all("<Shift-MouseWheel>", self.on_mousewheel)
         
-        # Always initialize WZ app when frame is shown (ensure fresh instance)
-        self.initialize_wz_app()
+        # Initialize only if not already created (e.g. when coming with template_context)
+        # NavigationManager may have already created wz_app_instance (with template). Don't overwrite it.
+        if not self.wz_app_instance:
+            self.initialize_wz_app()
+        else:
+            # Ensure scroll region reflects existing content
+            self.after(100, self.update_scroll_region)
