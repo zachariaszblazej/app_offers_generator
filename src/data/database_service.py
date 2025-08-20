@@ -6,12 +6,14 @@ import json
 import tkinter.messagebox
 import sys
 import os
+import datetime
 
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import DATABASE_PATH
 from src.utils.settings import SettingsManager
+import re
 
 def get_database_path():
     """Get the current database path from settings or fallback to config"""
@@ -97,11 +99,20 @@ def get_next_offer_number_for_year(year: int):
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        # Fetch all offer rows with context; we only extract year from JSON if possible
+        # Fast path: if OfferYearNumber column exists use SQL aggregate
+        cursor.execute("PRAGMA table_info(Offers)")
+        cols = [r[1] for r in cursor.fetchall()]
+        if 'OfferYearNumber' in cols:
+            cursor.execute("SELECT MAX(OfferOrderNumber) FROM Offers WHERE OfferYearNumber = ?", (year,))
+            result = cursor.fetchone()[0]
+            conn.close()
+            return 1 if result is None else result + 1
+
+        # Legacy fallback path (pre-migration)
         cursor.execute("SELECT OfferOrderNumber, OfferContext FROM Offers")
         max_number = 0
-        for row in cursor.fetchall():
-            order_no, context_json = row
+        import re as _re
+        for order_no, context_json in cursor.fetchall():
             if not context_json:
                 continue
             try:
@@ -109,31 +120,22 @@ def get_next_offer_number_for_year(year: int):
                 date_val = ctx.get('date')
                 if not date_val:
                     continue
-                # date may be isoformat or string like 'dd Month yyyy' – extract year digits
                 yr = None
                 if isinstance(date_val, str):
-                    # Try ISO first
                     if len(date_val) >= 4 and date_val[:4].isdigit():
                         yr = int(date_val[:4])
                     else:
-                        # Look for 4-digit year at end
-                        import re
-                        m = re.search(r'(19|20)\d{2}', date_val)
+                        m = _re.search(r'(19|20)\d{2}', date_val)
                         if m:
                             yr = int(m.group(0))
-                # If stored as something else, skip
                 if yr == year:
-                    # We need sequential number per year; OfferNumber may be embedded in offer_number string
-                    # Prefer extracting number from offer_number inside context if present
                     off_num = ctx.get('offer_number')
                     seq = None
                     if isinstance(off_num, str):
-                        import re
-                        m2 = re.match(r'(\d+)[/_-]OF[/_-](%d)' % year, off_num)
+                        m2 = _re.match(r'(\d+)[/_-]OF[/_-](%d)' % year, off_num)
                         if m2:
                             seq = int(m2.group(1))
                     if seq is None:
-                        # fallback: rely on OfferOrderNumber but that was global before change
                         seq = order_no
                     if seq > max_number:
                         max_number = seq
@@ -147,21 +149,41 @@ def get_next_offer_number_for_year(year: int):
 
 
 def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
-    """Save offer information to the database"""
+    """Save offer (assumes OfferYearNumber column already exists and composite UNIQUE set)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        
-        # Convert context to JSON if provided
+
+        # Determine offer year from context or path
+        offer_year = None
+        if offer_context:
+            raw_date = offer_context.get('date')
+            if isinstance(raw_date, str):
+                if re.match(r'^\d{4}-', raw_date):
+                    offer_year = int(raw_date[:4])
+                else:
+                    m = re.search(r'(19|20)\d{2}', raw_date)
+                    if m:
+                        offer_year = int(m.group(0))
+        if offer_year is None:
+            m2 = re.search(r'[\\/](19|20)\d{2}[\\/]', offer_file_path)
+            if m2:
+                offer_year = int(m2.group(0).strip('/\\'))
+        if offer_year is None:
+            offer_year = datetime.datetime.now().year
+
         context_json = None
         if offer_context:
             context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
-        
-        cursor.execute("INSERT INTO Offers (OfferOrderNumber, OfferFilePath, OfferContext) VALUES (?, ?, ?)", 
-                      (offer_order_number, offer_file_path, context_json))
+
+        cursor.execute("INSERT INTO Offers (OfferYearNumber, OfferOrderNumber, OfferFilePath, OfferContext) VALUES (?, ?, ?, ?)",
+                       (offer_year, offer_order_number, offer_file_path, context_json))
         conn.commit()
         conn.close()
         return True
+    except sqlite3.IntegrityError as ie:
+        tkinter.messagebox.showerror("Database Error", f"(OfferYearNumber, OfferOrderNumber) uniqueness violation: {ie}")
+        return False
     except sqlite3.Error as e:
         tkinter.messagebox.showerror("Database Error", f"Error saving offer to database: {e}")
         return False
