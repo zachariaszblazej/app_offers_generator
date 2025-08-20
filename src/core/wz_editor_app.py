@@ -71,23 +71,42 @@ class WzEditorApp:
         self.client_search = ClientSearchWindow(self.window, self.ui.fill_client_data)
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         
-        # Create UI sections
+        # Create UI sections using existing methods
         self.ui.create_upper_section(show_wz_number=True)  # Show WZ number in editor
-        self.ui.create_offer_section()  # This creates the client/supplier sections for WZ
-        # Note: WZ doesn't have details section like offers, so we skip create_wz_details_section
-        
-        # Setup search button commands after UI creation
-        self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
-        self.ui.client_search_btn.config(command=self.client_search.open_client_search)
-        
-        # Setup product add button command
-        self.ui.add_product_btn.config(command=self.product_add.show)
-        
-        # Connect move buttons to move methods (use buttons from UI)
-        self.ui.move_up_btn.config(command=self.move_product_up)
-        self.ui.move_down_btn.config(command=self.move_product_down)
-        
-        # Create buttons (modified for editor)
+        self.ui.create_wz_section()  # WZ-specific supplier/client section
+
+        # Create action buttons from WZ UI components (add / move / generate)
+        self.ui.create_action_buttons()
+
+        # Rewire buttons (override generate to update, hide if not needed)
+        if hasattr(self.ui, 'generate_btn'):
+            # Hide generate (we use save/update button at bottom)
+            try:
+                self.ui.generate_btn.place_forget()
+            except:
+                pass
+
+        # Assign commands to product management buttons
+        if hasattr(self.ui, 'add_product_btn'):
+            self.ui.add_product_btn.config(command=self.product_add.show)
+        if hasattr(self.ui, 'move_up_btn'):
+            self.ui.move_up_btn.config(command=self.move_product_up)
+        if hasattr(self.ui, 'move_down_btn'):
+            self.ui.move_down_btn.config(command=self.move_product_down)
+
+        # Create search buttons (not provided by WzUIComponents)
+        supplier_search_btn = Button(self.window, text="Szukaj dostawcy", font=("Arial", 10),
+                                     command=self.supplier_search.open_supplier_search)
+        supplier_search_btn.place(x=300, y=360)
+        client_search_btn = Button(self.window, text="Szukaj klienta", font=("Arial", 10),
+                                   command=self.client_search.open_client_search)
+        client_search_btn.place(x=900, y=360)
+
+        # Expose for potential external use
+        self.ui.supplier_search_btn = supplier_search_btn
+        self.ui.client_search_btn = client_search_btn
+
+        # Create editor-specific buttons (save etc.)
         self.create_buttons()
     
     def create_buttons(self):
