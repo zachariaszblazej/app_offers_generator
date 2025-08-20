@@ -39,6 +39,8 @@ class WzGeneratorApp:
         # Clear client and supplier NIP fields if this is a new WZ (no template context)
         if not self.template_context:
             self.clear_client_supplier_data()
+            # Auto-load default supplier like in offer creator
+            self.load_default_supplier()
         
         # Initialize calculation variables
         self.count = 0
@@ -155,6 +157,34 @@ class WzGeneratorApp:
                 self.ui.entries[field].delete(0, END)
                 if field == 'client_nip':
                     self.ui.entries[field].config(state='readonly')
+
+    def load_default_supplier(self):
+        """Load default supplier into WZ creator (only for fresh creation)"""
+        try:
+            from src.data.database_service import get_default_supplier
+            supplier = get_default_supplier()
+            if supplier:
+                # supplier tuple: (Nip, CompanyName, AddressP1, AddressP2, IsDefault)
+                nip, company_name, address1, address2, _ = supplier
+                # Fill fields
+                if 'supplier_name' in self.ui.entries:
+                    self.ui.entries['supplier_name'].delete(0, END)
+                    self.ui.entries['supplier_name'].insert(0, company_name)
+                if 'supplier_address_1' in self.ui.entries:
+                    self.ui.entries['supplier_address_1'].delete(0, END)
+                    self.ui.entries['supplier_address_1'].insert(0, address1)
+                if 'supplier_address_2' in self.ui.entries:
+                    self.ui.entries['supplier_address_2'].delete(0, END)
+                    self.ui.entries['supplier_address_2'].insert(0, address2)
+                if 'supplier_nip' in self.ui.entries:
+                    self.ui.entries['supplier_nip'].config(state='normal')
+                    self.ui.entries['supplier_nip'].delete(0, END)
+                    self.ui.entries['supplier_nip'].insert(0, str(nip))
+                    self.ui.entries['supplier_nip'].config(state='readonly')
+                # Store alias substitute (company name) for potential usage
+                self.ui.selected_supplier_alias = company_name
+        except Exception as e:
+            print(f"Could not load default supplier for WZ: {e}")
     
     def insert_product(self, product_data):
         """Insert product data into table"""
@@ -232,20 +262,12 @@ class WzGeneratorApp:
                     tkinter.messagebox.showinfo("Sukces", 
                                               f"WZ zostało wygenerowane pomyślnie!\n"
                                               f"Numer WZ: {wz_number}\n"
-                                              f"Plik zapisany w: {file_path}")
-                    
-                    # Ask if user wants to create another WZ
-                    if tkinter.messagebox.askyesno("Kolejne WZ", "Czy chcesz utworzyć kolejne WZ?"):
-                        # Clear form for next WZ
-                        self.ui.clear_all_fields()
-                        self.product_table.clear_table()
-                        self.user_modifications_made = False
+                                              f"Plik: {file_path}")
+                    # Automatyczny powrót do listy WZ jeśli przyszliśmy z przeglądarki, inaczej do menu
+                    if self.source_frame == 'browse_wz':
+                        self.nav_manager.show_frame('browse_wz')
                     else:
-                        # Return to main menu or browse WZ
-                        if self.source_frame == 'browse_wz':
-                            self.nav_manager.show_frame('browse_wz')
-                        else:
-                            self.nav_manager.show_frame('main_menu')
+                        self.nav_manager.show_frame('main_menu')
                 else:
                     tkinter.messagebox.showerror("Błąd", f"WZ zostało wygenerowane, ale nie udało się zapisać do bazy danych:\n{message}")
             else:
