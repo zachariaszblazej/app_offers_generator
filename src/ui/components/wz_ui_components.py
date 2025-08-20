@@ -42,23 +42,10 @@ class WzUIComponents:
         # Variables for specific fields (not needed for WZ but kept for compatibility)
         self.suma_var = StringVar()
         self.suma_var.set("0,00")
-        
-        # Create all UI components
-        self.create_upper_section()
-        self.create_offer_section()
-        self.create_action_buttons()
+    
     
     def create_upper_section(self, show_wz_number=False):
-        """Create the upper section with date and company info"""
-        # WZ number display (only in editor mode)
-        if show_wz_number:
-            wz_number_label = Label(self.window, text="Numer WZ:", font=("Arial", 10, "bold"))
-            wz_number_label.place(x=50, y=50)
-            
-            self.entries['wz_number_display'] = Entry(self.window, width=20, state='readonly',
-                                                     bg='#f0f0f0', fg='#666666')
-            self.entries['wz_number_display'].place(x=150, y=50)
-        
+
         # Town entry
         self.entries['town'] = Entry(self.window, width=10)
         self.entries['town'].place(x=640, y=90)
@@ -72,6 +59,13 @@ class WzUIComponents:
         # Date picker button
         self.date_btn = Button(self.window, text="📅", width=2, command=self.open_date_picker)
         self.date_btn.place(x=870, y=90)
+
+        """Create the upper section with date and company info"""
+        # WZ number display (only in editor mode)
+        if show_wz_number:
+            self.entries['wz_number_display'] = Entry(self.window, width=20, state='readonly',
+                                                     bg='#f0f0f0', fg='#666666')
+            self.entries['wz_number_display'].place(x=400, y=20)
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data.get('address_1', ''))
@@ -114,7 +108,7 @@ class WzUIComponents:
         self.entries['account_number'].place(x=675, y=148)
         self.entries['account_number'].bind('<KeyRelease>', self._on_field_modified)
     
-    def create_offer_section(self):
+    def create_wz_section(self):
         """Create the supplier/client section with search buttons"""
         # Supplier entries
         self.entries['supplier_name'] = Entry(self.window, width=25)
@@ -147,23 +141,6 @@ class WzUIComponents:
 
         self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
-        
-        # Add search buttons for supplier and client
-        self.supplier_search_btn = Button(self.window, 
-                                        text="SZUKAJ DOSTAWCY",
-                                        font=("Arial", 10, "bold"),
-                                        bg='#4CAF50', fg='white',
-                                        padx=10, pady=5,
-                                        cursor='hand2')
-        self.supplier_search_btn.place(x=300, y=315)
-        
-        self.client_search_btn = Button(self.window, 
-                                      text="SZUKAJ KLIENTA",
-                                      font=("Arial", 10, "bold"),
-                                      bg='#2196F3', fg='white',
-                                      padx=10, pady=5,
-                                      cursor='hand2')
-        self.client_search_btn.place(x=900, y=315)
     
     def create_action_buttons(self):
         """Create action buttons for WZ operations"""

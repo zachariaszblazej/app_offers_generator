@@ -77,15 +77,57 @@ class WzGeneratorApp:
         self.supplier_search = SupplierSearchWindow(self.window, self.ui.fill_supplier_data)
         self.product_add = WzProductAddWindow(self.window, self.insert_product)
         self.product_edit = WzProductEditWindow(self.window, self.update_product)
+
+
+        # Create UI sections
+        self.ui.create_upper_section()
+        self.ui.create_wz_section()
         
-        # Connect search buttons to search windows
-        self.ui.supplier_search_btn.config(command=self.supplier_search.open_supplier_search)
-        self.ui.client_search_btn.config(command=self.client_search.open_client_search)
-        self.ui.add_product_btn.config(command=self.product_add.show)
+        # Create buttons
+        self.create_buttons()
+
+    def create_buttons(self):
+        """Create all buttons"""
+        # Product management buttons
+        Button(self.window, text="DODAJ POZYCJĘ", 
+               font=("Arial", 12, "bold"),
+               bg='#28a745', fg='black',
+               padx=15, pady=8,
+               command=self.product_add.show,
+               cursor='hand2').place(x=50, y=740)
         
-        # Connect move buttons to move methods
-        self.ui.move_up_btn.config(command=self.move_product_up)
-        self.ui.move_down_btn.config(command=self.move_product_down)
+        # Product movement buttons
+        Button(self.window, text="▲", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_up,
+               cursor='hand2').place(x=250, y=740)
+        
+        Button(self.window, text="▼", anchor='center',
+               font=("Arial", 16, "bold"),
+               bg='#6c757d', fg='black',
+               width=3, height=1,
+               command=self.move_product_down,
+               cursor='hand2').place(x=320, y=740)
+        
+        # Client search button
+        search_client_button = Button(self.window, text="Szukaj klienta", 
+                                    font=("Arial", 10),
+                                    command=self.client_search.open_client_search)
+        search_client_button.place(x=900, y=360)
+        
+        # Supplier search button
+        search_supplier_button = Button(self.window, text="Szukaj dostawcy", 
+                                      font=("Arial", 10),
+                                      command=self.supplier_search.open_supplier_search)
+        search_supplier_button.place(x=300, y=360)
+        
+        # Generate offer button
+        generate_offer_button = Button(self.window, text="Generuj WZ", 
+                                     font=("Arial", 12, "bold"),
+                                     command=self.generate_wz)
+        generate_offer_button.place(x=700, y=980)
         
         if hasattr(self.ui, 'generate_btn'):
             self.ui.generate_btn.config(command=self.generate_wz)
