@@ -1,17 +1,13 @@
-"""
-Browse offers frame for viewing and managing generated offers
-"""
-from tkinter import *
+"""Browse offers frame (clean implementation with year-folder navigation)."""
+from tkinter import *  # noqa: F401,F403
 from tkinter import ttk
 import tkinter.messagebox
-import tkinter.filedialog
 import os
 import sys
 import subprocess
 import platform
 from datetime import datetime
 
-# Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from src.utils.config import get_offers_folder
@@ -19,463 +15,296 @@ from src.data.database_service import delete_offer_from_db, find_offer_by_filena
 
 
 class BrowseOffersFrame(Frame):
-    """Frame for browsing and managing generated offers"""
-    
+    """Browse and manage generated offers; supports year subfolders."""
+
     def __init__(self, parent, nav_manager):
         super().__init__(parent)
         self.nav_manager = nav_manager
-        self.offers_list = []
-        self.sort_by = 'date'  # default sort by date
-        self.sort_reverse = True  # newest first
-        self.create_ui()
+        self.offers_list: list[str] = []
+        self.current_year_folder: str | None = None
+        self.sort_by = 'date'
+        self.sort_reverse = True
+        self._build_ui()
         self.load_offers()
-    
-    def create_ui(self):
-        """Create the browse offers UI"""
+
+    # UI --------------------------------------------------------------
+    def _build_ui(self):
         self.configure(bg='#f0f0f0')
-        
-        # Header
-        header_frame = Frame(self, bg='#f0f0f0')
-        header_frame.pack(fill=X, padx=20, pady=20)
-        
-        # Title
-        title_label = Label(header_frame, text="Przeglądaj oferty", 
-                           font=("Arial", 20, "bold"), 
-                           bg='#f0f0f0', fg='#333333')
-        title_label.pack(side=LEFT)
-        
-        # Return button
-        return_btn = Button(header_frame, text="Powrót do menu głównego",
-                           font=("Arial", 12),
-                           fg='black',
-                           padx=15, pady=8,
-                           command=self.return_to_main_menu,
-                           cursor='hand2')
-        return_btn.pack(side=RIGHT)
-        
-        # Main content frame
-        content_frame = Frame(self, bg='#f0f0f0')
-        content_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
-        
-        # Offers list frame
-        list_frame = Frame(content_frame, bg='white', relief=RIDGE, bd=2)
+        header = Frame(self, bg='#f0f0f0')
+        header.pack(fill=X, padx=20, pady=20)
+        self.title_label = Label(header, text='Przeglądaj oferty', font=('Arial', 20, 'bold'), bg='#f0f0f0', fg='#333')
+        self.title_label.pack(side=LEFT)
+        Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
+               command=self.return_to_main_menu, cursor='hand2').pack(side=RIGHT)
+
+        content = Frame(self, bg='#f0f0f0')
+        content.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
+        list_frame = Frame(content, bg='white', relief=RIDGE, bd=2)
         list_frame.pack(fill=BOTH, expand=True, pady=(0, 20))
-        
-        # List header
-        list_header = Label(list_frame, text="Lista zapytań ofertowych", 
-                           font=("Arial", 14, "bold"), 
-                           bg='white', fg='#333333')
-        list_header.pack(pady=15)
-        
-        # Treeview for offers
-        tree_frame = Frame(list_frame, bg='white')
-        tree_frame.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
-        
-        # Create treeview
-        columns = ('filename', 'date', 'edit', 'similar', 'delete')
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
-        
-        # Configure columns
+        Label(list_frame, text='Lista zapytań ofertowych', font=('Arial', 14, 'bold'), bg='white', fg='#333').pack(pady=15)
+
+        tree_wrap = Frame(list_frame, bg='white')
+        tree_wrap.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
+        cols = ('filename', 'date', 'edit', 'similar', 'delete')
+        self.tree = ttk.Treeview(tree_wrap, columns=cols, show='headings', height=15)
         self.tree.heading('filename', text='Nazwa pliku', command=lambda: self.sort_by_column('filename'))
         self.tree.heading('date', text='Data utworzenia', command=lambda: self.sort_by_column('date'))
         self.tree.heading('edit', text='Edytuj')
         self.tree.heading('similar', text='Wczytaj do kreatora')
         self.tree.heading('delete', text='Usuń')
-        
         self.tree.column('filename', width=450, minwidth=350)
         self.tree.column('date', width=170, minwidth=150)
-        self.tree.column('edit', minwidth=70, width=70, stretch=NO, anchor=CENTER)
-        self.tree.column('similar', minwidth=160, width=160, stretch=NO, anchor=CENTER)
-        self.tree.column('delete', minwidth=70, width=70, stretch=NO, anchor=CENTER)
-        
-        # Scrollbars
-        v_scrollbar = ttk.Scrollbar(tree_frame, orient=VERTICAL, command=self.tree.yview)
-        h_scrollbar = ttk.Scrollbar(tree_frame, orient=HORIZONTAL, command=self.tree.xview)
-        self.tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
-        # Pack treeview and scrollbars
+        self.tree.column('edit', width=70, stretch=NO, anchor=CENTER)
+        self.tree.column('similar', width=160, stretch=NO, anchor=CENTER)
+        self.tree.column('delete', width=70, stretch=NO, anchor=CENTER)
+        vs = ttk.Scrollbar(tree_wrap, orient=VERTICAL, command=self.tree.yview)
+        hs = ttk.Scrollbar(tree_wrap, orient=HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
         self.tree.pack(side=LEFT, fill=BOTH, expand=True)
-        v_scrollbar.pack(side=RIGHT, fill=Y)
-        h_scrollbar.pack(side=BOTTOM, fill=X)
-        
-        # Bind single click for delete functionality and context menu
-        self.tree.bind("<ButtonRelease-1>", self.on_single_click)
-        # Bind double click to open in Word
-        self.tree.bind("<Double-1>", self.on_double_click)
-        
-        # Buttons frame
-        buttons_frame = Frame(content_frame, bg='#f0f0f0')
-        buttons_frame.pack(fill=X, pady=10)
-        
-        # Refresh button
-        refresh_btn = Button(buttons_frame, text="🔄 Odśwież listę",
-                            font=("Arial", 12),
-                            fg='black',
-                            padx=15, pady=8,
-                            command=self.load_offers,
-                            cursor='hand2')
-        refresh_btn.pack(side=LEFT, padx=(0, 10))
-        
-        # Open folder button
-        folder_btn = Button(buttons_frame, text="Otwórz folder",
-                           font=("Arial", 12),
-                           fg='black',
-                           padx=15, pady=8,
-                           command=self.open_offers_folder,
-                           cursor='hand2')
-        folder_btn.pack(side=LEFT, padx=(0, 10))
-    
-    def sort_by_column(self, column):
-        """Sort by clicking on column header"""
+        vs.pack(side=RIGHT, fill=Y)
+        hs.pack(side=BOTTOM, fill=X)
+        self.tree.bind('<ButtonRelease-1>', self.on_single_click)
+        self.tree.bind('<Double-1>', self.on_double_click)
+
+        buttons = Frame(content, bg='#f0f0f0')
+        buttons.pack(fill=X, pady=10)
+        self.up_btn = Button(buttons, text='⬆ Rok', font=('Arial', 12), fg='black', padx=15, pady=8,
+                              command=self.navigate_up, cursor='hand2')
+        self.up_btn.pack(side=LEFT, padx=(0, 10))
+        self.up_btn.forget()
+        Button(buttons, text='🔄 Odśwież listę', font=('Arial', 12), fg='black', padx=15, pady=8,
+               command=self.load_offers, cursor='hand2').pack(side=LEFT, padx=(0, 10))
+        Button(buttons, text='Otwórz folder', font=('Arial', 12), fg='black', padx=15, pady=8,
+               command=self.open_offers_folder, cursor='hand2').pack(side=LEFT, padx=(0, 10))
+
+    # Sorting ----------------------------------------------------------
+    def sort_by_column(self, column: str):
         if self.sort_by == column:
-            # If already sorting by this column, toggle order
             self.sort_reverse = not self.sort_reverse
         else:
-            # New column, start with descending
             self.sort_by = column
             self.sort_reverse = True
-        
-        # Update column headers and reload
         self.update_column_headers()
         self.load_offers()
-    
+
     def update_column_headers(self):
-        """Update column headers to show current sort direction"""
-        # Reset all headers
         self.tree.heading('filename', text='Nazwa pliku')
         self.tree.heading('date', text='Data utworzenia')
-        
-        # Add sort indicator to current sort column
-        arrow = " ↓" if self.sort_reverse else " ↑"
+        arrow = ' ↓' if self.sort_reverse else ' ↑'
         if self.sort_by == 'filename':
             self.tree.heading('filename', text=f'Nazwa pliku{arrow}')
         elif self.sort_by == 'date':
             self.tree.heading('date', text=f'Data utworzenia{arrow}')
-    
+
+    # Data loading -----------------------------------------------------
     def load_offers(self):
-        """Load offers from the output folder that exist in database"""
-        # Clear existing items
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        
-        self.offers_list = []
-        
-        # Get current offers folder from settings
-        offers_folder = get_offers_folder()
-        
-        # Check if output folder exists
-        if not os.path.exists(offers_folder):
-            os.makedirs(offers_folder)
+        for iid in self.tree.get_children():
+            self.tree.delete(iid)
+        self.offers_list.clear()
+
+        offers_root = get_offers_folder()
+        if not os.path.exists(offers_root):
+            os.makedirs(offers_root)
             return
-        
-        # Import database service here to avoid circular imports
+
         from src.data.database_service import get_all_offer_file_paths
-        
-        # Get all offer file paths from database
-        try:
-            db_offer_paths = get_all_offer_file_paths()
-            
-            # Also get all .docx files from folder for comparison
-            all_files_in_folder = [f for f in os.listdir(offers_folder) if f.endswith('.docx')]
-            
-            # Create list of file info for files that exist both in folder and database
-            file_info_list = []
-            files_in_db_count = 0
-            for db_path in db_offer_paths:
-                # Extract filename from database path
-                filename = os.path.basename(db_path)
-                filepath = os.path.join(offers_folder, filename)
-                
-                # Check if file actually exists in the folder and is a .docx file
-                if os.path.exists(filepath) and filename.endswith('.docx'):
-                    stat_info = os.stat(filepath)
-                    file_info_list.append({
-                        'filename': filename,
-                        'filepath': filepath,
-                        'mtime': stat_info.st_mtime
-                    })
-                    files_in_db_count += 1
-            
-            # Check for files in folder that are not in database (for debugging)
-            db_filenames = [os.path.basename(path) for path in db_offer_paths]
-            orphaned_files = [f for f in all_files_in_folder if f not in db_filenames]
-            if orphaned_files:
-                print(f"Found {len(orphaned_files)} .docx files in folder that are not in database: {orphaned_files}")
-            
-            # Sort based on selected criteria
-            if self.sort_by == 'filename':
-                file_info_list.sort(key=lambda x: x['filename'], reverse=self.sort_reverse)
-            else:  # sort by date
-                file_info_list.sort(key=lambda x: x['mtime'], reverse=self.sort_reverse)
-            
-            # Add sorted files to treeview
-            for file_info in file_info_list:
-                file_date = datetime.fromtimestamp(file_info['mtime']).strftime("%Y-%m-%d %H:%M")
-                
-                # Add to treeview
-                self.tree.insert('', 'end', values=(file_info['filename'], file_date, "Edytuj", "Wczytaj do kreatora", "Usuń"))
-                self.offers_list.append(file_info['filepath'])
-            
-            print(f"Loaded {len(file_info_list)} offers from database that exist in {offers_folder} (sorted by {self.sort_by}, {'desc' if self.sort_reverse else 'asc'})")
-            
-        except Exception as e:
-            tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować listy ofert: {e}")
-            print(f"Error loading offers: {e}")
-    
-    def get_selected_offer_path(self):
-        """Get the full path of the selected offer"""
-        selected = self.tree.selection()
-        if not selected:
-            return None
-        
-        item = self.tree.item(selected[0])
-        filename = item['values'][0]
-        return os.path.join(get_offers_folder(), filename)
-    
-    def open_selected_offer(self):
-        """Open the selected offer in default application"""
-        offer_path = self.get_selected_offer_path()
-        if not offer_path:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz ofertę do otwarcia!")
-            return
-        
-        try:
-            # Open file with default application
-            if platform.system() == 'Darwin':  # macOS
-                subprocess.call(['open', offer_path])
-            elif platform.system() == 'Windows':
-                os.startfile(offer_path)
-            else:  # Linux
-                subprocess.call(['xdg-open', offer_path])
-                
-        except Exception as e:
-            tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć pliku: {e}")
-    
-    def edit_selected_offer(self):
-        """Edit the selected offer"""
-        offer_path = self.get_selected_offer_path()
-        if not offer_path:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz ofertę do edycji!")
-            return
-        
-        # Navigate to offer editor with the selected file
-        self.nav_manager.show_frame('offer_editor', offer_path=offer_path)
-    
-    def delete_selected_offer(self):
-        """Delete the selected offer"""
-        offer_path = self.get_selected_offer_path()
-        if not offer_path:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz ofertę do usunięcia!")
-            return
-        
-        filename = os.path.basename(offer_path)
-        
-        # Confirm deletion
-        result = tkinter.messagebox.askyesno(
-            "Potwierdzenie usunięcia", 
-            f"Czy na pewno chcesz usunąć ofertę:\\n{filename}\\n\\nTej operacji nie można cofnąć!"
-        )
-        
-        if result:
+
+        if self.current_year_folder is None:
             try:
-                # First, try to remove from database
-                db_success, db_message = delete_offer_from_db(offer_path)
-                
-                # Remove the file regardless of database operation result
-                os.remove(offer_path)
-                
-                # Show appropriate message
-                if db_success:
-                    tkinter.messagebox.showinfo("Sukces", 
-                        f"Oferta {filename} została usunięta z plików i bazy danych!")
-                else:
-                    tkinter.messagebox.showinfo("Częściowy sukces", 
-                        f"Plik {filename} został usunięty, ale wystąpił problem z bazą danych:\\n{db_message}")
-                
-                self.load_offers()  # Refresh the list
-                
-            except Exception as e:
-                # If file deletion fails, try to check if it was in database and show appropriate error
-                offer_in_db = find_offer_by_filename(filename)
-                if offer_in_db:
-                    tkinter.messagebox.showerror("Błąd", 
-                        f"Nie udało się usunąć pliku: {e}\\n\\nOferta nadal istnieje w bazie danych.")
-                else:
-                    tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
-    
-    def open_offers_folder(self):
-        """Open the offers folder in file explorer"""
+                years = [d for d in os.listdir(offers_root)
+                         if os.path.isdir(os.path.join(offers_root, d)) and d.isdigit() and len(d) == 4]
+                years.sort(reverse=True)
+                for y in years:
+                    self.tree.insert('', 'end', values=(f'📁 {y}', '', '', '', ''))
+            except Exception as e:  # noqa: BLE001
+                print(f'Year folder listing error: {e}')
+
         try:
-            offers_folder = get_offers_folder()
-            if platform.system() == 'Darwin':  # macOS
-                subprocess.call(['open', offers_folder])
+            db_paths = get_all_offer_file_paths()
+            scope = offers_root if self.current_year_folder is None else os.path.join(offers_root, self.current_year_folder)
+            if not os.path.isdir(scope):
+                return
+            file_infos = []
+            for p in db_paths:
+                name = os.path.basename(p)
+                if self.current_year_folder is None:
+                    candidate = os.path.join(offers_root, name)
+                    if not os.path.exists(candidate):
+                        continue  # skip year-scoped entries
+                    full = candidate
+                else:
+                    full = os.path.join(offers_root, self.current_year_folder, name)
+                    if not os.path.exists(full):
+                        continue
+                if name.endswith('.docx') and os.path.isfile(full):
+                    st = os.stat(full)
+                    file_infos.append({'filename': name, 'filepath': full, 'mtime': st.st_mtime})
+            if self.sort_by == 'filename':
+                file_infos.sort(key=lambda x: x['filename'], reverse=self.sort_reverse)
+            else:
+                file_infos.sort(key=lambda x: x['mtime'], reverse=self.sort_reverse)
+            for info in file_infos:
+                date_str = datetime.fromtimestamp(info['mtime']).strftime('%Y-%m-%d %H:%M')
+                self.tree.insert('', 'end', values=(info['filename'], date_str, 'Edytuj', 'Wczytaj do kreatora', 'Usuń'))
+                self.offers_list.append(info['filepath'])
+        except Exception as e:  # noqa: BLE001
+            tkinter.messagebox.showerror('Błąd', f'Nie udało się załadować listy ofert: {e}')
+            print(f'Error loading offers: {e}')
+
+    # Helpers ----------------------------------------------------------
+    def _build_offer_path(self, filename: str) -> str:
+        base = get_offers_folder()
+        if self.current_year_folder:
+            return os.path.join(base, self.current_year_folder, filename)
+        return os.path.join(base, filename)
+
+    def get_selected_offer_path(self):
+        sel = self.tree.selection()
+        if not sel:
+            return None
+        filename = self.tree.item(sel[0])['values'][0]
+        if isinstance(filename, str) and filename.startswith('📁 '):
+            return None
+        return self._build_offer_path(filename)
+
+    # Actions ----------------------------------------------------------
+    def open_selected_offer(self):
+        path = self.get_selected_offer_path()
+        if not path:
+            tkinter.messagebox.showwarning('Uwaga', 'Najpierw zaznacz ofertę do otwarcia!')
+            return
+        try:
+            if platform.system() == 'Darwin':
+                subprocess.call(['open', path])
             elif platform.system() == 'Windows':
-                os.startfile(offers_folder)
-            else:  # Linux
-                subprocess.call(['xdg-open', offers_folder])
-                
-        except Exception as e:
-            tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć folderu: {e}")
-    
+                os.startfile(path)  # type: ignore[attr-defined]
+            else:
+                subprocess.call(['xdg-open', path])
+        except Exception as e:  # noqa: BLE001
+            tkinter.messagebox.showerror('Błąd', f'Nie udało się otworzyć pliku: {e}')
+
+    def edit_selected_offer(self):
+        path = self.get_selected_offer_path()
+        if not path:
+            tkinter.messagebox.showwarning('Uwaga', 'Najpierw zaznacz ofertę do edycji!')
+            return
+        self.nav_manager.show_frame('offer_editor', offer_path=path)
+
+    def delete_selected_offer(self):
+        path = self.get_selected_offer_path()
+        if not path:
+            tkinter.messagebox.showwarning('Uwaga', 'Najpierw zaznacz ofertę do usunięcia!')
+            return
+        filename = os.path.basename(path)
+        if not tkinter.messagebox.askyesno('Potwierdzenie usunięcia', f'Czy na pewno chcesz usunąć ofertę:\n{filename}\n\nTej operacji nie można cofnąć!'):
+            return
+        try:
+            db_success, db_message = delete_offer_from_db(path)
+            os.remove(path)
+            if not db_success:
+                tkinter.messagebox.showwarning('Częściowy sukces', f'Plik {filename} usunięty, problem z bazą:\n{db_message}')
+            self.load_offers()
+        except Exception as e:  # noqa: BLE001
+            exists = find_offer_by_filename(filename)
+            if exists:
+                tkinter.messagebox.showerror('Błąd', f'Nie udało się usunąć pliku: {e}\nOferta nadal w bazie danych.')
+            else:
+                tkinter.messagebox.showerror('Błąd', f'Nie udało się usunąć pliku: {e}')
+
+    def open_offers_folder(self):
+        try:
+            folder = get_offers_folder()
+            if platform.system() == 'Darwin':
+                subprocess.call(['open', folder])
+            elif platform.system() == 'Windows':
+                os.startfile(folder)  # type: ignore[attr-defined]
+            else:
+                subprocess.call(['xdg-open', folder])
+        except Exception as e:  # noqa: BLE001
+            tkinter.messagebox.showerror('Błąd', f'Nie udało się otworzyć folderu: {e}')
+
     def create_similar_offer(self):
-        """Create a new offer based on selected offer"""
-        selected_item = self.tree.selection()
-        if not selected_item:
-            tkinter.messagebox.showwarning("Uwaga", "Najpierw wybierz ofertę z listy!")
+        sel = self.tree.selection()
+        if not sel:
+            tkinter.messagebox.showwarning('Uwaga', 'Najpierw wybierz ofertę z listy!')
             return
-            
-        # Get selected offer info
-        item_values = self.tree.item(selected_item[0])['values']
-        if not item_values:
-            return
-            
-        filename = item_values[0]
-        offer_path = os.path.join(get_offers_folder(), filename)
-        
-        # Load context from selected offer
+        filename = self.tree.item(sel[0])['values'][0]
+        path = self._build_offer_path(filename)
         from src.data.database_service import get_offer_context_from_db
-        context_data = get_offer_context_from_db(offer_path)
-        
-        if not context_data:
-            # For older offers without context, show warning
-            result = tkinter.messagebox.askyesno(
-                "Brak kontekstu", 
-                f"Oferta '{filename}' nie ma zapisanego kontekstu.\\n\\n" +
-                "Czy chcesz przejść do kreatora ofert z pustymi polami?"
-            )
-            if result:
+        ctx = get_offer_context_from_db(path)
+        if not ctx:
+            if tkinter.messagebox.askyesno('Brak kontekstu', f"Oferta '{filename}' nie ma zapisanego kontekstu.\n\nCzy przejść do kreatora z pustymi polami?"):
                 self.nav_manager.show_frame('offer_generator')
             return
-        
-        # Remove offer_number from context (it will be generated anew)
-        if 'offer_number' in context_data:
-            del context_data['offer_number']
-        
-        # Pass context to offer generator with source frame information
-        self.nav_manager.show_frame('offer_generator', template_context=context_data, source_frame='browse_offers')
-    
+        ctx.pop('offer_number', None)
+        self.nav_manager.show_frame('offer_generator', template_context=ctx, source_frame='browse_offers')
+
+    # Event handlers ---------------------------------------------------
     def on_single_click(self, event):
-        """Handle single-click on table to check for action column clicks"""
-        # Get the region that was clicked
         region = self.tree.identify_region(event.x, event.y)
-        if region == "cell":
-            # Get the column that was clicked
-            column = self.tree.identify_column(event.x)
-            
-            # Get the item that was clicked
-            item = self.tree.identify_row(event.y)
-            if item:
-                # Get filename from the selected item
-                item_values = self.tree.item(item)['values']
-                filename = item_values[0]
-                
-                # Check which action column was clicked
-                num_columns = len(self.tree['columns'])
-                edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
-                similar_column_index = f"#{num_columns - 1}"   # Second from last (Wczytaj do kreatora)
-                delete_column_index = f"#{num_columns}"        # Last column (Usuń)
-                
-                if column == edit_column_index:
-                    # Edit offer
-                    offer_path = os.path.join(get_offers_folder(), filename)
-                    self.tree.selection_set(item)
-                    self.nav_manager.show_frame('offer_editor', offer_path=offer_path)
-                    
-                elif column == similar_column_index:
-                    # Create similar offer
-                    offer_path = os.path.join(get_offers_folder(), filename)
-                    self.tree.selection_set(item)
-                    
-                    # Load context from selected offer
-                    from src.data.database_service import get_offer_context_from_db
-                    context_data = get_offer_context_from_db(offer_path)
-                    
-                    if not context_data:
-                        # For older offers without context, show warning
-                        result = tkinter.messagebox.askyesno(
-                            "Brak kontekstu", 
-                            f"Oferta '{filename}' nie ma zapisanego kontekstu.\\n\\n" +
-                            "Czy chcesz przejść do kreatora ofert z pustymi polami?"
-                        )
-                        if result:
-                            self.nav_manager.show_frame('offer_generator')
-                        return
-                    
-                    # Remove offer_number from context (it will be generated anew)
-                    if 'offer_number' in context_data:
-                        del context_data['offer_number']
-                    
-                    # Pass context to offer generator with source frame information
-                    self.nav_manager.show_frame('offer_generator', template_context=context_data, source_frame='browse_offers')
-                    
-                elif column == delete_column_index:
-                    # Delete offer
-                    result = tkinter.messagebox.askyesno(
-                        "Potwierdzenie usunięcia", 
-                        f"Czy na pewno chcesz usunąć ofertę:\\n{filename}\\n\\nTej operacji nie można cofnąć!"
-                    )
-                    if result:
-                        # Get full path for deletion
-                        offer_path = os.path.join(get_offers_folder(), filename)
-                        
-                        try:
-                            # First, try to remove from database
-                            db_success, db_message = delete_offer_from_db(offer_path)
-                            
-                            # Remove the file regardless of database operation result
-                            os.remove(offer_path)
-                            
-                            # Show appropriate message
-                            if db_success:
-                                # Silent success - no messagebox, just refresh
-                                pass
-                            else:
-                                tkinter.messagebox.showwarning("Częściowy sukces", 
-                                    f"Plik {filename} został usunięty, ale wystąpił problem z bazą danych:\\n{db_message}")
-                            
-                            self.load_offers()  # Refresh the list
-                            
-                        except Exception as e:
-                            # If file deletion fails, try to check if it was in database and show appropriate error
-                            offer_in_db = find_offer_by_filename(filename)
-                            if offer_in_db:
-                                tkinter.messagebox.showerror("Błąd", 
-                                    f"Nie udało się usunąć pliku: {e}\\n\\nOferta nadal istnieje w bazie danych.")
-                            else:
-                                tkinter.messagebox.showerror("Błąd", f"Nie udało się usunąć pliku: {e}")
+        if region != 'cell':
+            return
+        col = self.tree.identify_column(event.x)
+        item = self.tree.identify_row(event.y)
+        if not item:
+            return
+        vals = self.tree.item(item)['values']
+        if not vals:
+            return
+        filename = vals[0]
+        if isinstance(filename, str) and filename.startswith('📁 '):
+            year = filename.replace('📁', '').strip()
+            self.current_year_folder = year
+            self.title_label.config(text=f'Przeglądaj oferty – {year}')
+            self.up_btn.pack(side=LEFT, padx=(0, 10))
+            self.load_offers()
+            return
+        n = len(self.tree['columns'])
+        edit_idx = f'#{n - 2}'
+        sim_idx = f'#{n - 1}'
+        del_idx = f'#{n}'
+        if col == edit_idx:
+            self.tree.selection_set(item)
+            self.edit_selected_offer()
+        elif col == sim_idx:
+            self.tree.selection_set(item)
+            self.create_similar_offer()
+        elif col == del_idx:
+            self.tree.selection_set(item)
+            self.delete_selected_offer()
 
     def on_double_click(self, event):
-        """Handle double-click to open offer in Word"""
-        # Get the region that was clicked
         region = self.tree.identify_region(event.x, event.y)
-        if region == "cell":
-            # Get the column that was clicked
-            column = self.tree.identify_column(event.x)
-            
-            # Don't open if clicking on action columns (edit, similar, delete)
-            num_columns = len(self.tree['columns'])
-            edit_column_index = f"#{num_columns - 2}"      # Third from last (Edytuj)
-            similar_column_index = f"#{num_columns - 1}"   # Second from last (Wczytaj do kreatora)
-            delete_column_index = f"#{num_columns}"        # Last column (Usuń)
-            
-            if column not in [edit_column_index, similar_column_index, delete_column_index]:
-                # Get the item that was clicked
-                item = self.tree.identify_row(event.y)
-                if item:
-                    # Select the clicked item and open it
-                    self.tree.selection_set(item)
-                    self.open_selected_offer()
+        if region != 'cell':
+            return
+        col = self.tree.identify_column(event.x)
+        n = len(self.tree['columns'])
+        if col in {f'#{n - 2}', f'#{n - 1}', f'#{n}'}:
+            return
+        item = self.tree.identify_row(event.y)
+        if item:
+            self.tree.selection_set(item)
+            self.open_selected_offer()
 
+    # Navigation -------------------------------------------------------
     def return_to_main_menu(self):
-        """Return to main menu"""
         self.nav_manager.show_frame('main_menu')
-    
+
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()
-    
+
     def show(self):
-        """Show this frame and automatically refresh offers list"""
         self.pack(fill=BOTH, expand=True)
-        # Automatically refresh offers list when frame is shown
+        self.current_year_folder = None
+        self.title_label.config(text='Przeglądaj oferty')
+        if self.up_btn.winfo_ismapped():
+            self.up_btn.forget()
         self.load_offers()
+
+    def navigate_up(self):
+        if self.current_year_folder is not None:
+            self.current_year_folder = None
+            self.title_label.config(text='Przeglądaj oferty')
+            if self.up_btn.winfo_ismapped():
+                self.up_btn.forget()
+            self.load_offers()
