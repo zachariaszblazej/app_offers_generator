@@ -9,6 +9,14 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+
+    - name: Compute dynamic version
+      shell: pwsh
+      run: |
+        $version = python -c "from src.utils.version import get_version_string; print(get_version_string())" 2>$null
+        if (-not $version) { $version = '1.0.0.dev' }
+        echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+        echo "Computed version: $version"
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -71,41 +79,50 @@ jobs:
     
     - name: Build executable (with console for debugging)
       run: |
-        python -m PyInstaller --clean --onefile --console --name=OfferGenerator-Debug --additional-hooks-dir=. --add-data="src/*;src" --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=PIL._tkinter_finder --hidden-import=PIL.Image --hidden-import=docx --hidden-import=docx.shared --hidden-import=docx.enum.text --hidden-import=docx.enum.table --hidden-import=docxtpl --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip --hidden-import=tkcalendar.__main__ --hidden-import=babel --hidden-import=babel.dates --hidden-import=src.core.main_app --hidden-import=src.core.navigation_manager --hidden-import=src.core.offer_generator_app --hidden-import=src.core.offer_editor_app --hidden-import=src.ui.frames.main_menu_frame --hidden-import=src.ui.frames.settings_frame --hidden-import=src.ui.frames.browse_clients_frame --hidden-import=src.ui.frames.browse_suppliers_frame --hidden-import=src.ui.frames.browse_offers_frame --hidden-import=src.ui.frames.offer_creation_frame --hidden-import=src.ui.frames.offer_editor_frame --hidden-import=src.ui.components.ui_components --hidden-import=src.ui.components.product_table --hidden-import=src.ui.windows.client_search_window --hidden-import=src.ui.windows.supplier_search_window --hidden-import=src.ui.windows.product_add_window --hidden-import=src.ui.windows.product_edit_window --hidden-import=src.services.offer_generator_service --hidden-import=src.services.offer_editor_service --hidden-import=src.services.sync_service --hidden-import=src.data.database_service --hidden-import=src.utils.config --hidden-import=src.utils.settings main.py
+        python -m PyInstaller --clean --onefile --console --name=OfferGenerator-Debug --additional-hooks-dir=. --add-data="src/*;src" --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="background_wz_1.png;." --add-data="app_settings.json;." --hidden-import=PIL._tkinter_finder --hidden-import=PIL.Image --hidden-import=docx --hidden-import=docx.shared --hidden-import=docx.enum.text --hidden-import=docx.enum.table --hidden-import=docxtpl --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip --hidden-import=tkcalendar.__main__ --hidden-import=babel --hidden-import=babel.dates --hidden-import=src.core.main_app --hidden-import=src.core.navigation_manager --hidden-import=src.core.offer_generator_app --hidden-import=src.core.offer_editor_app --hidden-import=src.ui.frames.main_menu_frame --hidden-import=src.ui.frames.settings_frame --hidden-import=src.ui.frames.browse_clients_frame --hidden-import=src.ui.frames.browse_suppliers_frame --hidden-import=src.ui.frames.browse_offers_frame --hidden-import=src.ui.frames.offer_creation_frame --hidden-import=src.ui.frames.offer_editor_frame --hidden-import=src.ui.components.ui_components --hidden-import=src.ui.components.product_table --hidden-import=src.ui.windows.client_search_window --hidden-import=src.ui.windows.supplier_search_window --hidden-import=src.ui.windows.product_add_window --hidden-import=src.ui.windows.product_edit_window --hidden-import=src.services.offer_generator_service --hidden-import=src.services.offer_editor_service --hidden-import=src.services.sync_service --hidden-import=src.data.database_service --hidden-import=src.utils.config --hidden-import=src.utils.settings main.py
     
-    - name: Build executable (without console - final version)
+    - name: Build executable (final spec build with embedded version)
+      shell: pwsh
       run: |
-        python -m PyInstaller --clean --onefile --noconsole --name=OfferGenerator --additional-hooks-dir=. --add-data="src/*;src" --add-data="templates/*;templates" --add-data="background_offer_1.png;." --add-data="app_settings.json;." --hidden-import=PIL._tkinter_finder --hidden-import=PIL.Image --hidden-import=docx --hidden-import=docx.shared --hidden-import=docx.enum.text --hidden-import=docx.enum.table --hidden-import=docxtpl --hidden-import=tkcalendar --hidden-import=tkcalendar.calendar_ --hidden-import=tkcalendar.dateentry --hidden-import=tkcalendar.tooltip --hidden-import=tkcalendar.__main__ --hidden-import=babel --hidden-import=babel.dates --hidden-import=src.core.main_app --hidden-import=src.core.navigation_manager --hidden-import=src.core.offer_generator_app --hidden-import=src.core.offer_editor_app --hidden-import=src.ui.frames.main_menu_frame --hidden-import=src.ui.frames.settings_frame --hidden-import=src.ui.frames.browse_clients_frame --hidden-import=src.ui.frames.browse_suppliers_frame --hidden-import=src.ui.frames.browse_offers_frame --hidden-import=src.ui.frames.offer_creation_frame --hidden-import=src.ui.frames.offer_editor_frame --hidden-import=src.ui.components.ui_components --hidden-import=src.ui.components.product_table --hidden-import=src.ui.windows.client_search_window --hidden-import=src.ui.windows.supplier_search_window --hidden-import=src.ui.windows.product_add_window --hidden-import=src.ui.windows.product_edit_window --hidden-import=src.services.offer_generator_service --hidden-import=src.services.offer_editor_service --hidden-import=src.services.sync_service --hidden-import=src.data.database_service --hidden-import=src.utils.config --hidden-import=src.utils.settings main.py
+        echo "Generating build_info.txt"
+        $version = $env:APP_VERSION
+        if (-not $version) { $version = '1.0.0.dev' }
+        echo "Version: $version" > build_info.txt
+        git rev-parse HEAD 2>$null >> build_info.txt
+        python -m PyInstaller offer_generator.spec --noconfirm
+        if (Test-Path build_info.txt -and Test-Path dist/OfferGenerator) { Copy-Item build_info.txt dist/OfferGenerator/ }
     
-    - name: Upload executable (Debug version)
+  - name: Upload executable (Debug version)
       uses: actions/upload-artifact@v4
       with:
-        name: OfferGenerator-Windows-Debug
+    name: OfferGenerator-Windows-Debug-${{ env.APP_VERSION }}
         path: dist/OfferGenerator-Debug.exe
     
-    - name: Upload executable (Final version)
+  - name: Upload executable (Final version)
       uses: actions/upload-artifact@v4
       with:
-        name: OfferGenerator-Windows
-        path: dist/OfferGenerator.exe
+    name: OfferGenerator-Windows-${{ env.APP_VERSION }}
+  path: dist/OfferGenerator/OfferGenerator.exe
     
-    - name: Create distribution package
+  - name: Create distribution package
       run: |
         mkdir distribution_windows
-        copy dist\OfferGenerator.exe distribution_windows\
+  copy dist\OfferGenerator\OfferGenerator.exe distribution_windows\
         copy app_settings.json distribution_windows\
         copy background_offer_1.png distribution_windows\
+    copy background_wz_1.png distribution_windows\
         xcopy /E /I templates distribution_windows\templates
-        echo "# Generator Ofert - Windows" > distribution_windows\README.txt
+    echo "# Generator Ofert - Windows ($env:APP_VERSION)" > distribution_windows\README.txt
         echo "" >> distribution_windows\README.txt
         echo "Uruchom OfferGenerator.exe aby rozpoczac" >> distribution_windows\README.txt
+    if (Test-Path dist\OfferGenerator\build_info.txt) { copy dist\OfferGenerator\build_info.txt distribution_windows\ }
     
-    - name: Create ZIP package
+  - name: Create ZIP package
       run: |
-        powershell Compress-Archive -Path distribution_windows\* -DestinationPath OfferGenerator-Windows.zip
+  powershell Compress-Archive -Path distribution_windows\* -DestinationPath OfferGenerator-Windows-${{ env.APP_VERSION }}.zip
     
-    - name: Upload distribution
+  - name: Upload distribution
       uses: actions/upload-artifact@v4
       with:
-        name: OfferGenerator-Windows-Complete
-        path: OfferGenerator-Windows.zip
+    name: OfferGenerator-Windows-Complete-${{ env.APP_VERSION }}
+    path: OfferGenerator-Windows-${{ env.APP_VERSION }}.zip
