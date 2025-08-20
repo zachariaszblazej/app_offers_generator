@@ -23,6 +23,7 @@ from src.services.wz_editor_service import update_wz_document
 from src.services.wz_editor_service import update_wz_document
 from src.data.database_service import get_wz_context_from_db
 from src.utils.config import BACKGROUND_IMAGE
+from src.utils.resources import get_resource_path
 
 
 class WzEditorApp:
@@ -51,14 +52,17 @@ class WzEditorApp:
         
         # Set background
         try:
-            bg = PhotoImage(file="/Users/blzc/Apka_Oferty/background_wz_1.png")
-            label_BG = Label(self.window, image=bg)
-            label_BG.place(x=0, y=0)
-            label_BG.image = bg  # Keep a reference
+            wz_bg_path = get_resource_path('background_wz_1.png')
+            if os.path.exists(wz_bg_path):
+                bg = PhotoImage(file=wz_bg_path)
+                label_BG = Label(self.window, image=bg)
+                label_BG.place(x=0, y=0)
+                label_BG.image = bg  # Keep a reference
+            else:
+                raise FileNotFoundError(wz_bg_path)
         except Exception as e:
             print(f"Could not load background image: {e}")
-            # If background image fails, use a clean professional color
-            self.window.configure(bg='#f5f5f5')
+            self.window.configure(bg='#f5f5f5')  # Fallback color
         
         # Initialize UI components
         # Create product table with edit and delete callbacks

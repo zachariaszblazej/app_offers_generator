@@ -37,6 +37,10 @@ def get_background_image_path():
     """Get the path to the background image"""
     return get_resource_path('background_offer_1.png')
 
+def get_wz_background_image_path():
+    """Get the path to the WZ background image"""
+    return get_resource_path('background_wz_1.png')
+
 def get_templates_dir():
     """Get the path to the templates directory"""
     return get_resource_path('templates')

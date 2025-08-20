@@ -14,7 +14,8 @@ import sys
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import TEMPLATE_PATH, get_wz_folder
+from src.utils.config import get_wz_folder
+from src.utils.resources import get_resource_path
 from src.data.database_service import get_next_wz_number, save_wz_to_db
 import re
 
@@ -54,22 +55,21 @@ def generate_wz_document(context_data, custom_output_path=None):
         str: Path to generated WZ file, or None if failed
     """
     try:
-        # Get template path
-        template_path = os.path.join("/Users/blzc/Apka_Oferty/templates", "wz_template.docx")
-        
-        if not os.path.exists(template_path):
-            tkinter.messagebox.showerror("Błąd", f"Szablon WZ nie został znaleziony: {template_path}")
+        # Resolve template path in a PyInstaller-friendly way via helper
+        template_path = get_wz_template_path()
+        if not template_path:
+            tkinter.messagebox.showerror("Błąd", "Szablon WZ nie został znaleziony (wz_template.docx)")
             return None
-        
+
         # Load template
         doc = DocxTemplate(template_path)
-        
+
         # Prepare context data for template
         template_context = prepare_wz_context(context_data)
-        
+
         # Render document
         doc.render(template_context)
-        
+
         # Determine output path
         if custom_output_path:
             # Editing existing WZ – keep original path
@@ -88,13 +88,13 @@ def generate_wz_document(context_data, custom_output_path=None):
             year_dir = os.path.join(get_wz_folder(), year)
             os.makedirs(year_dir, exist_ok=True)
             output_path = os.path.join(year_dir, output_filename)
-        
+
         # Save document
         doc.save(output_path)
-        
+
         print(f"WZ document generated: {output_path}")
         return output_path
-        
+
     except Exception as e:
         print(f"Error generating WZ document: {e}")
         tkinter.messagebox.showerror("Błąd", f"Wystąpił błąd podczas generowania WZ:\n{e}")
@@ -209,6 +209,6 @@ def prepare_wz_context(context_data):
 
 
 def get_wz_template_path():
-    """Get the path to WZ template file"""
-    template_path = os.path.join("/Users/blzc/Apka_Oferty/templates", "wz_template.docx")
-    return template_path if os.path.exists(template_path) else None
+    """Get the path to WZ template file (runtime safe)."""
+    path = get_resource_path(os.path.join('templates', 'wz_template.docx'))
+    return path if os.path.exists(path) else None
