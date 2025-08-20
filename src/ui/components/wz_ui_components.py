@@ -454,24 +454,20 @@ class WzUIComponents:
             
             # Store client alias for new WZ generation
             if 'client_alias' in context_data:
-                self.selected_client_alias = context_data['client_alias']
-                
-                # If client_alias is None, try to find it in database by client NIP
-                if self.selected_client_alias is None:
-                    client_nip = context_data.get('client_nip', '')
-                    
-                    if client_nip:
-                        # Try to find client in database by NIP
-                        from src.data.database_service import get_client_by_nip
-                        try:
-                            # Remove formatting from NIP for database lookup
-                            clean_nip = ''.join(c for c in client_nip if c.isdigit())
-                            client_data = get_client_by_nip(clean_nip)
-                            if client_data:
-                                # client_data format: (nip, company_name, address1, address2, alias)
-                                self.selected_client_alias = client_data[4]  # alias is at index 4
-                        except Exception as e:
-                            print(f"Debug: Error looking up client in database: {e}")
+                self.selected_client_alias = context_data.get('client_alias')
+            
+            # Fallback: if alias missing or empty, attempt DB lookup by NIP
+            if not self.selected_client_alias:
+                client_nip = context_data.get('client_nip', '')
+                if client_nip:
+                    from src.data.database_service import get_client_by_nip
+                    try:
+                        clean_nip = ''.join(c for c in client_nip if c.isdigit())
+                        client_data = get_client_by_nip(clean_nip)
+                        if client_data and len(client_data) >= 5:
+                            self.selected_client_alias = client_data[4]
+                    except Exception as e:
+                        print(f"Debug: Error looking up client alias by NIP: {e}")
             
             # Load supplier data
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']

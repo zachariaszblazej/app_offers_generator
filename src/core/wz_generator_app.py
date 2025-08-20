@@ -189,6 +189,9 @@ class WzGeneratorApp:
             
             # Get form data
             context_data = self.ui.get_all_data()
+            # Persist aliases (were previously omitted, causing regenerated WZ to default to 'KLIENT')
+            context_data['client_alias'] = self.ui.selected_client_alias
+            context_data['supplier_alias'] = self.ui.selected_supplier_alias
             
             # Get products data
             products_data = self.product_table.get_all_products()
