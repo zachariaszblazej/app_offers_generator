@@ -40,7 +40,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import TEMPLATE_PATH, get_offers_folder
-from src.data.database_service import get_next_offer_number, save_offer_to_db
+from src.data.database_service import get_next_offer_number_for_year, save_offer_to_db
 
 
 def convert_date(date: datetime.datetime) -> str:
@@ -49,21 +49,22 @@ def convert_date(date: datetime.datetime) -> str:
 
 
 def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:
-    """Generate offer number and file path"""
-    # Auto-generate offer number
+    """Generate year-scoped offer number and file path.
+    New rules:
+    - Sequential counter resets per year.
+    - Display number format: <seq>/OF/<year>_<alias>
+    - Stored filename: <seq>_OF_<year>_<alias>.docx (no slashes to avoid path conflicts)
+    - Directory: {offers_root}/{year}/
+    """
     try:
-        order_number = get_next_offer_number()
         year = date.year
-        
-        # Format: <order_number>/OF/<year>_<client_alias>
-        offer_number = f"{order_number}/OF/{year}_{client_alias}"
-        
-        # Create filename: <order_number>_OF_<year>_<client_alias>.docx
-        filename = f"{order_number}_OF_{year}_{client_alias}.docx"
-        file_path = os.path.join(get_offers_folder(), filename)
-        
-        return offer_number, file_path, order_number
-        
+        seq_number = get_next_offer_number_for_year(year)
+        offer_number = f"{seq_number}/OF/{year}_{client_alias}"
+        # For filesystem, avoid slashes in base name
+        filename = f"{seq_number}_OF_{year}_{client_alias}.docx"
+        year_dir = os.path.join(get_offers_folder(), str(year))
+        file_path = os.path.join(year_dir, filename)
+        return offer_number, file_path, seq_number
     except Exception as e:
         tkinter.messagebox.showerror("Error", f"Failed to generate offer number: {e}")
         return None, None, None
@@ -166,7 +167,7 @@ def generate_offer_document(context_data):
         doc = DocxTemplate(template_path)
         doc.render(context_data)
         
-        # Ensure output directory exists
+        # Ensure output directory exists (year subfolder)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
         # Save to offers folder

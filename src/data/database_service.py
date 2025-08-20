@@ -89,6 +89,62 @@ def get_next_offer_number():
         tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
         return 1
 
+def get_next_offer_number_for_year(year: int):
+    """Get next offer sequential number limited to a specific year.
+    Strategy: scan OfferContext JSON for entries whose 'date' belongs to given year.
+    If schema grows, consider adding explicit Year column for efficiency.
+    """
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        # Fetch all offer rows with context; we only extract year from JSON if possible
+        cursor.execute("SELECT OfferOrderNumber, OfferContext FROM Offers")
+        max_number = 0
+        for row in cursor.fetchall():
+            order_no, context_json = row
+            if not context_json:
+                continue
+            try:
+                ctx = json.loads(context_json)
+                date_val = ctx.get('date')
+                if not date_val:
+                    continue
+                # date may be isoformat or string like 'dd Month yyyy' – extract year digits
+                yr = None
+                if isinstance(date_val, str):
+                    # Try ISO first
+                    if len(date_val) >= 4 and date_val[:4].isdigit():
+                        yr = int(date_val[:4])
+                    else:
+                        # Look for 4-digit year at end
+                        import re
+                        m = re.search(r'(19|20)\d{2}', date_val)
+                        if m:
+                            yr = int(m.group(0))
+                # If stored as something else, skip
+                if yr == year:
+                    # We need sequential number per year; OfferNumber may be embedded in offer_number string
+                    # Prefer extracting number from offer_number inside context if present
+                    off_num = ctx.get('offer_number')
+                    seq = None
+                    if isinstance(off_num, str):
+                        import re
+                        m2 = re.match(r'(\d+)[/_-]OF[/_-](%d)' % year, off_num)
+                        if m2:
+                            seq = int(m2.group(1))
+                    if seq is None:
+                        # fallback: rely on OfferOrderNumber but that was global before change
+                        seq = order_no
+                    if seq > max_number:
+                        max_number = seq
+            except Exception:
+                continue
+        conn.close()
+        return max_number + 1 if max_number >= 0 else 1
+    except sqlite3.Error as e:
+        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        return 1
+
 
 def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
     """Save offer information to the database"""
