@@ -244,6 +244,12 @@ class OfferEditorApp:
                             self.ui.date_var.set(formatted_date)
                 except Exception as e:
                     print(f"Error setting date: {e}")
+            # After date set, lock year for editor (prevent changing year)
+            try:
+                parsed = datetime.strptime(self.ui.date_var.get(), "%d %m %Y")
+                self.ui.lock_year(parsed.year)
+            except Exception:
+                pass
             
             # Load products data
             if 'products' in context_data:

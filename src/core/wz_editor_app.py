@@ -232,6 +232,15 @@ class WzEditorApp:
                             self.ui.date_var.set(formatted_date)
                 except Exception as e:
                     print(f"Error setting date: {e}")
+            # Lock year after setting date
+            try:
+                parsed = datetime.strptime(self.ui.date_var.get(), "%d %m %Y")
+                if hasattr(self.ui, 'lock_year'):
+                    self.ui.lock_year(parsed.year)
+                else:
+                    self.ui.locked_year = parsed.year  # fallback
+            except Exception:
+                pass
             
             # Load products data
             if 'products' in context_data:

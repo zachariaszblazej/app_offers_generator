@@ -27,21 +27,29 @@ class WzUIComponents:
         self.selected_client_alias = None
         self.selected_supplier_alias = None
         self.wz_number = None  # Initialize WZ number attribute
-        
+        self.locked_year = None  # Locked year (editor mode)
+
         # Load default data
         self.suppliers_data = get_suppliers_from_db() or []
         self.clients_data = get_clients_from_db() or []
-        
+
         # Load company settings data
         self.text_data = settings_manager.get_all_company_data_settings()
-        
+
         # Date variable for date picker
         self.date_var = StringVar()
         self.date_var.set(datetime.now().strftime('%d %m %Y'))
-        
+
         # Variables for specific fields (not needed for WZ but kept for compatibility)
         self.suma_var = StringVar()
         self.suma_var.set("0,00")
+
+    def lock_year(self, year: int):
+        """Lock calendar year (editor mode)."""
+        try:
+            self.locked_year = int(year)
+        except Exception:
+            self.locked_year = None
     
     
     def create_upper_section(self, show_wz_number=False):
@@ -288,14 +296,25 @@ class WzUIComponents:
             current_date = datetime.now()
         
         # Create calendar widget with proper configuration
-        cal = Calendar(date_window, 
-                      selectmode='day',
-                      year=current_date.year,
-                      month=current_date.month,
-                      day=current_date.day,
-                      showweeknumbers=False,
-                      showothermonthdays=False,
-                      date_pattern='dd/mm/yyyy')
+        cal_kwargs = dict(
+            selectmode='day',
+            year=current_date.year,
+            month=current_date.month,
+            day=current_date.day,
+            showweeknumbers=False,
+            showothermonthdays=False,
+            date_pattern='dd/mm/yyyy'
+        )
+        if self.locked_year is not None:
+            from datetime import datetime as _dt
+            cal_kwargs['year'] = self.locked_year
+            if current_date.year != self.locked_year:
+                current_date = current_date.replace(year=self.locked_year)
+            cal_kwargs['month'] = current_date.month
+            cal_kwargs['day'] = current_date.day
+            cal_kwargs['mindate'] = _dt(self.locked_year, 1, 1)
+            cal_kwargs['maxdate'] = _dt(self.locked_year, 12, 31)
+        cal = Calendar(date_window, **cal_kwargs)
         cal.pack(pady=15)
         
         # Buttons frame
@@ -308,7 +327,12 @@ class WzUIComponents:
                 selected_date = cal.selection_get()
                 
                 if selected_date:
-                    # Format to our required format
+                    if self.locked_year is not None and selected_date.year != self.locked_year:
+                        from datetime import datetime as _dt
+                        try:
+                            selected_date = _dt(self.locked_year, selected_date.month, selected_date.day)
+                        except ValueError:
+                            selected_date = _dt(self.locked_year, 1, 1)
                     formatted_date = selected_date.strftime("%d %m %Y")
                     self.date_var.set(formatted_date)
                     date_window.destroy()
@@ -322,6 +346,12 @@ class WzUIComponents:
                     try:
                         # Calendar might return dd/mm/yyyy format
                         parsed_date = datetime.strptime(date_str, "%d/%m/%Y")
+                        if self.locked_year is not None and parsed_date.year != self.locked_year:
+                            from datetime import datetime as _dt
+                            try:
+                                parsed_date = _dt(self.locked_year, parsed_date.month, parsed_date.day)
+                            except ValueError:
+                                parsed_date = _dt(self.locked_year, 1, 1)
                         formatted_date = parsed_date.strftime("%d %m %Y")
                         self.date_var.set(formatted_date)
                         date_window.destroy()

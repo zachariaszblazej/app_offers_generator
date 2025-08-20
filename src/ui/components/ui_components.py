@@ -46,6 +46,15 @@ class UIComponents:
         self.product_table = product_table  # Reference to product table
         self.offer_number = None  # Store original offer number for editing
         self.modification_callback = None  # Callback for tracking modifications
+        # Locked year (for editor mode) - when set, calendar restricts selection to this year
+        self.locked_year: int | None = None
+
+    def lock_year(self, year: int):
+        """Lock the calendar year (editor mode) so only day/month can change."""
+        try:
+            self.locked_year = int(year)
+        except Exception:
+            self.locked_year = None
     
     def set_modification_callback(self, callback):
         """Set callback to be called when user modifies form fields"""
@@ -537,14 +546,27 @@ class UIComponents:
             current_date = datetime.now()
         
         # Create calendar widget with proper configuration
-        cal = Calendar(date_window, 
-                      selectmode='day',
-                      year=current_date.year,
-                      month=current_date.month,
-                      day=current_date.day,
-                      showweeknumbers=False,
-                      showothermonthdays=False,
-                      date_pattern='dd/mm/yyyy')  # Use standard format internally
+        # If year is locked (editor), constrain selectable range to that year
+        cal_kwargs = dict(
+            selectmode='day',
+            year=current_date.year,
+            month=current_date.month,
+            day=current_date.day,
+            showweeknumbers=False,
+            showothermonthdays=False,
+            date_pattern='dd/mm/yyyy'
+        )
+        if self.locked_year is not None:
+            from datetime import datetime as _dt
+            cal_kwargs['year'] = self.locked_year
+            # Ensure current month/day valid
+            if current_date.year != self.locked_year:
+                current_date = current_date.replace(year=self.locked_year)
+            cal_kwargs['month'] = current_date.month
+            cal_kwargs['day'] = current_date.day
+            cal_kwargs['mindate'] = _dt(self.locked_year, 1, 1)
+            cal_kwargs['maxdate'] = _dt(self.locked_year, 12, 31)
+        cal = Calendar(date_window, **cal_kwargs)
         cal.pack(pady=15)
         
         # Buttons frame
@@ -558,11 +580,16 @@ class UIComponents:
                 print(f"selection_get() returned: {selected_date}")  # Debug
                 
                 if selected_date:
-                    # Format to our required format
+                    # Enforce locked year if set
+                    if self.locked_year is not None and selected_date.year != self.locked_year:
+                        # Adjust to locked year keeping month/day
+                        from datetime import datetime as _dt
+                        try:
+                            selected_date = _dt(self.locked_year, selected_date.month, selected_date.day)
+                        except ValueError:
+                            selected_date = _dt(self.locked_year, 1, 1)
                     formatted_date = selected_date.strftime("%d %m %Y")
-                    print(f"Formatted date: {formatted_date}")  # Debug
                     self.date_var.set(formatted_date)
-                    print(f"Date set to: {self.date_var.get()}")  # Debug
                     date_window.destroy()
                     return
                 
@@ -575,8 +602,14 @@ class UIComponents:
                     try:
                         # Calendar might return dd/mm/yyyy format
                         parsed_date = datetime.strptime(date_str, "%d/%m/%Y")
+                        # Enforce locked year
+                        if self.locked_year is not None and parsed_date.year != self.locked_year:
+                            from datetime import datetime as _dt
+                            try:
+                                parsed_date = _dt(self.locked_year, parsed_date.month, parsed_date.day)
+                            except ValueError:
+                                parsed_date = _dt(self.locked_year, 1, 1)
                         formatted_date = parsed_date.strftime("%d %m %Y")
-                        print(f"Parsed and formatted: {formatted_date}")  # Debug
                         self.date_var.set(formatted_date)
                         print(f"Date set to: {self.date_var.get()}")  # Debug
                         date_window.destroy()
