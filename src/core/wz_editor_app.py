@@ -51,7 +51,17 @@ class WzEditorApp:
         
         # Set background
         try:
-            bg = PhotoImage(file=WZ_BACKGROUND_IMAGE)
+            bg = None
+            try:
+                bg = PhotoImage(file=WZ_BACKGROUND_IMAGE)
+            except Exception as te:
+                print(f"Primary PhotoImage load failed for WZ editor background: {te}. Trying Pillow fallback.")
+                try:
+                    from PIL import Image, ImageTk
+                    pil_img = Image.open(WZ_BACKGROUND_IMAGE)
+                    bg = ImageTk.PhotoImage(pil_img)
+                except Exception as pe:
+                    raise pe
             label_BG = Label(self.window, image=bg)
             label_BG.place(x=0, y=0)
             label_BG.image = bg
