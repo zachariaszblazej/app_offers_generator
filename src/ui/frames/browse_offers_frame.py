@@ -32,10 +32,8 @@ class BrowseOffersFrame(Frame):
         self.configure(bg='#f0f0f0')
         header = Frame(self, bg='#f0f0f0')
         header.pack(fill=X, padx=20, pady=20)
-        self.title_label = Label(header, text='Przeglądaj oferty', font=('Arial', 20, 'bold'), bg='#f0f0f0', fg='#333')
-        self.title_label.pack(side=LEFT)
         Button(header, text='Powrót do menu głównego', font=('Arial', 12), fg='black', padx=15, pady=8,
-               command=self.return_to_main_menu, cursor='hand2').pack(side=RIGHT)
+               command=self.return_to_main_menu, cursor='hand2').pack(side=LEFT)
 
         content = Frame(self, bg='#f0f0f0')
         content.pack(fill=BOTH, expand=True, padx=20, pady=(0, 20))
@@ -255,7 +253,6 @@ class BrowseOffersFrame(Frame):
         if isinstance(filename, str) and filename.startswith('📁 '):
             year = filename.replace('📁', '').strip()
             self.current_year_folder = year
-            self.title_label.config(text=f'Przeglądaj oferty – {year}')
             self.up_btn.pack(side=LEFT, padx=(0, 10))
             self.load_offers()
             return
@@ -296,7 +293,6 @@ class BrowseOffersFrame(Frame):
     def show(self):
         self.pack(fill=BOTH, expand=True)
         self.current_year_folder = None
-        self.title_label.config(text='Przeglądaj oferty')
         if self.up_btn.winfo_ismapped():
             self.up_btn.forget()
         self.load_offers()
@@ -304,7 +300,6 @@ class BrowseOffersFrame(Frame):
     def navigate_up(self):
         if self.current_year_folder is not None:
             self.current_year_folder = None
-            self.title_label.config(text='Przeglądaj oferty')
             if self.up_btn.winfo_ismapped():
                 self.up_btn.forget()
             self.load_offers()
