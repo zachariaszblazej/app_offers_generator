@@ -168,8 +168,23 @@ def generate_offer_document(context_data):
         doc = DocxTemplate(template_path)
         doc.render(context_data)
         
-        # Ensure output directory exists (year subfolder)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # Ensure base offers root exists (do NOT auto-create root to enforce startup validation)
+        offers_root = get_offers_folder()
+        if not os.path.isdir(offers_root):
+            tkinter.messagebox.showerror(
+                "Błąd",
+                "Folder ofert nie istnieje. Ustaw poprawny folder w zakładce Ustawienia przed generowaniem oferty."
+            )
+            return {'success': False, 'error': 'Offers root folder missing'}
+
+        # Ensure year subdirectory exists (safe to create under existing root)
+        year_dir = os.path.dirname(file_path)
+        if not os.path.isdir(year_dir):
+            try:
+                os.makedirs(year_dir, exist_ok=True)
+            except OSError as e:
+                tkinter.messagebox.showerror("Błąd", f"Nie udało się utworzyć folderu roku: {e}")
+                return {'success': False, 'error': f'Cannot create year folder: {e}'}
         
         # Save to offers folder
         doc.save(file_path)

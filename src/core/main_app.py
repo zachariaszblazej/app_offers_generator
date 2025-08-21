@@ -25,6 +25,7 @@ from src.core.offer_generator_app import OfferGeneratorApp
 from src.core.wz_generator_app import WzGeneratorApp
 from src.services.sync_service import OfferSyncService
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
+from src.utils.config import get_offers_folder
 
 
 def main():
@@ -39,10 +40,9 @@ class OfferGeneratorMainApp:
     def __init__(self):
         # Set locale
         locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
-        
+
         # Create main window
         self.window = Tk()
-        # Include version in window title
         try:
             from src.utils.version import get_version_string
             version_str = get_version_string()
@@ -50,19 +50,18 @@ class OfferGeneratorMainApp:
         except ImportError:
             self.window.title(APP_TITLE)
         self.window.geometry(WINDOW_SIZE)
-        
+
         # Initialize navigation manager
         self.nav_manager = NavigationManager(self.window)
-        
+
         # Create frames
         self.setup_frames()
-        
-        # Perform database synchronization with offers folder
-        # self.perform_synchronization()
-        
-        # Start with main menu
-        self.nav_manager.show_frame('main_menu')
-        
+
+        # Verify offers folder exists; if missing navigate to settings and skip main menu
+        missing = self.check_offers_folder_exists()
+        if not missing:
+            self.nav_manager.show_frame('main_menu')
+
         # Initialize offer creation components (but don't show them yet)
         self.setup_offer_components()
     
@@ -111,6 +110,17 @@ class OfferGeneratorMainApp:
         """Setup offer creation components"""
         # These will be initialized when needed
         self.offer_components_initialized = False
+
+    def check_offers_folder_exists(self) -> bool:
+        """Check if offers folder exists. If missing: show warning, go to settings, return True. Else False."""
+        try:
+            offers_path = get_offers_folder()
+            if not offers_path or not os.path.isdir(offers_path):
+                self.nav_manager.show_frame('settings')
+                return True
+        except Exception as e:
+            print(f"Offer folder existence check error: {e}")
+        return False
     
     def perform_synchronization(self):
         """Perform database synchronization with offers folder"""
