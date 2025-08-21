@@ -13,13 +13,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from src.utils.config import TABLE_COLUMNS, TABLE_COLUMN_HEADERS
 
 
-def format_currency(value):
-    """Format currency value with comma as decimal separator"""
-    # Handle both string and numeric values, and values that might already have comma
+def _to_float(value) -> float:
+    """Parse value that may contain spaces as thousand separators and comma decimal."""
     if isinstance(value, str):
-        # If already has comma, convert back to dot for float conversion
-        value = value.replace(',', '.')
-    return f"{float(value):.2f}".replace('.', ',')
+        # remove spaces (thousands) and convert comma to dot
+        cleaned = value.replace(' ', '').replace('\u00A0', '').replace(',', '.')
+        return float(cleaned)
+    return float(value)
+
+def format_currency(value):
+    """Format number as '36 800,00' (space thousands, comma decimals)."""
+    try:
+        n = _to_float(value)
+        # First format with US grouping, then swap separators
+        s = f"{n:,.2f}"
+        s = s.replace(',', ' ').replace('.', ',')
+        return s
+    except Exception:
+        # Fallback to string
+        return str(value)
 
 
 class ProductTable:
@@ -94,7 +106,7 @@ class ProductTable:
         
         try:
             quantity = int(quantity)
-            unit_price = float(unit_price)
+            unit_price = _to_float(unit_price)
             total = quantity * unit_price
             
             # Auto-generate position number (1-based)
@@ -152,8 +164,8 @@ class ProductTable:
                 # Skip the position number (first column) and DELETE column (last column)
                 position_number, product_name, unit, quantity, unit_price_display, total_display = values[:6]
                 
-                # Convert prices back to dot format for editing
-                unit_price = unit_price_display.replace(',', '.')
+                # Convert prices back to normalized dot format for editing
+                unit_price = unit_price_display.replace(' ', '').replace('\u00A0', '').replace(',', '.')
                 
                 return {
                     'item_id': selected_item,
@@ -180,7 +192,7 @@ class ProductTable:
         
         try:
             quantity = int(quantity)
-            unit_price = float(unit_price)
+            unit_price = _to_float(unit_price)
             total = quantity * unit_price
             
             if self.tree:
@@ -212,8 +224,8 @@ class ProductTable:
             if self.tree.exists(i):
                 item = self.tree.item(str(i))
                 if item['values']:
-                    # Handle values that might have comma as decimal separator
-                    total_value = str(item['values'][5]).replace(',', '.')
+                    # Handle values that might have spaces and comma decimal
+                    total_value = _to_float(str(item['values'][5]))
                     total += float(total_value)  # TOTAL column (now index 5)
         
         return total

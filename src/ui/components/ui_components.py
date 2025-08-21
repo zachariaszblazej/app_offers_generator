@@ -331,8 +331,12 @@ class UIComponents:
             products_total_netto = self.product_table.calculate_totals()
             context['products_total_netto'] = products_total_netto
             
-            # Format the netto total with comma as decimal separator
-            context['total_netto'] = f"{products_total_netto:.2f}".replace('.', ',')
+            # Format the netto total with space thousands and comma decimals
+            try:
+                from src.ui.components.product_table import format_currency
+                context['total_netto'] = format_currency(products_total_netto)
+            except Exception:
+                context['total_netto'] = f"{products_total_netto:.2f}".replace('.', ',')
             
             
         # Add product table headers for Word template
