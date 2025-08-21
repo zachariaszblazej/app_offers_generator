@@ -112,50 +112,50 @@ class UIComponents:
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data['address_1'])
-        self.entries['address1'] = Entry(self.window, width=17, textvariable=address1_value)
+        self.entries['address1'] = Entry(self.window, width=50, textvariable=address1_value)
         self.entries['address1'].place(x=110, y=118)
 
         address2_value = StringVar(self.window, value=self.text_data['address_2'])
-        self.entries['address2'] = Entry(self.window, width=17, textvariable=address2_value)
+        self.entries['address2'] = Entry(self.window, width=50, textvariable=address2_value)
         self.entries['address2'].place(x=110, y=148)
 
         nip_value = StringVar(self.window, value=self.text_data['nip'])
-        self.entries['nip'] = Entry(self.window, width=15, textvariable=nip_value)
+        self.entries['nip'] = Entry(self.window, width=25, textvariable=nip_value)
         self.entries['nip'].place(x=300, y=118)
 
         regon_value = StringVar(self.window, value=self.text_data['regon'])
-        self.entries['regon'] = Entry(self.window, width=15, textvariable=regon_value)
+        self.entries['regon'] = Entry(self.window, width=25, textvariable=regon_value)
         self.entries['regon'].place(x=320, y=148)
 
         email_value = StringVar(self.window, value=self.text_data['email'])
-        self.entries['email'] = Entry(self.window, width=20, textvariable=email_value)
+        self.entries['email'] = Entry(self.window, width=40, textvariable=email_value)
         self.entries['email'].place(x=485, y=118)
 
         phone_value = StringVar(self.window, value=self.text_data['phone_number'])
-        self.entries['phone'] = Entry(self.window, width=15, textvariable=phone_value)
+        self.entries['phone'] = Entry(self.window, width=30, textvariable=phone_value)
         self.entries['phone'].place(x=485, y=148)
 
         bank_name_value = StringVar(self.window, value=self.text_data['bank_name'])
-        self.entries['bank_name'] = Entry(self.window, width=15, textvariable=bank_name_value)
+        self.entries['bank_name'] = Entry(self.window, width=30, textvariable=bank_name_value)
         self.entries['bank_name'].place(x=715, y=118)
 
         account_number_value = StringVar(self.window, value=self.text_data['account_number'])
-        self.entries['account_number'] = Entry(self.window, width=25, textvariable=account_number_value)
+        self.entries['account_number'] = Entry(self.window, width=40, textvariable=account_number_value)
         self.entries['account_number'].place(x=675, y=148)
     
     def create_offer_section(self):
         """Create the offer/supplier/client section"""
 
         # Supplier entries
-        self.entries['supplier_name'] = Entry(self.window, width=25)
+        self.entries['supplier_name'] = Entry(self.window, width=50)
         self.entries['supplier_name'].place(x=60, y=270)
         self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_1'] = Entry(self.window, width=25)
+        self.entries['supplier_address_1'] = Entry(self.window, width=50)
         self.entries['supplier_address_1'].place(x=60, y=300)
         self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_2'] = Entry(self.window, width=25)
+        self.entries['supplier_address_2'] = Entry(self.window, width=50)
         self.entries['supplier_address_2'].place(x=60, y=330)
         self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
@@ -163,51 +163,51 @@ class UIComponents:
         self.entries['supplier_nip'].place(x=60, y=360)
 
         # Client entries
-        self.entries['client_name'] = Entry(self.window, width=25)
+        self.entries['client_name'] = Entry(self.window, width=50)
         self.entries['client_name'].place(x=660, y=270)
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_1'] = Entry(self.window, width=25)
+        self.entries['client_address_1'] = Entry(self.window, width=50)
         self.entries['client_address_1'].place(x=660, y=300)
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_2'] = Entry(self.window, width=25)
+        self.entries['client_address_2'] = Entry(self.window, width=50)
         self.entries['client_address_2'].place(x=660, y=330)
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
+        self.entries['client_nip'] = Entry(self.window, width=40, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
     
     def create_offer_details_section(self):
         """Create additional offer details section under EDYTUJ PRODUKT button"""
-        self.entries['termin_realizacji'] = Entry(self.window, width=20)
+        self.entries['termin_realizacji'] = Entry(self.window, width=50)
         self.entries['termin_realizacji'].place(x=260, y=810)
         self.entries['termin_realizacji'].insert(0, self.offer_details_data.get('termin_realizacji', 'p1'))
         self.entries['termin_realizacji'].bind('<KeyRelease>', self._on_field_modified)
         
-        self.entries['termin_platnosci'] = Entry(self.window, width=20)
+        self.entries['termin_platnosci'] = Entry(self.window, width=50)
         self.entries['termin_platnosci'].place(x=260, y=840)
         self.entries['termin_platnosci'].insert(0, self.offer_details_data.get('termin_platnosci', 'p1'))
         self.entries['termin_platnosci'].bind('<KeyRelease>', self._on_field_modified)
         
-        self.entries['warunki_dostawy'] = Entry(self.window, width=20)
+        self.entries['warunki_dostawy'] = Entry(self.window, width=50)
         self.entries['warunki_dostawy'].place(x=260, y=870)
         self.entries['warunki_dostawy'].insert(0, self.offer_details_data.get('warunki_dostawy', 'p1'))
         
-        self.entries['waznosc_oferty'] = Entry(self.window, width=20)
+        self.entries['waznosc_oferty'] = Entry(self.window, width=50)
         self.entries['waznosc_oferty'].place(x=260, y=900)
         self.entries['waznosc_oferty'].insert(0, self.offer_details_data.get('waznosc_oferty', 'p1'))
         
-        self.entries['gwarancja'] = Entry(self.window, width=20)
+        self.entries['gwarancja'] = Entry(self.window, width=50)
         self.entries['gwarancja'].place(x=260, y=930)
         self.entries['gwarancja'].insert(0, self.offer_details_data.get('gwarancja', 'p1'))
         
-        self.entries['cena'] = Entry(self.window, width=20)
+        self.entries['cena'] = Entry(self.window, width=50)
         self.entries['cena'].place(x=260, y=960)
         self.entries['cena'].insert(0, self.offer_details_data.get('cena', 'p1'))
         
         # Multi-line text field for notes (no default value)
-        self.entries['uwagi'] = Text(self.window, width=25, height=3)
+        self.entries['uwagi'] = Text(self.window, width=40, height=3)
         self.entries['uwagi'].place(x=260, y=990)
         self.entries['uwagi'].bind('<KeyRelease>', self._on_field_modified)
     
