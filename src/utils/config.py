@@ -19,7 +19,7 @@ def get_data_dir():
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 # Database configuration
-DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData.db'
+DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData2.db'
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {
@@ -83,6 +83,11 @@ def get_wz_folder():
     except ImportError:
         # Fallback to default if settings not available
         return '../FakeHantechServer/WZ'
+
+def migrate_wz_folder(old_base: str, new_base: str) -> dict:
+    """Run migration for Wuzetkas table paths after WZ folder change."""
+    from src.data.database_service import migrate_wz_folder_path
+    return migrate_wz_folder_path(old_base, new_base)
 
 # UI Configuration
 WINDOW_SIZE = "1600x1200"

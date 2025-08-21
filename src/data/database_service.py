@@ -647,6 +647,56 @@ def migrate_offers_folder_path(old_base: str, new_base: str) -> dict:
         summary['errors'] += 1
     return summary
 
+def migrate_wz_folder_path(old_base: str, new_base: str) -> dict:
+    """Migrate WzFilePath entries when WZ folder location changes.
+
+    For each record in Wuzetkas:
+      - Extract trailing "<year>/<filename>.docx" (year=4 digits) pattern.
+      - Build candidate new path new_base/year/filename.
+      - If file exists at new path, update WzFilePath.
+
+    Returns summary dict like offers migration.
+    """
+    import re
+    summary = {
+        'checked': 0,
+        'updated': 0,
+        'skipped_not_found': 0,
+        'errors': 0,
+        'skipped_files': [],
+        'error_files': []
+    }
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT rowid, WzFilePath FROM Wuzetkas")
+        rows = cursor.fetchall()
+        for rowid, path in rows:
+            summary['checked'] += 1
+            if not isinstance(path, str):
+                continue
+            m = re.search(r"(\d{4}[\\/][^/\\]+\.docx)$", path)
+            if not m:
+                continue
+            tail = m.group(1)
+            new_full = os.path.join(new_base, tail)
+            new_full_norm = os.path.normpath(new_full)
+            if os.path.exists(new_full_norm):
+                try:
+                    cursor.execute("UPDATE Wuzetkas SET WzFilePath = ? WHERE rowid = ?", (new_full_norm, rowid))
+                    summary['updated'] += 1
+                except Exception:
+                    summary['errors'] += 1
+                    summary['error_files'].append(path)
+            else:
+                summary['skipped_not_found'] += 1
+                summary['skipped_files'].append(path)
+        conn.commit()
+        conn.close()
+    except Exception:
+        summary['errors'] += 1
+    return summary
+
 
 # WZ (Wuzetka) related functions
 
