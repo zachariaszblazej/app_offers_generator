@@ -45,7 +45,8 @@ from src.data.database_service import get_next_offer_number_for_year, save_offer
 
 def convert_date(date: datetime.datetime) -> str:
     """Convert datetime to formatted string"""
-    return date.strftime("%d %B %Y")
+    # Use non‑padded day (1-9 without leading zero); keep existing month/year formatting
+    return f"{date.day} {date.strftime('%B %Y')}"
 
 
 def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:

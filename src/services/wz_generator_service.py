@@ -26,19 +26,20 @@ def convert_date(date: datetime.datetime) -> str:
         # Temporarily set Polish locale for date formatting
         current_locale = locale.getlocale()
         locale.setlocale(locale.LC_TIME, 'pl_PL.UTF-8')
-        formatted = date.strftime("%d %B %Y")
+        # Build manually to avoid leading zero in day
+        formatted = f"{date.day} {date.strftime('%B %Y')}"
         # Restore original locale
         locale.setlocale(locale.LC_TIME, current_locale)
         return formatted
-    except:
+    except Exception:
         # Fallback to manual Polish months if locale fails
         polish_months = {
             1: "stycznia", 2: "lutego", 3: "marca", 4: "kwietnia",
             5: "maja", 6: "czerwca", 7: "lipca", 8: "sierpnia",
             9: "września", 10: "października", 11: "listopada", 12: "grudnia"
         }
-        day = date.day
-        month = polish_months[date.month]
+        day = date.day  # already non-padded
+        month = polish_months.get(date.month, '')
         year = date.year
         return f"{day} {month} {year}"
 
