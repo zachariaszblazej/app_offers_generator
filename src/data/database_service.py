@@ -257,8 +257,7 @@ def validate_nip(nip):
 
 def validate_alias(alias):
     """Validate alias format"""
-    if "_" in alias:
-        return False, "Alias nie może zawierać znaku '_'"
+    # Underscore now allowed
     
     if not alias.strip():
         return False, "Alias nie może być pusty"
