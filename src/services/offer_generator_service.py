@@ -169,16 +169,16 @@ def generate_offer_document(context_data):
         # Utwórz ścieżkę do wybranego szablonu
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
         
-        # Convert client_name '/n' markers to real line breaks using RichText
+    # Convert client_name '\n' markers to real line breaks using RichText
         def _to_richtext_with_newlines(value):
             if value is None:
                 return ""
             text = str(value)
-            if '/n' not in text:
+            if '\\n' not in text:
                 return text
             # Add as a single run with embedded line breaks to preserve style
             rt = RichText()
-            rt.add(text.replace('/n', '\n'))
+            rt.add(text.replace('\\n', '\n'))
             return rt
 
         context_data['client_name'] = _to_richtext_with_newlines(context_data.get('client_name', ''))

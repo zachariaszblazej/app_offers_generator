@@ -167,15 +167,15 @@ def prepare_wz_context(context_data):
     for field, default_value in default_fields.items():
         if field not in template_context:
             template_context[field] = default_value
-    # Convert client_name '/n' markers to actual newlines via RichText so multi-line names render in Word
+    # Convert client_name '\n' markers to actual newlines via RichText so multi-line names render in Word
     def _to_richtext_with_newlines(value):
         if value is None:
             return ""
         text = str(value)
-        if '/n' not in text:
+        if '\\n' not in text:
             return text
         rt = RichText()
-        rt.add(text.replace('/n', '\n'))
+        rt.add(text.replace('\\n', '\n'))
         return rt
 
     template_context['client_name'] = _to_richtext_with_newlines(template_context.get('client_name', ''))

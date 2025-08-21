@@ -76,13 +76,13 @@ def update_offer_document(context_data, offer_file_path):
         if 'date' in template_context:
             template_context['date'] = convert_date(template_context['date'])
 
-        # Convert client_name '/n' markers to real line breaks using RichText for Word rendering
+        # Convert client_name '\n' markers to real line breaks using RichText for Word rendering
         try:
             from docxtpl import RichText
             name_val = template_context.get('client_name', '')
-            if isinstance(name_val, str) and '/n' in name_val:
+            if isinstance(name_val, str) and '\\n' in name_val:
                 rt = RichText()
-                rt.add(name_val.replace('/n', '\n'))
+                rt.add(name_val.replace('\\n', '\n'))
                 template_context['client_name'] = rt
         except Exception:
             # Fallback: leave as plain text if RichText unavailable

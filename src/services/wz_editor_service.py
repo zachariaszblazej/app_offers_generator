@@ -39,6 +39,18 @@ def update_wz_document(context_data, wz_path):
         wz_number = context_data.get('wz_number', 'WZ_UNKNOWN')
         print(f"Updating WZ number: {wz_number}")
         
+        # Convert client_name '\n' markers to real line breaks using RichText for Word rendering
+        try:
+            from docxtpl import RichText
+            name_val = context_data.get('client_name', '')
+            if isinstance(name_val, str) and '\\n' in name_val:
+                rt = RichText()
+                rt.add(name_val.replace('\\n', '\n'))
+                context_data['client_name'] = rt
+        except Exception:
+            # Fallback: leave as plain text if RichText unavailable
+            pass
+
         # Update WZ document using template
         success = generate_wz_document_from_template(context_data, wz_path)
         
