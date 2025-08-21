@@ -16,95 +16,120 @@ class ProductAddWindow:
     def open_product_add_window(self):
         """Open product addition window"""
         print("DEBUG: Opening product add window")  # Debug
-        
+
         # Create product add window
         product_window = Toplevel(self.parent_window)
         product_window.title("Dodaj produkt")
-        product_window.geometry("700x500")  # Increased size
+        product_window.geometry("700x500")
         product_window.resizable(False, False)
         product_window.grab_set()  # Make window modal
         product_window.transient(self.parent_window)
-        product_window.configure(bg='#f8f9fa')  # Light background
-        
+        product_window.configure(bg='#f8f9fa')
+
         # Bind Enter key to the window for global shortcut
         product_window.bind('<Return>', lambda event: self._add_product(product_window))
-        
+
         print("DEBUG: Product window created")  # Debug
-        
+
         # Center the window
-        product_window.geometry("+%d+%d" % (
-            self.parent_window.winfo_rootx() + 100,
-            self.parent_window.winfo_rooty() + 100
-        ))
-        
+        product_window.geometry(
+            "+%d+%d" % (
+                self.parent_window.winfo_rootx() + 100,
+                self.parent_window.winfo_rooty() + 100,
+            )
+        )
+
         # Title
-        title_label = Label(product_window, text="Dodaj pozycję do oferty", 
-                           font=("Arial", 18, "bold"),
-                           bg='#f8f9fa', fg='#343a40')
+        title_label = Label(
+            product_window,
+            text="Dodaj pozycję do oferty",
+            font=("Arial", 18, "bold"),
+            bg='#f8f9fa',
+            fg='#343a40',
+        )
         title_label.pack(pady=(30, 20), fill=X)
-        
+
         # Main form frame with border
         form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
-        
+
         # Product name
-        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(
+            row=0, column=0, sticky=W, padx=5, pady=12
+        )
         self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
         self.entries['product_name'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
-        
+
         # Unit
-        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="j.m.", font=("Arial", 11)).grid(
+            row=1, column=0, sticky=W, padx=5, pady=12
+        )
         self.entries['unit'] = Entry(form_frame, width=12, font=("Arial", 11))
         self.entries['unit'].grid(row=1, column=1, padx=5, pady=12, sticky=W)
-        
+        # Default unit
+        self.entries['unit'].insert(0, "szt.")
+
         # Quantity
-        Label(form_frame, text="ilość", font=("Arial", 11)).grid(row=2, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="ilość", font=("Arial", 11)).grid(
+            row=2, column=0, sticky=W, padx=5, pady=12
+        )
         self.entries['quantity'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['quantity'].grid(row=2, column=1, padx=5, pady=12, sticky=W)
-        
+        # Default quantity
+        self.entries['quantity'].insert(0, "1")
+
         # Unit price
-        Label(form_frame, text="Cena jednostkowa netto [PLN]", font=("Arial", 11)).grid(row=3, column=0, sticky=W, padx=5, pady=12)
+        Label(form_frame, text="Cena jednostkowa netto [PLN]", font=("Arial", 11)).grid(
+            row=3, column=0, sticky=W, padx=5, pady=12
+        )
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['unit_price'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
-        
+
         # Bind Enter key to all entry fields
         for entry in self.entries.values():
             entry.bind('<Return>', lambda event: self._add_product(product_window))
-        
+
         # Add separator line
         separator = Frame(product_window, height=2, bg='#cccccc')
         separator.pack(fill=X, padx=20, pady=(10, 20))
-        
+
         # Buttons frame with explicit positioning
         buttons_frame = Frame(product_window, bg='#f8f9fa', height=100)
         buttons_frame.pack(fill=X, pady=(0, 20))
         buttons_frame.pack_propagate(False)  # Maintain frame size
-        
-        # Center the buttons using place instead of pack
-        # Add button - make it very prominent and centered
-        add_btn = Button(buttons_frame, text="✓ ZATWIERDŹ I DODAJ", 
-                        font=("Arial", 16, "bold"),
-                        fg='black',  # Orange color to make it very visible
-                        padx=40, pady=15,
-                        command=lambda: self._add_product(product_window),
-                        cursor='hand2',
-                        relief=RAISED,
-                        bd=4)
-        add_btn.place(relx=0.3, rely=0.5, anchor=CENTER)  # Center left
-        
+
+        # Add button - prominent
+        add_btn = Button(
+            buttons_frame,
+            text="✓ ZATWIERDŹ I DODAJ",
+            font=("Arial", 16, "bold"),
+            fg='black',
+            padx=40,
+            pady=15,
+            command=lambda: self._add_product(product_window),
+            cursor='hand2',
+            relief=RAISED,
+            bd=4,
+        )
+        add_btn.place(relx=0.3, rely=0.5, anchor=CENTER)
+
         # Cancel button
-        cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
-                           font=("Arial", 14),
-                           fg='black',
-                           padx=25, pady=12,
-                           command=product_window.destroy,
-                           cursor='hand2')
-        cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)  # Center right
-        
+        cancel_btn = Button(
+            buttons_frame,
+            text="✗ Anuluj",
+            font=("Arial", 14),
+            fg='black',
+            padx=25,
+            pady=12,
+            command=product_window.destroy,
+            cursor='hand2',
+        )
+        cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)
+
         # Bind Enter key to add product
         product_window.bind('<Return>', lambda event: self._add_product(product_window))
-        product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))  # Numpad Enter
-        
+        product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))
+
         # Set focus to first field
         self.entries['product_name'].focus_set()
     
@@ -127,8 +152,11 @@ class ProductAddWindow:
         
         # Try to validate numeric fields
         try:
-            int(product_data[2])  # quantity  
-            float(product_data[3])  # unit_price
+            # quantity must be integer
+            int(product_data[2])
+            # unit_price can contain spaces and comma as decimal
+            _price_clean = product_data[3].replace(' ', '').replace('\u00A0', '').replace(',', '.')
+            float(_price_clean)
         except ValueError:
             tkinter.messagebox.showerror("Błąd", "Ilość musi być liczbą całkowitą, a cena liczbą!")
             return
