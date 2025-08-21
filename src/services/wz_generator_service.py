@@ -68,8 +68,20 @@ def generate_wz_document(context_data, custom_output_path=None):
                 year = str(datetime.datetime.now().year)
             # Build filesystem-safe filename (already safe – wz_number has no slashes)
             output_filename = f"{wz_number}.docx"
-            year_dir = os.path.join(get_wz_folder(), year)
-            os.makedirs(year_dir, exist_ok=True)
+            wz_root = get_wz_folder()
+            if not wz_root or not os.path.isdir(wz_root):
+                tkinter.messagebox.showerror(
+                    "Błąd",
+                    "Folder WZ nie istnieje. Ustaw poprawny folder w zakładce Ustawienia przed generowaniem WZ."
+                )
+                return None
+            year_dir = os.path.join(wz_root, year)
+            if not os.path.isdir(year_dir):
+                try:
+                    os.makedirs(year_dir, exist_ok=True)
+                except OSError as e:
+                    tkinter.messagebox.showerror("Błąd", f"Nie udało się utworzyć folderu roku dla WZ: {e}")
+                    return None
             output_path = os.path.join(year_dir, output_filename)
 
         # Save document

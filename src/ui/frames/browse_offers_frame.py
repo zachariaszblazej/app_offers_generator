@@ -104,10 +104,6 @@ class BrowseOffersFrame(Frame):
 
         offers_root = get_offers_folder()
         if not os.path.isdir(offers_root):
-            tkinter.messagebox.showwarning(
-                'Brak folderu ofert',
-                'Folder ofert nie istnieje. Przejdź do Ustawień i wskaż poprawny folder.'
-            )
             return
 
         from src.data.database_service import get_all_offer_file_paths

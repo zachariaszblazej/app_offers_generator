@@ -25,7 +25,7 @@ from src.core.offer_generator_app import OfferGeneratorApp
 from src.core.wz_generator_app import WzGeneratorApp
 from src.services.sync_service import OfferSyncService
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
-from src.utils.config import get_offers_folder
+from src.utils.config import get_offers_folder, get_wz_folder
 
 
 def main():
@@ -57,8 +57,8 @@ class OfferGeneratorMainApp:
         # Create frames
         self.setup_frames()
 
-        # Verify offers folder exists; if missing navigate to settings and skip main menu
-        missing = self.check_offers_folder_exists()
+        # Verify required folders (offers & WZ); navigate to settings if any missing
+        missing = self.check_required_folders()
         if not missing:
             self.nav_manager.show_frame('main_menu')
 
@@ -111,16 +111,44 @@ class OfferGeneratorMainApp:
         # These will be initialized when needed
         self.offer_components_initialized = False
 
-    def check_offers_folder_exists(self) -> bool:
-        """Check if offers folder exists. If missing: show warning, go to settings, return True. Else False."""
+    def check_required_folders(self) -> bool:
+        """Check existence of offers and WZ folders. Show one combined warning if any missing and go to settings.
+        Returns True if missing (navigated), else False.
+        """
         try:
-            offers_path = get_offers_folder()
-            if not offers_path or not os.path.isdir(offers_path):
-                self.nav_manager.show_frame('settings')
-                return True
+            offers_ok = False
+            wz_ok = False
+            try:
+                offers_path = get_offers_folder()
+                offers_ok = bool(offers_path and os.path.isdir(offers_path))
+            except Exception:
+                offers_ok = False
+            try:
+                wz_path = get_wz_folder()
+                wz_ok = bool(wz_path and os.path.isdir(wz_path))
+            except Exception:
+                wz_ok = False
+
+            if offers_ok and wz_ok:
+                return False
+
+            import tkinter.messagebox
+            if not offers_ok and not wz_ok:
+                title = 'Brak folderów'
+                msg = 'Folder ofert oraz folder WZ nie istnieją. Zostaniesz przeniesiony do Ustawień aby wskazać poprawne foldery.'
+            elif not offers_ok:
+                title = 'Brak folderu ofert'
+                msg = 'Folder ofert nie istnieje. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
+            else:  # not wz_ok
+                title = 'Brak folderu WZ'
+                msg = 'Folder WZ nie istnieje. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
+
+            tkinter.messagebox.showwarning(title, msg)
+            self.nav_manager.show_frame('settings')
+            return True
         except Exception as e:
-            print(f"Offer folder existence check error: {e}")
-        return False
+            print(f"Required folders check error: {e}")
+            return False
     
     def perform_synchronization(self):
         """Perform database synchronization with offers folder"""

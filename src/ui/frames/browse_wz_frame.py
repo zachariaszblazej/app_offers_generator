@@ -115,8 +115,7 @@ class BrowseWzFrame(Frame):
             self.item_path.clear()
 
             wz_root = get_wz_folder()
-            if not os.path.exists(wz_root):
-                os.makedirs(wz_root)
+            if not os.path.isdir(wz_root):
                 return
 
             wz_data = self.db.get_all_wz()
