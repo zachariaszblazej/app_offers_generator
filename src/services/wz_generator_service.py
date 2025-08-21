@@ -155,6 +155,18 @@ def prepare_wz_context(context_data):
     for field, default_value in default_fields.items():
         if field not in template_context:
             template_context[field] = default_value
+
+    # Format NIPs (supplier & client) to XXX-XXX-XX-XX like offers
+    def _format_nip(nip_value: str) -> str:
+        if not nip_value:
+            return nip_value
+        digits = ''.join(ch for ch in str(nip_value) if ch.isdigit())
+        if len(digits) == 10:
+            return f"{digits[0:3]}-{digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
+        return nip_value  # leave unchanged if not 10 digits
+
+    template_context['supplier_nip'] = _format_nip(template_context.get('supplier_nip', ''))
+    template_context['client_nip'] = _format_nip(template_context.get('client_nip', ''))
     
     # Process products data
     products = template_context.get('products', [])

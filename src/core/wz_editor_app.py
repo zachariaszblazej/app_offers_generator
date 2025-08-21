@@ -190,7 +190,13 @@ class WzEditorApp:
             if 'client_nip' in context_data and 'client_nip' in self.ui.entries:
                 self.ui.entries['client_nip'].config(state='normal')
                 self.ui.entries['client_nip'].delete(0, END)
-                self.ui.entries['client_nip'].insert(0, context_data.get('client_nip', ''))
+                raw_client_nip = context_data.get('client_nip', '')
+                digits = ''.join(ch for ch in str(raw_client_nip) if ch.isdigit())
+                if len(digits) == 10:
+                    formatted_client_nip = f"{digits[0:3]}-{digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
+                else:
+                    formatted_client_nip = raw_client_nip
+                self.ui.entries['client_nip'].insert(0, formatted_client_nip)
                 self.ui.entries['client_nip'].config(state='readonly')
             
             # Load supplier data
@@ -204,7 +210,13 @@ class WzEditorApp:
             if 'supplier_nip' in context_data and 'supplier_nip' in self.ui.entries:
                 self.ui.entries['supplier_nip'].config(state='normal')
                 self.ui.entries['supplier_nip'].delete(0, END)
-                self.ui.entries['supplier_nip'].insert(0, context_data.get('supplier_nip', ''))
+                raw_supplier_nip = context_data.get('supplier_nip', '')
+                digits = ''.join(ch for ch in str(raw_supplier_nip) if ch.isdigit())
+                if len(digits) == 10:
+                    formatted_supplier_nip = f"{digits[0:3]}-{digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
+                else:
+                    formatted_supplier_nip = raw_supplier_nip
+                self.ui.entries['supplier_nip'].insert(0, formatted_supplier_nip)
                 self.ui.entries['supplier_nip'].config(state='readonly')
             
             # Load town
