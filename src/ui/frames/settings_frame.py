@@ -245,7 +245,7 @@ class SettingsFrame(Frame):
         termin_realizacji_frame.pack(fill=X, pady=5)
         Label(termin_realizacji_frame, text="Termin realizacji:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['termin_realizacji'] = Entry(termin_realizacji_frame, width=30, font=("Arial", 11))
+        self.entries['termin_realizacji'] = Entry(termin_realizacji_frame, width=60, font=("Arial", 11))
         self.entries['termin_realizacji'].pack(fill=X, pady=(5, 0))
         
         # Termin płatności
@@ -253,7 +253,7 @@ class SettingsFrame(Frame):
         termin_platnosci_frame.pack(fill=X, pady=5)
         Label(termin_platnosci_frame, text="Termin płatności:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['termin_platnosci'] = Entry(termin_platnosci_frame, width=30, font=("Arial", 11))
+        self.entries['termin_platnosci'] = Entry(termin_platnosci_frame, width=60, font=("Arial", 11))
         self.entries['termin_platnosci'].pack(fill=X, pady=(5, 0))
         
         # Warunki dostawy
@@ -261,7 +261,7 @@ class SettingsFrame(Frame):
         warunki_dostawy_frame.pack(fill=X, pady=5)
         Label(warunki_dostawy_frame, text="Warunki dostawy:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['warunki_dostawy'] = Entry(warunki_dostawy_frame, width=30, font=("Arial", 11))
+        self.entries['warunki_dostawy'] = Entry(warunki_dostawy_frame, width=60, font=("Arial", 11))
         self.entries['warunki_dostawy'].pack(fill=X, pady=(5, 0))
         
         # Ważność oferty
@@ -269,7 +269,7 @@ class SettingsFrame(Frame):
         waznosc_oferty_frame.pack(fill=X, pady=5)
         Label(waznosc_oferty_frame, text="Ważność oferty:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['waznosc_oferty'] = Entry(waznosc_oferty_frame, width=30, font=("Arial", 11))
+        self.entries['waznosc_oferty'] = Entry(waznosc_oferty_frame, width=60, font=("Arial", 11))
         self.entries['waznosc_oferty'].pack(fill=X, pady=(5, 0))
         
         # Gwarancja
@@ -277,7 +277,7 @@ class SettingsFrame(Frame):
         gwarancja_frame.pack(fill=X, pady=5)
         Label(gwarancja_frame, text="Gwarancja:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['gwarancja'] = Entry(gwarancja_frame, width=30, font=("Arial", 11))
+        self.entries['gwarancja'] = Entry(gwarancja_frame, width=60, font=("Arial", 11))
         self.entries['gwarancja'].pack(fill=X, pady=(5, 0))
         
         # Cena
@@ -285,7 +285,7 @@ class SettingsFrame(Frame):
         cena_frame.pack(fill=X, pady=5)
         Label(cena_frame, text="Cena:", 
               font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        self.entries['cena'] = Entry(cena_frame, width=30, font=("Arial", 11))
+        self.entries['cena'] = Entry(cena_frame, width=60, font=("Arial", 11))
         self.entries['cena'].pack(fill=X, pady=(5, 0))
     
     def create_app_settings_section(self, parent):
