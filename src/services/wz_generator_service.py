@@ -5,7 +5,7 @@ import os
 import locale  # kept only if elsewhere needed; will not be used for date formatting now
 from docx import Document
 from datetime import datetime
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, RichText
 import tkinter.messagebox
 import datetime
 import os
@@ -167,6 +167,19 @@ def prepare_wz_context(context_data):
     for field, default_value in default_fields.items():
         if field not in template_context:
             template_context[field] = default_value
+    # Convert client_name '/n' markers to actual newlines via RichText so multi-line names render in Word
+    def _to_richtext_with_newlines(value):
+        if value is None:
+            return ""
+        text = str(value)
+        if '/n' not in text:
+            return text
+        rt = RichText()
+        rt.add(text.replace('/n', '\n'))
+        return rt
+
+    template_context['client_name'] = _to_richtext_with_newlines(template_context.get('client_name', ''))
+
 
     # Format NIPs (supplier & client) to XXX-XXX-XX-XX like offers
     def _format_nip(nip_value: str) -> str:

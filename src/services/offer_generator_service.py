@@ -35,7 +35,7 @@ def select_template(supplier_name: str, supplier_address1: str, client_name: str
     if not is_long and has_warranty:
         return "offer_template.docx"
     return "offer_template_no_gwarancja.docx"
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, RichText
 import tkinter.messagebox
 import datetime
 import os
@@ -155,7 +155,7 @@ def generate_offer_document(context_data):
         # This can be directly used in Word template as table rows
         # Headers are available in context['product_headers']
         
-        # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
+    # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
         supplier_name = context_data.get('supplier_name', '')
         supplier_address1 = context_data.get('supplier_address_1', '')
         client_name = context_data.get('client_name', '')
@@ -169,6 +169,20 @@ def generate_offer_document(context_data):
         # Utwórz ścieżkę do wybranego szablonu
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
         
+        # Convert client_name '/n' markers to real line breaks using RichText
+        def _to_richtext_with_newlines(value):
+            if value is None:
+                return ""
+            text = str(value)
+            if '/n' not in text:
+                return text
+            # Add as a single run with embedded line breaks to preserve style
+            rt = RichText()
+            rt.add(text.replace('/n', '\n'))
+            return rt
+
+        context_data['client_name'] = _to_richtext_with_newlines(context_data.get('client_name', ''))
+
         # Generate document
         doc = DocxTemplate(template_path)
         doc.render(context_data)
