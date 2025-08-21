@@ -1,5 +1,10 @@
 """
-Service for generating offers with template selection based on name length
+Service for generating offers with template selection based on client name/address length
+and whether the warranty (gwarancja) field is provided. Maps to four templates:
+ - Small names + with gwarancja -> offer_template.docx
+ - Small names + empty gwarancja -> offer_template_no_gwarancja.docx
+ - Long names  + with gwarancja -> offer_template_long_names.docx
+ - Long names  + empty gwarancja -> offer_template_long_names_no_gwarancja.docx
 """
 import os
 from docx import Document
@@ -7,30 +12,29 @@ from datetime import datetime
 from src.utils.date_utils import format_polish_date
 
 
-def select_template_based_on_name_length(supplier_name, supplier_address1, client_name, client_address1):
+def select_template(supplier_name: str, supplier_address1: str, client_name: str, client_address1: str, gwarancja: str) -> str:
     """
-    Wybiera szablon na podstawie długości nazw i adresów
-    
-    Args:
-        supplier_name: Nazwa dostawcy
-        supplier_address1: Adres 1 dostawcy  
-        client_name: Nazwa klienta
-        client_address1: Adres 1 klienta
-        
-    Returns:
-        str: Nazwa pliku szablonu do użycia
+    Select offer template based on client name/address length and warranty field.
+
+    Criteria:
+    - "Small" sum (client_name + client_address1) AND gwarancja non-empty -> offer_template.docx
+    - "Small" sum AND gwarancja empty -> offer_template_no_gwarancja.docx
+    - "Large" sum (>= threshold) AND gwarancja non-empty -> offer_template_long_names.docx
+    - "Large" sum AND gwarancja empty -> offer_template_long_names_no_gwarancja.docx
+
+    Note: Threshold kept at 95 characters for client_name + client_address1.
     """
-    # Sprawdź długość nazwy i adresu dostawcy
-    supplier_total_length = len(supplier_name or "") + len(supplier_address1 or "")
-    
-    # Sprawdź długość nazwy i adresu klienta
     client_total_length = len(client_name or "") + len(client_address1 or "")
-    
-    # Jeśli któraś z sum przekracza lub równa się 95 znaków, użyj długiego szablonu
-    if supplier_total_length >= 95 or client_total_length >= 95:
+    is_long = client_total_length >= 95
+    has_warranty = bool((gwarancja or "").strip())
+
+    if is_long and has_warranty:
         return "offer_template_long_names.docx"
-    else:
+    if is_long and not has_warranty:
+        return "offer_template_long_names_no_gwarancja.docx"
+    if not is_long and has_warranty:
         return "offer_template.docx"
+    return "offer_template_no_gwarancja.docx"
 from docxtpl import DocxTemplate
 import tkinter.messagebox
 import datetime
@@ -151,14 +155,15 @@ def generate_offer_document(context_data):
         # This can be directly used in Word template as table rows
         # Headers are available in context['product_headers']
         
-        # Wybierz odpowiedni szablon na podstawie długości nazw
+        # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
         supplier_name = context_data.get('supplier_name', '')
         supplier_address1 = context_data.get('supplier_address_1', '')
         client_name = context_data.get('client_name', '')
         client_address1 = context_data.get('client_address_1', '')
+        gwarancja = context_data.get('gwarancja', '')
         
-        template_filename = select_template_based_on_name_length(
-            supplier_name, supplier_address1, client_name, client_address1
+        template_filename = select_template(
+            supplier_name, supplier_address1, client_name, client_address1, gwarancja
         )
         
         # Utwórz ścieżkę do wybranego szablonu

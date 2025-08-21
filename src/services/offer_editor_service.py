@@ -12,34 +12,11 @@ import shutil
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import TEMPLATE_PATH
-from src.services.offer_generator_service import convert_date
+from src.services.offer_generator_service import convert_date, select_template
 from src.data.database_service import update_offer_context_in_db
 
 
-def select_template_based_on_name_length(supplier_name, supplier_address1, client_name, client_address1):
-    """
-    Wybiera szablon na podstawie długości nazw i adresów
-    
-    Args:
-        supplier_name: Nazwa dostawcy
-        supplier_address1: Adres 1 dostawcy  
-        client_name: Nazwa klienta
-        client_address1: Adres 1 klienta
-        
-    Returns:
-        str: Nazwa pliku szablonu do użycia
-    """
-    # Sprawdź długość nazwy i adresu dostawcy
-    supplier_total_length = len(supplier_name or "") + len(supplier_address1 or "")
-    
-    # Sprawdź długość nazwy i adresu klienta
-    client_total_length = len(client_name or "") + len(client_address1 or "")
-    
-    # Jeśli któraś z sum przekracza lub równa się 95 znaków, użyj długiego szablonu
-    if supplier_total_length >= 95 or client_total_length >= 95:
-        return "offer_template_long_names.docx"
-    else:
-        return "offer_template.docx"
+# Template selection is centralized in offer_generator_service.select_template
 
 
 def update_offer_document(context_data, offer_file_path):
@@ -63,12 +40,13 @@ def update_offer_document(context_data, offer_file_path):
         # Pobierz produkty z context_data
         products = context_data.get('products', [])
         
-        # Wybierz odpowiedni szablon na podstawie długości nazw
-        template_filename = select_template_based_on_name_length(
+        # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
+        template_filename = select_template(
             supplier_data.get('name', ''),
             supplier_data.get('address1', ''),
             client_data.get('name', ''),
-            client_data.get('address1', '')
+            client_data.get('address1', ''),
+            context_data.get('gwarancja', ''),
         )
         
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
