@@ -2,7 +2,7 @@
 Service for generating WZ documents
 """
 import os
-import locale
+import locale  # kept only if elsewhere needed; will not be used for date formatting now
 from docx import Document
 from datetime import datetime
 from docxtpl import DocxTemplate
@@ -16,32 +16,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import get_wz_folder
 from src.utils.resources import get_resource_path
+from src.utils.date_utils import format_polish_date
 from src.data.database_service import get_next_wz_number, save_wz_to_db
 import re
 
 
 def convert_date(date: datetime.datetime) -> str:
-    """Convert datetime to formatted string with Polish locale"""
-    try:
-        # Temporarily set Polish locale for date formatting
-        current_locale = locale.getlocale()
-        locale.setlocale(locale.LC_TIME, 'pl_PL.UTF-8')
-        # Build manually to avoid leading zero in day
-        formatted = f"{date.day} {date.strftime('%B %Y')}"
-        # Restore original locale
-        locale.setlocale(locale.LC_TIME, current_locale)
-        return formatted
-    except Exception:
-        # Fallback to manual Polish months if locale fails
-        polish_months = {
-            1: "stycznia", 2: "lutego", 3: "marca", 4: "kwietnia",
-            5: "maja", 6: "czerwca", 7: "lipca", 8: "sierpnia",
-            9: "września", 10: "października", 11: "listopada", 12: "grudnia"
-        }
-        day = date.day  # already non-padded
-        month = polish_months.get(date.month, '')
-        year = date.year
-        return f"{day} {month} {year}"
+    """Return Polish formatted date (manual month mapping, no locale)."""
+    return format_polish_date(date)
 
 
 def generate_wz_document(context_data, custom_output_path=None):

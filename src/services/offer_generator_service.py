@@ -4,6 +4,7 @@ Service for generating offers with template selection based on name length
 import os
 from docx import Document
 from datetime import datetime
+from src.utils.date_utils import format_polish_date
 
 
 def select_template_based_on_name_length(supplier_name, supplier_address1, client_name, client_address1):
@@ -44,9 +45,8 @@ from src.data.database_service import get_next_offer_number_for_year, save_offer
 
 
 def convert_date(date: datetime.datetime) -> str:
-    """Convert datetime to formatted string"""
-    # Use non‑padded day (1-9 without leading zero); keep existing month/year formatting
-    return f"{date.day} {date.strftime('%B %Y')}"
+    """Convert datetime to Polish formatted string (manual month mapping)."""
+    return format_polish_date(date)
 
 
 def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:
