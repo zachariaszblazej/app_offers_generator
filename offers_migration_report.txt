@@ -1,0 +1,11 @@
+Raport migracji ofert
+============================================================
+checked: 15
+updated: 14
+skipped_not_found: 1
+errors: 0
+
+Pliki pominięte (nie znaleziono w nowej lokalizacji):
+ - /Users/blzc/FakeHantechServer/Oferty2/2025/14_OF_2025_CUM.docx
+
+Koniec raportu.

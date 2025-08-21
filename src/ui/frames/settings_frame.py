@@ -550,6 +550,29 @@ class SettingsFrame(Frame):
             try:
                 from src.utils.config import migrate_offers_folder
                 migration_summary = migrate_offers_folder(offers_folder_old, app_settings.get('offers_folder'))
+                # Persist report to app directory
+                try:
+                    report_path = os.path.join(os.path.abspath('.'), 'offers_migration_report.txt')
+                    with open(report_path, 'w', encoding='utf-8') as rf:
+                        rf.write('Raport migracji ofert\n')
+                        rf.write('='*60 + '\n')
+                        for key in ['checked','updated','skipped_not_found','errors']:
+                            if key in migration_summary:
+                                rf.write(f"{key}: {migration_summary[key]}\n")
+                        # List skipped
+                        skipped = migration_summary.get('skipped_files') or []
+                        if skipped:
+                            rf.write('\nPliki pominięte (nie znaleziono w nowej lokalizacji):\n')
+                            for p in skipped:
+                                rf.write(f" - {p}\n")
+                        error_files = migration_summary.get('error_files') or []
+                        if error_files:
+                            rf.write('\nPliki z błędami aktualizacji w bazie:\n')
+                            for p in error_files:
+                                rf.write(f" - {p}\n")
+                        rf.write('\nKoniec raportu.\n')
+                except Exception as rep_e:
+                    print(f"Nie udało się zapisać raportu migracji: {rep_e}")
             except Exception as e:
                 print(f"Offers folder migration error: {e}")
                 migration_summary = {'error': str(e)}

@@ -606,7 +606,14 @@ def migrate_offers_folder_path(old_base: str, new_base: str) -> dict:
         dict summary with counts: {'checked': int, 'updated': int, 'skipped_not_found': int, 'errors': int}
     """
     import re
-    summary = {'checked': 0, 'updated': 0, 'skipped_not_found': 0, 'errors': 0}
+    summary = {
+        'checked': 0,
+        'updated': 0,
+        'skipped_not_found': 0,
+        'errors': 0,
+        'skipped_files': [],   # list of original paths whose new target not found
+        'error_files': []      # list of original paths that caused DB update errors
+    }
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
@@ -630,8 +637,10 @@ def migrate_offers_folder_path(old_base: str, new_base: str) -> dict:
                     summary['updated'] += 1
                 except Exception:
                     summary['errors'] += 1
+                    summary['error_files'].append(path)
             else:
                 summary['skipped_not_found'] += 1
+                summary['skipped_files'].append(path)
         conn.commit()
         conn.close()
     except Exception:
