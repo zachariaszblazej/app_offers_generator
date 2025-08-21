@@ -55,8 +55,8 @@ class WzUIComponents:
     def create_upper_section(self, show_wz_number=False):
 
         # Town entry
-        self.entries['town'] = Entry(self.window, width=10)
-        self.entries['town'].place(x=640, y=90)
+        self.entries['town'] = Entry(self.window, width=50)
+        self.entries['town'].place(x=600, y=90)
         self.entries['town'].insert(0, self.text_data.get('town', ''))
         self.entries['town'].bind('<KeyRelease>', self._on_field_modified)
 
@@ -77,12 +77,12 @@ class WzUIComponents:
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data.get('address_1', ''))
-        self.entries['address_1'] = Entry(self.window, width=17, textvariable=address1_value)
+        self.entries['address_1'] = Entry(self.window, width=28, textvariable=address1_value)
         self.entries['address_1'].place(x=110, y=118)
         self.entries['address_1'].bind('<KeyRelease>', self._on_field_modified)
 
         address2_value = StringVar(self.window, value=self.text_data.get('address_2', ''))
-        self.entries['address_2'] = Entry(self.window, width=17, textvariable=address2_value)
+        self.entries['address_2'] = Entry(self.window, width=28, textvariable=address2_value)
         self.entries['address_2'].place(x=110, y=148)
         self.entries['address_2'].bind('<KeyRelease>', self._on_field_modified)
 
@@ -97,37 +97,37 @@ class WzUIComponents:
         self.entries['regon'].bind('<KeyRelease>', self._on_field_modified)
 
         email_value = StringVar(self.window, value=self.text_data.get('email', ''))
-        self.entries['email'] = Entry(self.window, width=20, textvariable=email_value)
+        self.entries['email'] = Entry(self.window, width=37, textvariable=email_value)
         self.entries['email'].place(x=485, y=118)
         self.entries['email'].bind('<KeyRelease>', self._on_field_modified)
 
         phone_value = StringVar(self.window, value=self.text_data.get('phone_number', ''))
-        self.entries['phone_number'] = Entry(self.window, width=15, textvariable=phone_value)
+        self.entries['phone_number'] = Entry(self.window, width=18, textvariable=phone_value)
         self.entries['phone_number'].place(x=485, y=148)
         self.entries['phone_number'].bind('<KeyRelease>', self._on_field_modified)
 
         bank_name_value = StringVar(self.window, value=self.text_data.get('bank_name', ''))
-        self.entries['bank_name'] = Entry(self.window, width=15, textvariable=bank_name_value)
+        self.entries['bank_name'] = Entry(self.window, width=23, textvariable=bank_name_value)
         self.entries['bank_name'].place(x=715, y=118)
         self.entries['bank_name'].bind('<KeyRelease>', self._on_field_modified)
 
         account_number_value = StringVar(self.window, value=self.text_data.get('account_number', ''))
-        self.entries['account_number'] = Entry(self.window, width=25, textvariable=account_number_value)
+        self.entries['account_number'] = Entry(self.window, width=37, textvariable=account_number_value)
         self.entries['account_number'].place(x=675, y=148)
         self.entries['account_number'].bind('<KeyRelease>', self._on_field_modified)
     
     def create_wz_section(self):
         """Create the supplier/client section with search buttons"""
         # Supplier entries
-        self.entries['supplier_name'] = Entry(self.window, width=25)
+        self.entries['supplier_name'] = Entry(self.window, width=30)
         self.entries['supplier_name'].place(x=60, y=270)
         self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_1'] = Entry(self.window, width=25)
+        self.entries['supplier_address_1'] = Entry(self.window, width=30)
         self.entries['supplier_address_1'].place(x=60, y=300)
         self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_2'] = Entry(self.window, width=25)
+        self.entries['supplier_address_2'] = Entry(self.window, width=30)
         self.entries['supplier_address_2'].place(x=60, y=330)
         self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
@@ -135,15 +135,15 @@ class WzUIComponents:
         self.entries['supplier_nip'].place(x=60, y=360)
 
         # Client entries
-        self.entries['client_name'] = Entry(self.window, width=25)
+        self.entries['client_name'] = Entry(self.window, width=30)
         self.entries['client_name'].place(x=660, y=270)
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_1'] = Entry(self.window, width=25)
+        self.entries['client_address_1'] = Entry(self.window, width=30)
         self.entries['client_address_1'].place(x=660, y=300)
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_2'] = Entry(self.window, width=25)
+        self.entries['client_address_2'] = Entry(self.window, width=30)
         self.entries['client_address_2'].place(x=660, y=330)
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
