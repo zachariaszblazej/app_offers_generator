@@ -529,20 +529,31 @@ class SettingsFrame(Frame):
         app_fields = ['offers_folder', 'wz_folder', 'database_path']
         app_settings = {}
         offers_folder_changed = False
+        offers_folder_old = None
         database_path_changed = False
-        
+
         for field in app_fields:
             if field in self.entries:
                 new_value = self.entries[field].get().strip()
                 old_value = self.settings_manager.get_app_setting(field)
                 app_settings[field] = new_value
-                
+
                 if field == 'offers_folder' and new_value != old_value:
                     offers_folder_changed = True
+                    offers_folder_old = old_value
                 elif field == 'database_path' and new_value != old_value:
                     database_path_changed = True
         
-        # Update app settings
+        # Update app settings (but run migration for offers first if path changed)
+        migration_summary = None
+        if offers_folder_changed and offers_folder_old:
+            try:
+                from src.utils.config import migrate_offers_folder
+                migration_summary = migrate_offers_folder(offers_folder_old, app_settings.get('offers_folder'))
+            except Exception as e:
+                print(f"Offers folder migration error: {e}")
+                migration_summary = {'error': str(e)}
+
         self.settings_manager.update_app_settings(app_settings)
         
         # Validate database path if it changed
@@ -559,7 +570,16 @@ class SettingsFrame(Frame):
         if self.settings_manager.save_settings():
             # Check if app restart is needed
             if offers_folder_changed or database_path_changed:
-                self.show_restart_prompt(database_path_changed)
+                if migration_summary:
+                # Show migration results before restart prompt
+                    try:
+                        msg = ("Migracja ścieżek ofert zakończona:\n" +
+                                "\n".join(f"- {k}: {v}" for k, v in migration_summary.items()))
+                        tkinter.messagebox.showinfo("Migracja ofert", msg)
+                    except Exception:
+                        pass
+                    self.show_restart_prompt(database_path_changed)
+
             else:
                 # Refresh company data in any existing offer creation windows
                 self.refresh_offer_creation_data()

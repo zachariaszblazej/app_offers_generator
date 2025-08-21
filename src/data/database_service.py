@@ -590,6 +590,55 @@ def get_all_offer_file_paths():
         return []
 
 
+def migrate_offers_folder_path(old_base: str, new_base: str) -> dict:
+    """Migrate OfferFilePath entries when offers folder location changes.
+
+    For each record in Offers:
+      - Extract the trailing "<year>/<filename>.docx" (year = 4 digits) if present.
+      - Build candidate path under new_base.
+      - If the file exists at new path, update OfferFilePath to new_base/year/filename.
+
+    Args:
+        old_base: Previous offers folder absolute (or as stored) path.
+        new_base: New offers folder absolute path.
+
+    Returns:
+        dict summary with counts: {'checked': int, 'updated': int, 'skipped_not_found': int, 'errors': int}
+    """
+    import re
+    summary = {'checked': 0, 'updated': 0, 'skipped_not_found': 0, 'errors': 0}
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT rowid, OfferFilePath FROM Offers")
+        rows = cursor.fetchall()
+        for rowid, path in rows:
+            summary['checked'] += 1
+            if not isinstance(path, str):
+                continue
+            # Find year + filename pattern at end
+            m = re.search(r"(\d{4}/[^/\\]+\.docx)$", path)
+            if not m:
+                continue  # pattern not found, skip silently
+            tail = m.group(1)  # year/filename.docx
+            new_full = os.path.join(new_base, tail)
+            # Normalize paths
+            new_full_norm = os.path.normpath(new_full)
+            if os.path.exists(new_full_norm):
+                try:
+                    cursor.execute("UPDATE Offers SET OfferFilePath = ? WHERE rowid = ?", (new_full_norm, rowid))
+                    summary['updated'] += 1
+                except Exception:
+                    summary['errors'] += 1
+            else:
+                summary['skipped_not_found'] += 1
+        conn.commit()
+        conn.close()
+    except Exception:
+        summary['errors'] += 1
+    return summary
+
+
 # WZ (Wuzetka) related functions
 
 def get_next_wz_number(year: int):
