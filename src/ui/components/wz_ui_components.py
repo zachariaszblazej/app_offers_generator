@@ -77,77 +77,77 @@ class WzUIComponents:
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data.get('address_1', ''))
-        self.entries['address_1'] = Entry(self.window, width=50, textvariable=address1_value)
+        self.entries['address_1'] = Entry(self.window, width=17, textvariable=address1_value)
         self.entries['address_1'].place(x=110, y=118)
         self.entries['address_1'].bind('<KeyRelease>', self._on_field_modified)
 
         address2_value = StringVar(self.window, value=self.text_data.get('address_2', ''))
-        self.entries['address_2'] = Entry(self.window, width=50, textvariable=address2_value)
+        self.entries['address_2'] = Entry(self.window, width=17, textvariable=address2_value)
         self.entries['address_2'].place(x=110, y=148)
         self.entries['address_2'].bind('<KeyRelease>', self._on_field_modified)
 
         nip_value = StringVar(self.window, value=self.text_data.get('nip', ''))
-        self.entries['nip'] = Entry(self.window, width=25, textvariable=nip_value)
+        self.entries['nip'] = Entry(self.window, width=15, textvariable=nip_value)
         self.entries['nip'].place(x=300, y=118)
         self.entries['nip'].bind('<KeyRelease>', self._on_field_modified)
 
         regon_value = StringVar(self.window, value=self.text_data.get('regon', ''))
-        self.entries['regon'] = Entry(self.window, width=25, textvariable=regon_value)
+        self.entries['regon'] = Entry(self.window, width=15, textvariable=regon_value)
         self.entries['regon'].place(x=320, y=148)
         self.entries['regon'].bind('<KeyRelease>', self._on_field_modified)
 
         email_value = StringVar(self.window, value=self.text_data.get('email', ''))
-        self.entries['email'] = Entry(self.window, width=40, textvariable=email_value)
+        self.entries['email'] = Entry(self.window, width=20, textvariable=email_value)
         self.entries['email'].place(x=485, y=118)
         self.entries['email'].bind('<KeyRelease>', self._on_field_modified)
 
         phone_value = StringVar(self.window, value=self.text_data.get('phone_number', ''))
-        self.entries['phone_number'] = Entry(self.window, width=30, textvariable=phone_value)
+        self.entries['phone_number'] = Entry(self.window, width=15, textvariable=phone_value)
         self.entries['phone_number'].place(x=485, y=148)
         self.entries['phone_number'].bind('<KeyRelease>', self._on_field_modified)
 
         bank_name_value = StringVar(self.window, value=self.text_data.get('bank_name', ''))
-        self.entries['bank_name'] = Entry(self.window, width=30, textvariable=bank_name_value)
+        self.entries['bank_name'] = Entry(self.window, width=15, textvariable=bank_name_value)
         self.entries['bank_name'].place(x=715, y=118)
         self.entries['bank_name'].bind('<KeyRelease>', self._on_field_modified)
 
         account_number_value = StringVar(self.window, value=self.text_data.get('account_number', ''))
-        self.entries['account_number'] = Entry(self.window, width=40, textvariable=account_number_value)
+        self.entries['account_number'] = Entry(self.window, width=25, textvariable=account_number_value)
         self.entries['account_number'].place(x=675, y=148)
         self.entries['account_number'].bind('<KeyRelease>', self._on_field_modified)
     
     def create_wz_section(self):
         """Create the supplier/client section with search buttons"""
         # Supplier entries
-        self.entries['supplier_name'] = Entry(self.window, width=50)
+        self.entries['supplier_name'] = Entry(self.window, width=25)
         self.entries['supplier_name'].place(x=60, y=270)
         self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_1'] = Entry(self.window, width=50)
+        self.entries['supplier_address_1'] = Entry(self.window, width=25)
         self.entries['supplier_address_1'].place(x=60, y=300)
         self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_2'] = Entry(self.window, width=50)
+        self.entries['supplier_address_2'] = Entry(self.window, width=25)
         self.entries['supplier_address_2'].place(x=60, y=330)
         self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_nip'] = Entry(self.window, width=40, state='readonly', bg='#f0f0f0')
+        self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
         # Client entries
-        self.entries['client_name'] = Entry(self.window, width=50)
+        self.entries['client_name'] = Entry(self.window, width=25)
         self.entries['client_name'].place(x=660, y=270)
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_1'] = Entry(self.window, width=50)
+        self.entries['client_address_1'] = Entry(self.window, width=25)
         self.entries['client_address_1'].place(x=660, y=300)
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_2'] = Entry(self.window, width=50)
+        self.entries['client_address_2'] = Entry(self.window, width=25)
         self.entries['client_address_2'].place(x=660, y=330)
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_nip'] = Entry(self.window, width=40, state='readonly', bg='#f0f0f0')
+        self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['client_nip'].place(x=660, y=360)
     
     def create_action_buttons(self):
