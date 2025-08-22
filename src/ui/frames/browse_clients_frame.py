@@ -14,6 +14,7 @@ from src.data.database_service import (
     get_clients_from_db, add_client_to_db, get_client_by_nip,
     update_client_in_db, delete_client_from_db, validate_nip, validate_alias
 )
+from src.ui.windows.client_edit_window import ClientEditWindow
 
 
 class BrowseClientsFrame(Frame):
@@ -26,6 +27,7 @@ class BrowseClientsFrame(Frame):
         self.clients_data = []  # Store current clients data for sorting
         self.sort_column = None
         self.sort_reverse = False
+        self.client_window = None
         self.create_ui()
         
     def create_ui(self):
@@ -142,111 +144,16 @@ class BrowseClientsFrame(Frame):
         # Bind single click for delete functionality
         self.clients_tree.bind('<ButtonRelease-1>', self.on_client_single_click)
         
-        # Form frame (for both editing and adding)
-        self.form_frame = Frame(content_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
-        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
-        
-        # Initially hide form frame
-        self.form_frame.pack_forget()
-        
-        # Track current mode
-        self.form_mode = None  # 'edit' or 'add'
-        
         # Load clients
         self.refresh_clients_list()
     
     def show_add_client_form(self):
-        """Show form for adding a new client"""
-        self.form_mode = 'add'
-        self.current_editing_nip = None
-        self.create_client_form()
-        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+        """Open modal window for adding a new client"""
+        if self.client_window is None:
+            self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
+        self.client_window.open(mode='add')
     
-    def create_client_form(self):
-        """Create form for adding or editing a client"""
-        # Clear existing widgets
-        for widget in self.form_frame.winfo_children():
-            widget.destroy()
-        
-        # Form title
-        title_text = "Dodaj nowego klienta" if self.form_mode == 'add' else "Edytuj klienta"
-        form_title = Label(self.form_frame, text=title_text, 
-                          font=("Arial", 16, "bold"), 
-                          bg='#f0f0f0', fg='#333333')
-        form_title.pack(pady=20)
-        
-        # Form fields
-        self.form_entries = {}
-        self.form_validation_labels = {}
-        
-        fields = [
-            ('nip', 'NIP (10 cyfr):', self.form_mode == 'edit'),  # NIP read-only only when editing
-            ('company_name', 'Nazwa firmy:', False),
-            ('address_p1', 'Adres (linia 1):', False),
-            ('address_p2', 'Adres (linia 2):', False),
-            ('alias', 'Alias:', False)
-        ]
-        
-        for field_name, label_text, is_readonly in fields:
-            # Label
-            label = Label(self.form_frame, text=label_text, 
-                         font=("Arial", 12), bg='#f0f0f0')
-            label.pack(anchor=W, padx=20, pady=(10, 0))
-            
-            # Entry
-            entry = Entry(self.form_frame, font=("Arial", 12), width=30)
-            if is_readonly:
-                entry.config(state='readonly', bg='#e9ecef')
-            entry.pack(anchor=W, padx=20, pady=(0, 5))
-            
-            self.form_entries[field_name] = entry
-            
-            # Validation labels
-            validation_label = Label(self.form_frame, text="", 
-                                   font=("Arial", 10), bg='#f0f0f0')
-            validation_label.pack(anchor=W, padx=20)
-            self.form_validation_labels[field_name] = validation_label
-            
-            # Bind validation events
-            if field_name == 'nip' and not is_readonly:
-                entry.bind('<KeyRelease>', self.validate_nip_input)
-            elif field_name == 'alias':
-                entry.bind('<KeyRelease>', self.validate_alias_input)
-            
-            # Bind Enter key to save client
-            entry.bind('<Return>', lambda event: self.save_client())
-        
-        # Buttons frame
-        form_buttons_frame = Frame(self.form_frame, bg='#f0f0f0')
-        form_buttons_frame.pack(pady=20)
-        
-        # Save button
-        save_text = "Zapisz klienta" if self.form_mode == 'add' else "Zapisz zmiany"
-        save_btn = Button(form_buttons_frame, text=save_text,
-                         font=("Arial", 12, "bold"),
-                         fg='black',
-                         padx=20, pady=10,
-                         command=self.save_client,
-                         cursor='hand2')
-        save_btn.pack(side=LEFT, padx=10)
-        
-        # Cancel button
-        cancel_btn = Button(form_buttons_frame, text="Anuluj",
-                           font=("Arial", 12),
-                           fg='black',
-                           padx=20, pady=10,
-                           command=self.hide_form,
-                           cursor='hand2')
-        cancel_btn.pack(side=LEFT, padx=10)
-        
-        # Bind Enter key globally to the form frame and all its children
-        self.form_frame.bind('<Return>', lambda event: self.save_client())
-        self.form_frame.bind('<KP_Enter>', lambda event: self.save_client())  # Numpad Enter
-        self.form_frame.focus_set()  # Allow form frame to receive key events
-        
-        # If editing, populate form with current data
-        if self.form_mode == 'edit' and self.current_editing_nip:
-            self.populate_form_for_edit()
+    # Inline form methods removed in favor of modal window
     
     def return_to_main_menu(self):
         """Return to main menu"""
@@ -351,19 +258,24 @@ class BrowseClientsFrame(Frame):
         pass
     
     def edit_selected_client(self):
-        """Edit the selected client"""
+        """Open modal window to edit the selected client"""
         selection = self.clients_tree.selection()
         if not selection:
             tkinter.messagebox.showwarning("Brak wyboru", "Proszę wybrać klienta do edycji.")
             return
-        
         item = self.clients_tree.item(selection[0])
         values = item['values']
         if values:
-            self.current_editing_nip = values[0]
-            self.form_mode = 'edit'
-            self.create_client_form()
-            self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+            client = {
+                'nip': values[0],
+                'company_name': values[1],
+                'address_p1': values[2],
+                'address_p2': values[3],
+                'alias': values[4]
+            }
+            if self.client_window is None:
+                self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
+            self.client_window.open(mode='edit', client=client)
     
     def delete_selected_client(self):
         """Delete the selected client"""
@@ -387,11 +299,9 @@ class BrowseClientsFrame(Frame):
                 else:
                     tkinter.messagebox.showerror("Błąd", message)
     
+    # No longer used (kept for compatibility if referenced elsewhere)
     def hide_form(self):
-        """Hide the form"""
-        self.form_frame.pack_forget()
-        self.form_mode = None
-        self.current_editing_nip = None
+        pass
     
     def validate_nip_input(self, event):
         """Validate NIP input in real-time"""
@@ -424,68 +334,23 @@ class BrowseClientsFrame(Frame):
         else:
             validation_label.config(text="✗ " + message, fg='red')
     
-    def populate_form_for_edit(self):
-        """Populate form fields when editing"""
-        if not self.current_editing_nip:
-            return
-        
-        client = get_client_by_nip(self.current_editing_nip)
-        if client:
-            nip, company_name, address1, address2, alias = client
-            
-            # Temporarily enable readonly fields for setting values
-            self.form_entries['nip'].config(state='normal')
-            self.form_entries['nip'].delete(0, END)
-            self.form_entries['nip'].insert(0, nip)
-            self.form_entries['nip'].config(state='readonly')
-            
-            self.form_entries['company_name'].delete(0, END)
-            self.form_entries['company_name'].insert(0, company_name)
-            
-            self.form_entries['address_p1'].delete(0, END)
-            self.form_entries['address_p1'].insert(0, address1)
-            
-            self.form_entries['address_p2'].delete(0, END)
-            self.form_entries['address_p2'].insert(0, address2)
-            
-            self.form_entries['alias'].delete(0, END)
-            self.form_entries['alias'].insert(0, alias)
+    # Removed inline populate; handled by modal window
     
-    def save_client(self):
-        """Save client (add or update)"""
-        # Get form data
-        nip = self.form_entries['nip'].get().strip()
-        company_name = self.form_entries['company_name'].get().strip()
-        address_p1 = self.form_entries['address_p1'].get().strip()
-        address_p2 = self.form_entries['address_p2'].get().strip()
-        alias = self.form_entries['alias'].get().strip()
-        
-        # Validate required fields
-        if not all([nip, company_name, address_p1, address_p2, alias]):
-            tkinter.messagebox.showerror("Błąd", "Proszę wypełnić wszystkie wymagane pola.")
-            return
-        
-        # Validate NIP
-        if not nip.isdigit() or len(nip) != 10:
-            tkinter.messagebox.showerror("Błąd", "NIP musi składać się z dokładnie 10 cyfr.")
-            return
-        
-        # Validate alias
-        is_valid, message = validate_alias(alias)
-        if not is_valid:
-            tkinter.messagebox.showerror("Błąd", message)
-            return
-        
-        if self.form_mode == 'add':
-            success, message = add_client_to_db(nip, company_name, address_p1, address_p2, alias)
-        else:  # edit
-            success, message = update_client_in_db(nip, company_name, address_p1, address_p2, alias)
-        
-        if success:
-            self.refresh_clients_list()
-            self.hide_form()
+    # Replaced with handler used by modal window
+    def _handle_client_save(self, mode, data):
+        """Callback for ClientEditWindow. Returns (success, message)."""
+        if mode == 'add':
+            result = add_client_to_db(
+                data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
+            )
         else:
-            tkinter.messagebox.showerror("Błąd", message)
+            result = update_client_in_db(
+                data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
+            )
+        # Refresh list on success for both add and edit
+        if result[0]:
+            self.refresh_clients_list()
+        return result
     
     def hide(self):
         """Hide this frame"""
@@ -515,8 +380,17 @@ class BrowseClientsFrame(Frame):
                 
                 # EDIT column is the 12th column (index #12)
                 if column == "#12":  
-                    # Open edit form for this client
-                    self.open_edit_client_form(client_nip, values)
+                    # Open edit modal for this client
+                    client = {
+                        'nip': values[0],
+                        'company_name': values[1],
+                        'address_p1': values[2],
+                        'address_p2': values[3],
+                        'alias': values[4]
+                    }
+                    if self.client_window is None:
+                        self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
+                    self.client_window.open(mode='edit', client=client)
                     
                 # DELETE column is the 13th column (index #13)
                 elif column == "#13":  
@@ -533,9 +407,6 @@ class BrowseClientsFrame(Frame):
                         else:
                             tkinter.messagebox.showerror("Błąd", message)
 
+    # Replaced by modal window; method kept as no-op for backward references
     def open_edit_client_form(self, client_nip, client_values):
-        """Open edit form for a specific client"""
-        self.current_editing_nip = client_nip
-        self.form_mode = 'edit'
-        self.create_client_form()
-        self.form_frame.pack(side=RIGHT, fill=Y, padx=(20, 0))
+        pass
