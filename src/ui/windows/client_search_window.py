@@ -22,7 +22,8 @@ class ClientSearchWindow:
     
     def open_client_search(self):
         """Open client search window"""
-        clients = get_clients_from_db()
+        # Fetch with extended fields so we can fill offer details when needed
+        clients = get_clients_from_db(include_extended=True)
         if not clients:
             tkinter.messagebox.showinfo("No Clients", "No clients found in database.")
             return
@@ -75,7 +76,7 @@ class ClientSearchWindow:
         self.current_clients = clients
         self.current_listbox = client_listbox
         
-        # Populate listbox with sorted client data
+    # Populate listbox with sorted client data
         self._update_client_list(clients, client_listbox)
         
         # Bind double-click to select client
@@ -110,7 +111,8 @@ class ClientSearchWindow:
         # Clear and repopulate listbox
         listbox.delete(0, END)
         for client in sorted_clients:
-            nip, company_name, address1, address2, alias = client
+            nip = client[0]
+            company_name = client[1]
             display_text = f"{company_name} (NIP: {nip})"
             listbox.insert(END, display_text)
 
@@ -119,5 +121,14 @@ class ClientSearchWindow:
         selection = client_listbox.curselection()
         if selection:
             selected_client = self.current_clients[selection[0]]
-            self.client_fill_callback(selected_client)
+            # Determine target UI type to avoid breaking WZ which expects 5 fields
+            cb_owner = getattr(self.client_fill_callback, '__self__', None)
+            owner_class = cb_owner.__class__.__name__ if cb_owner is not None else ''
+            if owner_class == 'UIComponents':
+                # Offer UI expects we can handle extended fields too
+                payload = selected_client
+            else:
+                # Default/WZ fallback: only first 5 fields (nip, company_name, address1, address2, alias)
+                payload = (selected_client[0], selected_client[1], selected_client[2], selected_client[3], selected_client[4])
+            self.client_fill_callback(payload)
             search_window.destroy()

@@ -227,8 +227,10 @@ class UIComponents:
         self.suma_var.set("0,00")
 
     def fill_client_data(self, client_data):
-        """Fill client entry fields with selected client data"""
-        nip, company_name, address1, address2, alias = client_data
+        """Fill client entry fields with selected client data.
+        Supports tuples of length 5 (base) or 11 (with extended fields)."""
+        # Unpack base fields
+        nip, company_name, address1, address2, alias = client_data[:5]
         
         # Store the alias for offer number generation
         self.selected_client_alias = alias
@@ -250,6 +252,32 @@ class UIComponents:
         
         # Set NIP field back to readonly
         self.entries['client_nip'].config(state='readonly')
+
+        # If extended fields are available, fill offer detail fields
+        if isinstance(client_data, (list, tuple)) and len(client_data) >= 11:
+            try:
+                termin_realizacji = client_data[5]
+                termin_platnosci = client_data[6]
+                warunki_dostawy = client_data[7]
+                waznosc_oferty = client_data[8]
+                gwarancja = client_data[9]
+                cena = client_data[10]
+                mapping = [
+                    ('termin_realizacji', termin_realizacji),
+                    ('termin_platnosci', termin_platnosci),
+                    ('warunki_dostawy', warunki_dostawy),
+                    ('waznosc_oferty', waznosc_oferty),
+                    ('gwarancja', gwarancja),
+                    ('cena', cena),
+                ]
+                for key, val in mapping:
+                    if key in self.entries:
+                        self.entries[key].delete(0, END)
+                        if val is None:
+                            val = ''
+                        self.entries[key].insert(0, str(val))
+            except Exception as e:
+                print(f"Debug: could not fill extended client fields: {e}")
     
     def fill_supplier_data(self, supplier_data):
         """Fill supplier entry fields with selected supplier data"""
