@@ -19,15 +19,15 @@ class ClientEditWindow:
     def open(self, mode='add', client=None):
         """Open the window.
         mode: 'add' | 'edit'
-        client: optional dict with keys: nip, company_name, address_p1, address_p2, alias
+        client: optional dict with keys: nip, company_name, address_p1, address_p2, alias, and extended fields
         """
         self.mode = mode
 
         # Create modal window
         self.window = Toplevel(self.parent_window)
         self.window.title("Dodaj klienta" if mode == 'add' else "Edytuj klienta")
-        self.window.geometry("720x560")
-        self.window.resizable(False, False)
+        self.window.geometry("900x720")
+        self.window.resizable(True, True)
         self.window.grab_set()  # modal
         self.window.transient(self.parent_window)
         self.window.configure(bg='#f8f9fa')
@@ -41,9 +41,28 @@ class ClientEditWindow:
         )
         title.pack(pady=(25, 15), fill=X)
 
-        # Form container
-        form = Frame(self.window, bg='white', relief=RIDGE, bd=2)
-        form.pack(pady=10, padx=40, fill=BOTH, expand=True)
+        # Form container with scrolling
+        form_holder = Frame(self.window, bg='white', relief=RIDGE, bd=2)
+        form_holder.pack(pady=10, padx=40, fill=BOTH, expand=True)
+
+        canvas = Canvas(form_holder, bg='white', highlightthickness=0)
+        vscroll = Scrollbar(form_holder, orient=VERTICAL, command=canvas.yview)
+        canvas.configure(yscrollcommand=vscroll.set)
+        canvas.pack(side=LEFT, fill=BOTH, expand=True)
+        vscroll.pack(side=RIGHT, fill=Y)
+
+        form = Frame(canvas, bg='white')
+        form_window = canvas.create_window((0, 0), window=form, anchor='nw')
+
+        def _on_form_configure(event):
+            canvas.configure(scrollregion=canvas.bbox('all'))
+
+        def _on_canvas_configure(event):
+            # Make inner frame width follow canvas width
+            canvas.itemconfigure(form_window, width=event.width)
+
+        form.bind('<Configure>', _on_form_configure)
+        canvas.bind('<Configure>', _on_canvas_configure)
 
         # Fields
         rows = [
@@ -52,15 +71,22 @@ class ClientEditWindow:
             ('address_p1', 'Adres (linia 1):', False),
             ('address_p2', 'Adres (linia 2):', False),
             ('alias', 'Alias:', False),
+            # Extended fields
+            ('termin_realizacji', 'Termin realizacji:', False),
+            ('termin_platnosci', 'Termin płatności:', False),
+            ('warunki_dostawy', 'Warunki dostawy:', False),
+            ('waznosc_oferty', 'Ważność oferty:', False),
+            ('gwarancja', 'Gwarancja:', False),
+            ('cena', 'Cena:', False),
         ]
 
         self.entries = {}
         for idx, (key, label, readonly) in enumerate(rows):
-            Label(form, text=label, font=("Arial", 12), bg='white').grid(row=idx, column=0, sticky=W, padx=12, pady=10)
-            ent = Entry(form, font=("Arial", 12), width=36)
+            Label(form, text=label, font=("Arial", 12), bg='white').grid(row=idx, column=0, sticky=W, padx=12, pady=6)
+            ent = Entry(form, font=("Arial", 12), width=40)
             if readonly:
                 ent.config(state='readonly', bg='#e9ecef')
-            ent.grid(row=idx, column=1, sticky=W, padx=12, pady=10)
+            ent.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
             self.entries[key] = ent
 
         # Pre-fill when editing
@@ -74,6 +100,13 @@ class ClientEditWindow:
             self.entries['address_p1'].insert(0, client.get('address_p1', ''))
             self.entries['address_p2'].insert(0, client.get('address_p2', ''))
             self.entries['alias'].insert(0, client.get('alias', ''))
+            # Extended
+            self.entries['termin_realizacji'].insert(0, client.get('termin_realizacji', ''))
+            self.entries['termin_platnosci'].insert(0, client.get('termin_platnosci', ''))
+            self.entries['warunki_dostawy'].insert(0, client.get('warunki_dostawy', ''))
+            self.entries['waznosc_oferty'].insert(0, client.get('waznosc_oferty', ''))
+            self.entries['gwarancja'].insert(0, client.get('gwarancja', ''))
+            self.entries['cena'].insert(0, client.get('cena', ''))
 
         # Buttons
         buttons = Frame(self.window, bg='#f8f9fa', height=90)
@@ -111,10 +144,15 @@ class ClientEditWindow:
     def _save(self):
         """Collect form data and call the provided save callback"""
         # Read fields
-        data = {k: self.entries[k].get().strip() for k in ['nip', 'company_name', 'address_p1', 'address_p2', 'alias']}
+        keys = ['nip', 'company_name', 'address_p1', 'address_p2', 'alias',
+                'termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
+        data = {k: self.entries[k].get().strip() for k in keys}
 
         # Basic validation
-        if not all(data.values()):
+        required_ok = all(
+            data[k] for k in ['nip', 'company_name', 'address_p1', 'address_p2', 'alias']
+        )
+        if not required_ok:
             tkinter.messagebox.showerror("Błąd", "Proszę wypełnić wszystkie wymagane pola.")
             return
 

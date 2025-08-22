@@ -12,7 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from src.data.database_service import (
     get_clients_from_db, add_client_to_db, get_client_by_nip,
-    update_client_in_db, delete_client_from_db, validate_nip, validate_alias
+    update_client_in_db, delete_client_from_db, validate_nip, validate_alias,
+    set_client_extended_fields
 )
 from src.ui.windows.client_edit_window import ClientEditWindow
 
@@ -271,7 +272,13 @@ class BrowseClientsFrame(Frame):
                 'company_name': values[1],
                 'address_p1': values[2],
                 'address_p2': values[3],
-                'alias': values[4]
+                'alias': values[4],
+                'termin_realizacji': values[5] if len(values) > 5 else '',
+                'termin_platnosci': values[6] if len(values) > 6 else '',
+                'warunki_dostawy': values[7] if len(values) > 7 else '',
+                'waznosc_oferty': values[8] if len(values) > 8 else '',
+                'gwarancja': values[9] if len(values) > 9 else '',
+                'cena': values[10] if len(values) > 10 else '',
             }
             if self.client_window is None:
                 self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
@@ -343,10 +350,20 @@ class BrowseClientsFrame(Frame):
             result = add_client_to_db(
                 data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
             )
+            if result[0]:
+                set_client_extended_fields(
+                    data['nip'], data.get('termin_realizacji'), data.get('termin_platnosci'),
+                    data.get('warunki_dostawy'), data.get('waznosc_oferty'), data.get('gwarancja'), data.get('cena')
+                )
         else:
             result = update_client_in_db(
                 data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
             )
+            if result[0]:
+                set_client_extended_fields(
+                    data['nip'], data.get('termin_realizacji'), data.get('termin_platnosci'),
+                    data.get('warunki_dostawy'), data.get('waznosc_oferty'), data.get('gwarancja'), data.get('cena')
+                )
         # Refresh list on success for both add and edit
         if result[0]:
             self.refresh_clients_list()
@@ -386,7 +403,13 @@ class BrowseClientsFrame(Frame):
                         'company_name': values[1],
                         'address_p1': values[2],
                         'address_p2': values[3],
-                        'alias': values[4]
+                        'alias': values[4],
+                        'termin_realizacji': values[5] if len(values) > 5 else '',
+                        'termin_platnosci': values[6] if len(values) > 6 else '',
+                        'warunki_dostawy': values[7] if len(values) > 7 else '',
+                        'waznosc_oferty': values[8] if len(values) > 8 else '',
+                        'gwarancja': values[9] if len(values) > 9 else '',
+                        'cena': values[10] if len(values) > 10 else '',
                     }
                     if self.client_window is None:
                         self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)

@@ -444,6 +444,43 @@ def delete_client_from_db(nip):
         return False, f"Błąd podczas usuwania klienta: {e}"
 
 
+def set_client_extended_fields(nip, termin_realizacji=None, termin_platnosci=None,
+                               warunki_dostawy=None, waznosc_oferty=None,
+                               gwarancja=None, cena=None):
+    """Update extended nullable text fields for a client by NIP.
+    All parameters are optional; missing values will be set to NULL.
+    """
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE Clients
+            SET TerminRealizacji = ?,
+                TerminPlatnosci = ?,
+                WarunkiDostawy = ?,
+                WaznoscOferty = ?,
+                Gwarancja = ?,
+                Cena = ?
+            WHERE Nip = ?
+            """,
+            (
+                termin_realizacji if termin_realizacji != '' else None,
+                termin_platnosci if termin_platnosci != '' else None,
+                warunki_dostawy if warunki_dostawy != '' else None,
+                waznosc_oferty if waznosc_oferty != '' else None,
+                gwarancja if gwarancja != '' else None,
+                cena if cena != '' else None,
+                nip,
+            ),
+        )
+        conn.commit()
+        conn.close()
+        return True, "Zapisano dodatkowe pola klienta"
+    except sqlite3.Error as e:
+        return False, f"Błąd zapisu dodatkowych pól klienta: {e}"
+
+
 def get_supplier_by_nip(nip):
     """Get supplier data by NIP"""
     try:
