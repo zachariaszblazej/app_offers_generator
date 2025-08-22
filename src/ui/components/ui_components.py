@@ -253,29 +253,24 @@ class UIComponents:
         # Set NIP field back to readonly
         self.entries['client_nip'].config(state='readonly')
 
-        # If extended fields are available, fill offer detail fields
+        # If extended fields are available, fill offer detail fields with fallback to settings
         if isinstance(client_data, (list, tuple)) and len(client_data) >= 11:
             try:
-                termin_realizacji = client_data[5]
-                termin_platnosci = client_data[6]
-                warunki_dostawy = client_data[7]
-                waznosc_oferty = client_data[8]
-                gwarancja = client_data[9]
-                cena = client_data[10]
                 mapping = [
-                    ('termin_realizacji', termin_realizacji),
-                    ('termin_platnosci', termin_platnosci),
-                    ('warunki_dostawy', warunki_dostawy),
-                    ('waznosc_oferty', waznosc_oferty),
-                    ('gwarancja', gwarancja),
-                    ('cena', cena),
+                    ('termin_realizacji', client_data[5]),
+                    ('termin_platnosci', client_data[6]),
+                    ('warunki_dostawy', client_data[7]),
+                    ('waznosc_oferty', client_data[8]),
+                    ('gwarancja', client_data[9]),
+                    ('cena', client_data[10]),
                 ]
                 for key, val in mapping:
                     if key in self.entries:
                         self.entries[key].delete(0, END)
-                        if val is None:
-                            val = ''
-                        self.entries[key].insert(0, str(val))
+                        # Fallback to defaults from settings when value is None/empty
+                        default_val = settings_manager.get_offer_details_setting(key)
+                        use_val = val if (val is not None and str(val).strip() != '') else default_val
+                        self.entries[key].insert(0, str(use_val or ''))
             except Exception as e:
                 print(f"Debug: could not fill extended client fields: {e}")
     
