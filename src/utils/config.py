@@ -19,13 +19,13 @@ def get_data_dir():
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 # Database configuration
-DATABASE_PATH = '/Users/blzc/FakeHantechServer/DocumentsCreationData2.db'
+DATABASE_PATH = 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {
-    'offers_folder': '../FakeHantechServer/Oferty',
-    'wz_folder': '../FakeHantechServer/WZ',
-    'database_path': '../FakeHantechServer/DocumentsCreationData.db'
+    'offers_folder': 'Y:/20. Oferty',
+    'wz_folder': 'Y:/40. WZ-ki',
+    'database_path': 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
 }
 
 # Default company data
@@ -44,12 +44,12 @@ DEFAULT_COMPANY_DATA = {
 
 # Default offer details data
 DEFAULT_OFFER_DETAILS = {
-    'termin_realizacji': 'p1',
-    'termin_platnosci': 'p1',
-    'warunki_dostawy': 'p1',
-    'waznosc_oferty': 'p1',
-    'gwarancja': 'p1',
-    'cena': 'p1'
+    'termin_realizacji': "30 dni roboczych",
+    'termin_platnosci': "14 dni od wystawienia faktury",
+    'warunki_dostawy': "DAP",
+    'waznosc_oferty': "14 dni",
+    'gwarancja': "",
+    'cena': "Do ceny netto zostanie doliczony podatek VAT zgodnie z obowiązującymi przepisami."
 }
 
 # File paths
