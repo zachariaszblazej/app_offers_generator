@@ -12,16 +12,16 @@
         "offer_number": ""
     },
     "offer_details": {
-        "termin_realizacji": "12 dni roboczychhhh",
-        "termin_platnosci": "2 dni od wystawienia faktury",
-        "warunki_dostawy": "FABBBB",
+        "termin_realizacji": "30 dni roboczych",
+        "termin_platnosci": "14 dni od wystawienia faktury",
+        "warunki_dostawy": "DAP",
         "waznosc_oferty": "14 dni",
-        "gwarancja": "2 lata",
-        "cena": "Z VATem"
+        "gwarancja": "",
+        "cena": "Do ceny netto zostanie doliczony podatek VAT zgodnie z obowiązującymi przepisami."
     },
     "app_settings": {
-        "offers_folder": "/Users/blzc/FakeHantechServer/Oferty",
-        "database_path": "/Users/blzc/FakeHantechServer/DocumentsCreationData.db",
-        "wz_folder": "/Users/blzc/FakeHantechServer/WZki"
+        "offers_folder": "Y:/20. Oferty",
+        "database_path": "Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db",
+        "wz_folder": "Y:/40. WZ-ki"
     }
 }
