@@ -88,15 +88,25 @@ class BrowseClientsFrame(Frame):
         list_label.pack(anchor=W, pady=(0, 10))
         
         # Treeview for clients list
-        columns = ('NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias', 'EDIT', 'DELETE')
+        columns = (
+            'NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias',
+            'Termin realizacji', 'Termin płatności', 'Warunki dostawy', 'Ważność oferty', 'Gwarancja', 'Cena',
+            'EDIT', 'DELETE'
+        )
         self.clients_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
-        
+
         # Define headings with sorting commands
         self.clients_tree.heading('NIP', text='NIP', command=lambda: self.sort_by_column('NIP'))
         self.clients_tree.heading('Nazwa firmy', text='Nazwa firmy', command=lambda: self.sort_by_column('Nazwa firmy'))
         self.clients_tree.heading('Adres 1', text='Adres 1', command=lambda: self.sort_by_column('Adres 1'))
         self.clients_tree.heading('Adres 2', text='Adres 2', command=lambda: self.sort_by_column('Adres 2'))
         self.clients_tree.heading('Alias', text='Alias', command=lambda: self.sort_by_column('Alias'))
+        self.clients_tree.heading('Termin realizacji', text='Termin realizacji', command=lambda: self.sort_by_column('Termin realizacji'))
+        self.clients_tree.heading('Termin płatności', text='Termin płatności', command=lambda: self.sort_by_column('Termin płatności'))
+        self.clients_tree.heading('Warunki dostawy', text='Warunki dostawy', command=lambda: self.sort_by_column('Warunki dostawy'))
+        self.clients_tree.heading('Ważność oferty', text='Ważność oferty', command=lambda: self.sort_by_column('Ważność oferty'))
+        self.clients_tree.heading('Gwarancja', text='Gwarancja', command=lambda: self.sort_by_column('Gwarancja'))
+        self.clients_tree.heading('Cena', text='Cena', command=lambda: self.sort_by_column('Cena'))
         self.clients_tree.heading('EDIT', text='Edytuj')
         self.clients_tree.heading('DELETE', text='Usuń')
         
@@ -105,7 +115,13 @@ class BrowseClientsFrame(Frame):
         self.clients_tree.column('Nazwa firmy', width=200)
         self.clients_tree.column('Adres 1', width=150)
         self.clients_tree.column('Adres 2', width=150)
-        self.clients_tree.column('Alias', width=80)
+        self.clients_tree.column('Alias', width=100)
+        self.clients_tree.column('Termin realizacji', width=140)
+        self.clients_tree.column('Termin płatności', width=140)
+        self.clients_tree.column('Warunki dostawy', width=160)
+        self.clients_tree.column('Ważność oferty', width=140)
+        self.clients_tree.column('Gwarancja', width=120)
+        self.clients_tree.column('Cena', width=100)
         self.clients_tree.column('EDIT', width=70, stretch=NO, anchor=CENTER)
         self.clients_tree.column('DELETE', width=70, stretch=NO, anchor=CENTER)
         
@@ -239,18 +255,28 @@ class BrowseClientsFrame(Frame):
     def refresh_clients_list(self):
         """Refresh the clients list"""
         # Load clients from database
-        clients = get_clients_from_db()
+        clients = get_clients_from_db(include_extended=True)
         self.clients_data = []
         
         # Convert to list of dictionaries for easier sorting
         for client in clients:
-            nip, company_name, address1, address2, alias = client
+            # Extended tuple if include_extended=True
+            # (Nip, CompanyName, AddressP1, AddressP2, Alias, TerminRealizacji, TerminPlatnosci, WarunkiDostawy, WaznoscOferty, Gwarancja, Cena)
+            nip, company_name, address1, address2, alias, tr, tp, wd, wo, gw, cena = (
+                client + ("", "", "", "", "", "") if len(client) == 5 else client
+            )
             self.clients_data.append({
                 'NIP': nip,
                 'Nazwa firmy': company_name,
                 'Adres 1': address1,
                 'Adres 2': address2,
-                'Alias': alias
+                'Alias': alias,
+                'Termin realizacji': tr,
+                'Termin płatności': tp,
+                'Warunki dostawy': wd,
+                'Ważność oferty': wo,
+                'Gwarancja': gw,
+                'Cena': cena
             })
         
         # Display the data
@@ -265,11 +291,17 @@ class BrowseClientsFrame(Frame):
         # Populate tree with current data
         for client in self.clients_data:
             self.clients_tree.insert('', 'end', values=(
-                client['NIP'], 
-                client['Nazwa firmy'], 
-                client['Adres 1'], 
-                client['Adres 2'], 
+                client['NIP'],
+                client['Nazwa firmy'],
+                client['Adres 1'],
+                client['Adres 2'],
                 client['Alias'],
+                client['Termin realizacji'],
+                client['Termin płatności'],
+                client['Warunki dostawy'],
+                client['Ważność oferty'],
+                client['Gwarancja'],
+                client['Cena'],
                 "Edytuj",
                 "Usuń"
             ))
@@ -294,7 +326,7 @@ class BrowseClientsFrame(Frame):
     
     def update_column_headers(self):
         """Update column headers to show current sort direction"""
-        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias']
+        columns = ['NIP', 'Nazwa firmy', 'Adres 1', 'Adres 2', 'Alias', 'Termin realizacji', 'Termin płatności', 'Warunki dostawy', 'Ważność oferty', 'Gwarancja', 'Cena']
         
         # Reset all headers
         for col in columns:
@@ -481,13 +513,13 @@ class BrowseClientsFrame(Frame):
                 client_name = values[1]  # Company name
                 client_nip = values[0]   # NIP
                 
-                # EDIT column is the 6th column (index #6)
-                if column == "#6":  
+                # EDIT column is the 12th column (index #12)
+                if column == "#12":  
                     # Open edit form for this client
                     self.open_edit_client_form(client_nip, values)
                     
-                # DELETE column is the 7th column (index #7)
-                elif column == "#7":  
+                # DELETE column is the 13th column (index #13)
+                elif column == "#13":  
                     # Ask for confirmation
                     result = tkinter.messagebox.askyesno(
                         "Potwierdź usunięcie", 

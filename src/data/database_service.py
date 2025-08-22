@@ -46,13 +46,31 @@ def get_database_path():
         return DATABASE_PATH
 
 
-def get_clients_from_db():
-    """Fetch all clients from the database"""
+def get_clients_from_db(include_extended: bool = False):
+    """Fetch all clients from the database.
+    When include_extended=True, also return additional nullable text columns:
+    TerminRealizacji, TerminPlatnosci, WarunkiDostawy, WaznoscOferty, Gwarancja, Cena
+    """
     try:
         db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients ORDER BY CompanyName")
+        if include_extended:
+            cursor.execute(
+                """
+                SELECT Nip, CompanyName, AddressP1, AddressP2, Alias,
+                       COALESCE(TerminRealizacji, ''),
+                       COALESCE(TerminPlatnosci, ''),
+                       COALESCE(WarunkiDostawy, ''),
+                       COALESCE(WaznoscOferty, ''),
+                       COALESCE(Gwarancja, ''),
+                       COALESCE(Cena, '')
+                FROM Clients
+                ORDER BY CompanyName
+                """
+            )
+        else:
+            cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients ORDER BY CompanyName")
         clients = cursor.fetchall()
         conn.close()
         return clients
