@@ -18,9 +18,6 @@ def get_data_dir():
     else:
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-# Database configuration
-DATABASE_PATH = 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
-
 # Default application settings
 DEFAULT_APP_SETTINGS = {
     'database_path': 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'

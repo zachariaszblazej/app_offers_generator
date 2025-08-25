@@ -11,7 +11,7 @@ import datetime
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import DATABASE_PATH
+from src.utils.config import DEFAULT_APP_SETTINGS
 from src.utils.settings import SettingsManager
 import re
 
@@ -20,9 +20,9 @@ def get_database_path():
     try:
         settings_manager = SettingsManager()
         db_path = settings_manager.get_database_path()
-        
+
         print(f"DEBUG: Raw database path from settings: {db_path}")
-        
+
         # If path is relative, make it absolute from the executable location
         if db_path and not os.path.isabs(db_path):
             if getattr(sys, 'frozen', False):
@@ -34,16 +34,18 @@ def get_database_path():
                 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
                 print(f"DEBUG: Development mode - base directory: {base_dir}")
             db_path = os.path.abspath(os.path.join(base_dir, db_path))
-        
-        final_path = db_path if db_path else DATABASE_PATH
+
+        default_path = DEFAULT_APP_SETTINGS.get('database_path', '')
+        final_path = db_path if db_path else default_path
         print(f"DEBUG: Final database path: {final_path}")
         print(f"DEBUG: Database file exists: {os.path.exists(final_path)}")
-        
+
         return final_path
     except Exception as e:
         print(f"Warning: Could not get database path from settings: {e}")
-        print(f"DEBUG: Falling back to DATABASE_PATH: {DATABASE_PATH}")
-        return DATABASE_PATH
+        default_path = DEFAULT_APP_SETTINGS.get('database_path', '')
+        print(f"DEBUG: Falling back to DEFAULT_APP_SETTINGS['database_path']: {default_path}")
+        return default_path
 
 
 # ------------------------------
