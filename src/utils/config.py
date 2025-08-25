@@ -81,7 +81,7 @@ def get_offers_folder():
         pass
 
     # 2) Fallback to module default
-    return OFFERS_FOLDER
+    return ''
 
 
 def get_wz_folder():
@@ -106,7 +106,7 @@ def get_wz_folder():
                 return row[0]
     except Exception:
         pass
-    return '../FakeHantechServer/WZ'
+    return ''
 
 
 # UI Configuration
