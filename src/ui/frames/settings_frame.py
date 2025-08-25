@@ -517,7 +517,8 @@ class SettingsFrame(Frame):
                 offers_folder = ''
         if 'offers_folder' in self.entries:
             self.entries['offers_folder'].delete(0, END)
-            self.entries['offers_folder'].insert(0, offers_folder)
+            if offers_folder:
+                self.entries['offers_folder'].insert(0, offers_folder)
 
         # database_path still from app settings; wz_folder from DB Paths
         for field in ['database_path']:
@@ -534,7 +535,8 @@ class SettingsFrame(Frame):
                 wz_folder = ''
         if 'wz_folder' in self.entries:
             self.entries['wz_folder'].delete(0, END)
-            self.entries['wz_folder'].insert(0, wz_folder)
+            if wz_folder:
+                self.entries['wz_folder'].insert(0, wz_folder)
     
     def save_settings(self):
         """Save settings to file"""

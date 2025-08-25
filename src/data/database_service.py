@@ -123,9 +123,11 @@ def set_wz_root_in_db(new_path: str) -> bool:
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute(
-            "CREATE TABLE IF NOT EXISTS Paths (Name TEXT PRIMARY KEY, Path TEXT)"
-        )
+        # Refuse to create Paths table implicitly; ensure it exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
+        if cursor.fetchone() is None:
+            conn.close()
+            return False
         cursor.execute(
             "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
             ("Wz_Folder", new_path),
@@ -210,10 +212,11 @@ def set_offers_root_in_db(new_path: str) -> bool:
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        # Ensure table Paths exists (lightweight safeguard)
-        cursor.execute(
-            "CREATE TABLE IF NOT EXISTS Paths (Name TEXT PRIMARY KEY, Path TEXT)"
-        )
+        # Refuse to create Paths table implicitly; ensure it exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
+        if cursor.fetchone() is None:
+            conn.close()
+            return False
         # Upsert the Offers_Folder row
         cursor.execute(
             "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
