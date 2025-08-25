@@ -398,8 +398,6 @@ class SettingsFrame(Frame):
         from tkinter import filedialog
         
         current_folder = self.entries['offers_folder'].get()
-        if not current_folder:
-            current_folder = self.settings_manager.get_app_setting('offers_folder')
         
         folder_path = filedialog.askdirectory(
             title="Wybierz folder dla ofert",
@@ -493,9 +491,9 @@ class SettingsFrame(Frame):
                 self.entries[field].delete(0, END)
                 self.entries[field].insert(0, value)
         
-        # Load app settings data
+        # Load app settings data (but not offers_folder)
         app_settings = self.settings_manager.get_all_app_settings()
-        # offers_folder comes from DB (Paths table)
+        # offers_folder comes only from DB (Paths table)
         try:
             from src.data.database_service import get_offers_root_from_db
             offers_folder = get_offers_root_from_db()
@@ -503,11 +501,8 @@ class SettingsFrame(Frame):
                 self.entries['offers_folder'].delete(0, END)
                 self.entries['offers_folder'].insert(0, offers_folder or '')
         except Exception:
-            # Fallback to app settings if DB access fails
-            if 'offers_folder' in self.entries:
-                value = app_settings.get('offers_folder', '')
-                self.entries['offers_folder'].delete(0, END)
-                self.entries['offers_folder'].insert(0, value)
+            # If DB access fails, leave the entry as-is (empty)
+            pass
 
         # The rest (wz_folder, database_path) still from app settings
         for field in ['wz_folder', 'database_path']:
@@ -538,8 +533,8 @@ class SettingsFrame(Frame):
         # Update offer details settings
         self.settings_manager.update_offer_details_settings(offer_details_settings)
         
-        # Collect app settings and check if critical settings changed
-        # offers_folder is stored in DB (Paths); wz_folder and database_path in app settings
+    # Collect app settings and check if critical settings changed
+    # offers_folder is stored ONLY in DB (Paths); wz_folder and database_path in app settings
         app_fields = ['wz_folder', 'database_path']
         app_settings = {}
         offers_folder_changed = False
@@ -572,15 +567,14 @@ class SettingsFrame(Frame):
                     wz_folder_old = old_value
                 elif field == 'database_path' and new_value != old_value:
                     database_path_changed = True
-        # Update offers folder in DB and update app settings for remaining fields
+    # Update offers folder in DB and update app settings for remaining fields
         if offers_folder_changed:
             try:
                 from src.data.database_service import set_offers_root_in_db
                 set_offers_root_in_db(new_offers_folder)
             except Exception as e:
                 print(f"Failed to update Offers_Folder in DB: {e}")
-        # Update app settings (no DB path migrations for offers/WZ)
-
+    # Update app settings (no DB path migrations for offers)
         self.settings_manager.update_app_settings(app_settings)
         
         # Validate database path if it changed

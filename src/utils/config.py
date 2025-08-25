@@ -62,8 +62,8 @@ def get_offers_folder():
     """Get the current offers folder.
     Order of precedence:
     1) DB table Paths (Name='Offers_Folder') if available,
-    2) app_settings.json ('offers_folder'),
-    3) module fallback OFFERS_FOLDER.
+    2) module fallback OFFERS_FOLDER.
+    Does not read app_settings.json for offers folder.
     """
     # 1) Try DB Paths first
     try:
@@ -80,16 +80,11 @@ def get_offers_folder():
             if row and row[0]:
                 return row[0]
     except Exception:
-        # Silently fallback to settings if DB not available or query fails
+        # Silently fallback to default if DB not available or query fails
         pass
 
-    # 2) Fallback to app settings
-    try:
-        from src.utils.settings import settings_manager
-        return settings_manager.get_app_setting('offers_folder')
-    except ImportError:
-        # 3) Fallback to module default if settings not available
-        return OFFERS_FOLDER
+    # 2) Fallback to module default
+    return OFFERS_FOLDER
 
 
 def get_wz_folder():

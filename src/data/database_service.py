@@ -52,7 +52,7 @@ def get_database_path():
 
 def get_offers_root_from_db() -> str:
     """Get offers root folder from DB table `Paths` (Name='Offers_Folder').
-    Falls back to settings manager 'offers_folder' if table or row missing.
+    No fallback to app_settings.json; returns empty string if not set.
     """
     try:
         conn = sqlite3.connect(get_database_path())
@@ -68,11 +68,7 @@ def get_offers_root_from_db() -> str:
         # Ignore and fallback below
         pass
 
-    try:
-        sm = SettingsManager()
-        return sm.get_app_setting('offers_folder')
-    except Exception:
-        return ''
+    return ''
 
 
 def normalize_offer_db_path(path: str) -> str:
