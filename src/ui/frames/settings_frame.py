@@ -648,9 +648,15 @@ class SettingsFrame(Frame):
             if offers_folder_applied or wz_folder_applied or database_path_changed:
                 self.show_restart_prompt(database_path_changed)
             else:
-                # Refresh company data in any existing offer creation windows
-                self.refresh_offer_creation_data()
-                tkinter.messagebox.showinfo("Sukces", "Ustawienia zostały zapisane pomyślnie!")
+                # Don't show success if user changed folders but they couldn't be saved to DB
+                failed_folder_changes = (
+                    (offers_folder_changed and not offers_folder_applied) or
+                    (wz_folder_changed and not wz_folder_applied)
+                )
+                if not failed_folder_changes:
+                    # Refresh company data in any existing offer creation windows
+                    self.refresh_offer_creation_data()
+                    tkinter.messagebox.showinfo("Sukces", "Ustawienia zostały zapisane pomyślnie!")
         else:
             tkinter.messagebox.showerror("Błąd", "Nie udało się zapisać ustawień.")
     
