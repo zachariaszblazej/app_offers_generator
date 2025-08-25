@@ -644,8 +644,8 @@ class SettingsFrame(Frame):
 
         # Save to file
         if self.settings_manager.save_settings():
-            # Check if app restart is needed (only when changes were actually applied)
-            if offers_folder_applied or wz_folder_applied or database_path_changed:
+            # Restart only when database path changed; folder changes don't require restart
+            if database_path_changed:
                 self.show_restart_prompt(database_path_changed)
             else:
                 # Don't show success if user changed folders but they couldn't be saved to DB
