@@ -70,6 +70,90 @@ def get_offers_root_from_db() -> str:
 
     return ''
 
+# ------------------------------
+# Paths helpers (WZ root via DB Paths table)
+# ------------------------------
+
+def get_wz_root_from_db() -> str:
+    """Get WZ root folder from DB table `Paths` (Name='Wz_Folder').
+    Returns empty string if not set.
+    """
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Wz_Folder",)
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass
+    return ''
+
+def set_wz_root_in_db(new_path: str) -> bool:
+    """Set or update Wz_Folder path in Paths table."""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS Paths (Name TEXT PRIMARY KEY, Path TEXT)"
+        )
+        cursor.execute(
+            "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
+            ("Wz_Folder", new_path),
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Failed to set Wz_Folder in DB: {e}")
+        return False
+
+def normalize_wz_db_path(path: str) -> str:
+    """Normalize WZ file path to relative DB format 'YYYY/filename.docx'.
+    Strips WZ root prefix if present; mirrors offers normalization.
+    """
+    if not path:
+        return ''
+    p = path.replace('\\', '/')
+    base = get_wz_root_from_db().replace('\\', '/')
+    # Strip leading base if present
+    if base and p.startswith(base.rstrip('/') + '/'):
+        p = p[len(base.rstrip('/') + '/'):]
+    # If absolute or nested path, try to extract last 'YYYY/filename.ext'
+    import re as _re
+    m = _re.search(r'(?:^|/)((?:19|20)\d{2})/([^/]+\.[A-Za-z0-9]+)$', p)
+    if m:
+        year, fname = m.group(1), m.group(2)
+        return f"{year}/{fname}"
+    # If already contains a separator, treat as relative and trim to last two segments if they match YYYY/filename
+    if '/' in p:
+        parts = p.strip('/').split('/')
+        if len(parts) >= 2 and len(parts[-2]) == 4 and parts[-2].isdigit():
+            return f"{parts[-2]}/{parts[-1]}"
+        return p.strip('/')
+    # Fallback to basename only
+    return os.path.basename(p)
+
+def build_full_wz_path(rel_path: str) -> str:
+    """Compose full absolute path from relative WzFilePath using Wz_Folder base.
+    Be tolerant of legacy/mis-saved absolute paths without leading slash on POSIX.
+    """
+    base = get_wz_root_from_db()
+    if not rel_path:
+        return base
+    # Absolute path stays as-is
+    if os.path.isabs(rel_path):
+        return rel_path
+    # Handle case where value accidentally includes base but without leading slash on POSIX
+    p_norm = rel_path.replace('\\', '/')
+    base_norm = base.replace('\\', '/').strip('/')
+    if p_norm.startswith(base_norm + '/'):  # looks like '/base/...', but missing leading '/'
+        return '/' + p_norm
+    return os.path.join(base, rel_path)
+
 
 def normalize_offer_db_path(path: str) -> str:
     """Convert an absolute or mixed path to DB-stored relative format 'YYYY/filename.docx'.
@@ -291,11 +375,12 @@ def update_offer_context_in_db(offer_file_path, offer_context):
 
 
 def get_wz_context_from_db(wz_file_path):
-    """Get WZ context from database by file path"""
+    """Get WZ context from database by file path (accepts full or relative)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT WzContext FROM Wuzetkas WHERE WzFilePath = ?", (wz_file_path,))
+        rel_path = normalize_wz_db_path(wz_file_path)
+        cursor.execute("SELECT WzContext FROM Wuzetkas WHERE WzFilePath = ?", (rel_path,))
         result = cursor.fetchone()
         conn.close()
         
@@ -312,16 +397,16 @@ def get_wz_context_from_db(wz_file_path):
 
 
 def update_wz_context_in_db(wz_file_path, wz_context):
-    """Update WZ context in database"""
+    """Update WZ context in database (accepts full or relative path)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Convert context to JSON
         context_json = json.dumps(wz_context, default=str, ensure_ascii=False)
-        
+        rel_path = normalize_wz_db_path(wz_file_path)
         cursor.execute("UPDATE Wuzetkas SET WzContext = ? WHERE WzFilePath = ?", 
-                      (context_json, wz_file_path))
+                      (context_json, rel_path))
         conn.commit()
         conn.close()
         return True
@@ -786,12 +871,26 @@ def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
         if wz_context:
             context_json = json.dumps(wz_context, ensure_ascii=False)
 
+        # Normalize path to relative before saving
+        try:
+            rel_wz_path = normalize_wz_db_path(wz_file_path)
+        except Exception:
+            rel_wz_path = wz_file_path
+
+        # Enforce strict 'YYYY/filename.ext' in DB
+        try:
+            parts = rel_wz_path.strip('/').split('/') if rel_wz_path else []
+            if not (len(parts) >= 2 and len(parts[-2]) == 4 and parts[-2].isdigit()):
+                rel_wz_path = f"{wz_year}/{os.path.basename(rel_wz_path)}"
+        except Exception:
+            rel_wz_path = f"{wz_year}/{os.path.basename(str(rel_wz_path))}"
+
         if 'WzYearNumber' in cols:
             cursor.execute("INSERT INTO Wuzetkas (WzYearNumber, WzOrderNumber, WzFilePath, WzContext) VALUES (?, ?, ?, ?)",
-                           (wz_year, wz_order_number, wz_file_path, context_json))
+                           (wz_year, wz_order_number, rel_wz_path, context_json))
         else:
             cursor.execute("INSERT INTO Wuzetkas (WzOrderNumber, WzFilePath, WzContext) VALUES (?, ?, ?)",
-                           (wz_order_number, wz_file_path, context_json))
+                           (wz_order_number, rel_wz_path, context_json))
         conn.commit()
         conn.close()
         return True, "WZ zostało zapisane do bazy danych"
@@ -815,7 +914,7 @@ def get_all_wz():
         wz_data = []
         for row in cursor.fetchall():
             wz_number = row[0]
-            file_path = row[1]
+            rel_wz_path = row[1]
             context_json = row[2]
             wz_id = row[3]
             
@@ -839,7 +938,8 @@ def get_all_wz():
             else:
                 formatted_wz_number = str(wz_number)
             
-            wz_data.append((wz_id, formatted_wz_number, date, client_name, "Utworzone", file_path))
+            full_path = build_full_wz_path(rel_wz_path) if rel_wz_path else ''
+            wz_data.append((wz_id, formatted_wz_number, date, client_name, "Utworzone", full_path))
         
         conn.close()
         return wz_data
@@ -875,7 +975,8 @@ def delete_wz_by_file_path(wz_file_path: str):
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM Wuzetkas WHERE WzFilePath = ?", (wz_file_path,))
+        rel = normalize_wz_db_path(wz_file_path)
+        cursor.execute("DELETE FROM Wuzetkas WHERE WzFilePath = ?", (rel,))
         if cursor.rowcount == 0:
             conn.close()
             return False, "WZ nie zostało znalezione w bazie (po ścieżce)"

@@ -129,16 +129,18 @@ class OfferGeneratorMainApp:
             except Exception:
                 offers_ok = False
             try:
-                wz_path = get_wz_folder()
-                wz_ok = bool(wz_path and os.path.isdir(wz_path))
+                # Validation based on presence in DB (Paths.Name='Wz_Folder'), not filesystem
+                from src.data.database_service import get_wz_root_from_db
+                wz_path = get_wz_root_from_db()
+                wz_ok = bool(wz_path)
             except Exception:
                 wz_ok = False
 
-            # If WZ folder missing, block
+            # If WZ folder path missing in DB, block
             if not wz_ok:
                 import tkinter.messagebox
                 title = 'Brak folderu WZ'
-                msg = 'Folder WZ nie istnieje. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
+                msg = 'W bazie danych nie ustawiono ścieżki do folderu WZ. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
                 tkinter.messagebox.showwarning(title, msg)
                 self.nav_manager.show_frame('settings')
                 return True

@@ -88,13 +88,28 @@ def get_offers_folder():
 
 
 def get_wz_folder():
-    """Get the current WZ folder from settings or return default"""
+    """Get the current WZ folder.
+    Order of precedence:
+    1) DB table Paths (Name='Wz_Folder') if available,
+    2) module fallback '../FakeHantechServer/WZ'.
+    Does not read app_settings.json for WZ folder.
+    """
     try:
-        from src.utils.settings import settings_manager
-        return settings_manager.get_app_setting('wz_folder')
-    except ImportError:
-        # Fallback to default if settings not available
-        return '../FakeHantechServer/WZ'
+        import sqlite3
+        from src.utils.settings import SettingsManager
+        sm = SettingsManager()
+        db_path = sm.get_database_path()
+        if db_path and os.path.exists(db_path):
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            cur.execute("SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Wz_Folder",))
+            row = cur.fetchone()
+            conn.close()
+            if row and row[0]:
+                return row[0]
+    except Exception:
+        pass
+    return '../FakeHantechServer/WZ'
 
 
 # UI Configuration

@@ -413,8 +413,6 @@ class SettingsFrame(Frame):
         from tkinter import filedialog
         
         current_folder = self.entries['wz_folder'].get()
-        if not current_folder:
-            current_folder = self.settings_manager.get_app_setting('wz_folder')
         
         folder_path = filedialog.askdirectory(
             title="Wybierz folder dla WZ",
@@ -504,12 +502,22 @@ class SettingsFrame(Frame):
             # If DB access fails, leave the entry as-is (empty)
             pass
 
-        # The rest (wz_folder, database_path) still from app settings
-        for field in ['wz_folder', 'database_path']:
+        # database_path still from app settings; wz_folder from DB Paths
+        for field in ['database_path']:
             if field in self.entries:
                 value = app_settings.get(field, '')
                 self.entries[field].delete(0, END)
                 self.entries[field].insert(0, value)
+
+        # Load WZ folder from DB Paths
+        try:
+            from src.data.database_service import get_wz_root_from_db
+            wz_folder = get_wz_root_from_db()
+            if 'wz_folder' in self.entries:
+                self.entries['wz_folder'].delete(0, END)
+                self.entries['wz_folder'].insert(0, wz_folder or '')
+        except Exception:
+            pass
     
     def save_settings(self):
         """Save settings to file"""
@@ -519,23 +527,23 @@ class SettingsFrame(Frame):
         for field in company_fields:
             if field in self.entries:
                 company_settings[field] = self.entries[field].get().strip()
-        
+
         # Update settings
         self.settings_manager.update_company_data_settings(company_settings)
-        
+
         # Collect offer details settings
         offer_details_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
         offer_details_settings = {}
         for field in offer_details_fields:
             if field in self.entries:
                 offer_details_settings[field] = self.entries[field].get().strip()
-        
+
         # Update offer details settings
         self.settings_manager.update_offer_details_settings(offer_details_settings)
-        
-    # Collect app settings and check if critical settings changed
-    # offers_folder is stored ONLY in DB (Paths); wz_folder and database_path in app settings
-        app_fields = ['wz_folder', 'database_path']
+
+        # Collect app settings and check if critical settings changed
+        # offers_folder and wz_folder are stored ONLY in DB (Paths); database_path in app settings
+        app_fields = ['database_path']
         app_settings = {}
         offers_folder_changed = False
         wz_folder_changed = False
@@ -555,38 +563,54 @@ class SettingsFrame(Frame):
             if new_offers_folder != offers_folder_old:
                 offers_folder_changed = True
 
-        # Handle remaining app fields
+        # Handle remaining app fields (database_path only)
         for field in app_fields:
             if field in self.entries:
                 new_value = self.entries[field].get().strip()
                 old_value = self.settings_manager.get_app_setting(field)
                 app_settings[field] = new_value
-
-                if field == 'wz_folder' and new_value != old_value:
-                    wz_folder_changed = True
-                    wz_folder_old = old_value
-                elif field == 'database_path' and new_value != old_value:
+                if field == 'database_path' and new_value != old_value:
                     database_path_changed = True
-    # Update offers folder in DB and update app settings for remaining fields
+
+        # Update offers folder in DB and update app settings for remaining fields
         if offers_folder_changed:
             try:
                 from src.data.database_service import set_offers_root_in_db
                 set_offers_root_in_db(new_offers_folder)
             except Exception as e:
                 print(f"Failed to update Offers_Folder in DB: {e}")
-    # Update app settings (no DB path migrations for offers)
+
+        # Update app settings (no DB path migrations for offers/WZ)
         self.settings_manager.update_app_settings(app_settings)
-        
+
+        # Update WZ folder in DB if changed
+        new_wz_folder = ''
+        try:
+            from src.data.database_service import get_wz_root_from_db
+            wz_folder_old = get_wz_root_from_db()
+        except Exception:
+            wz_folder_old = ''
+        if 'wz_folder' in self.entries:
+            new_wz_folder = self.entries['wz_folder'].get().strip()
+            if new_wz_folder != wz_folder_old:
+                wz_folder_changed = True
+                try:
+                    from src.data.database_service import set_wz_root_in_db
+                    set_wz_root_in_db(new_wz_folder)
+                except Exception as e:
+                    print(f"Failed to update Wz_Folder in DB: {e}")
+
         # Validate database path if it changed
         if database_path_changed:
             new_db_path = app_settings.get('database_path', '')
             if new_db_path and not os.path.exists(new_db_path):
-                result = tkinter.messagebox.askyesno("Uwaga", 
-                    f"Podana ścieżka do bazy danych nie istnieje:\n{new_db_path}\n\n"
-                    "Czy chcesz kontynuować? Aplikacja może nie działać poprawnie.")
+                result = tkinter.messagebox.askyesno(
+                    "Uwaga",
+                    f"Podana ścieżka do bazy danych nie istnieje:\n{new_db_path}\n\nCzy chcesz kontynuować? Aplikacja może nie działać poprawnie."
+                )
                 if not result:
                     return  # Don't save if user cancels
-        
+
         # Save to file
         if self.settings_manager.save_settings():
             # Check if app restart is needed

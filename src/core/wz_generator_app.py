@@ -16,7 +16,7 @@ from src.ui.windows.wz_product_add_window import WzProductAddWindow
 from src.ui.windows.wz_product_edit_window import WzProductEditWindow
 from src.ui.components.wz_product_table import WzProductTable
 from src.services.wz_generator_service import generate_wz_document
-from src.data.database_service import get_next_wz_number, save_wz_to_db
+from src.data.database_service import get_next_wz_number, save_wz_to_db, normalize_wz_db_path
 from src.utils.config import WZ_BACKGROUND_IMAGE
 
 
@@ -226,59 +226,49 @@ class WzGeneratorApp:
             # Validate required fields
             if not self.validate_form():
                 return
-            
-            # Get form data
+
+            # Gather context
             context_data = self.ui.get_all_data()
-            # Persist aliases (were previously omitted, causing regenerated WZ to default to 'KLIENT')
             context_data['client_alias'] = self.ui.selected_client_alias
             context_data['supplier_alias'] = self.ui.selected_supplier_alias
-            
-            # Get products data
-            products_data = self.product_table.get_all_products()
-            context_data['products'] = products_data
-            
-            # Determine year (current or from date field if parseable)
-            date_str = context_data.get('date', '')
+            context_data['products'] = self.product_table.get_all_products()
+
+            # Determine year from date string if possible
             from datetime import datetime as _dt
             year_val = None
+            date_str = context_data.get('date', '')
             if isinstance(date_str, str):
                 parts = date_str.split()
-                # Expect patterns like 'DD <month_name> YYYY' after formatting
                 if len(parts) >= 3 and parts[-1].isdigit() and len(parts[-1]) == 4:
                     year_val = parts[-1]
             if year_val is None:
                 year_val = str(_dt.now().year)
 
-            # Get next year-scoped WZ sequence
+            # Next sequential number per year and full WZ number
             wz_order_number = get_next_wz_number(int(year_val))
             client_alias = self.ui.selected_client_alias or 'KLIENT'
-
-            # Format WZ number: WZ_{seq}_{year}_{alias}
             wz_number = f"WZ_{wz_order_number}_{year_val}_{client_alias}"
             context_data['wz_number'] = wz_number
-            
-            # Generate document
-            file_path = generate_wz_document(context_data)
-            
-            if file_path:
-                # Save to database
-                success, message = save_wz_to_db(wz_order_number, file_path, context_data)
-                
-                if success:
-                    tkinter.messagebox.showinfo("Sukces", 
-                                              f"WZ zostało wygenerowane pomyślnie!\n"
-                                              f"Numer WZ: {wz_number}\n"
-                                              f"Plik: {file_path}")
-                    # Automatyczny powrót do listy WZ jeśli przyszliśmy z przeglądarki, inaczej do menu
-                    if self.source_frame == 'browse_wz':
-                        self.nav_manager.show_frame('browse_wz')
-                    else:
-                        self.nav_manager.show_frame('main_menu')
-                else:
-                    tkinter.messagebox.showerror("Błąd", f"WZ zostało wygenerowane, ale nie udało się zapisać do bazy danych:\n{message}")
-            else:
+
+            # Generate document to disk
+            output_path = generate_wz_document(context_data)
+            if not output_path:
                 tkinter.messagebox.showerror("Błąd", "Nie udało się wygenerować pliku WZ.")
-            
+                return
+
+            # Store relative path in DB
+            rel_wz = normalize_wz_db_path(output_path)
+            save_wz_to_db(wz_order_number, rel_wz, context_data)
+
+            tkinter.messagebox.showinfo(
+                "Sukces",
+                f"WZ zostało wygenerowane i zapisane do: {output_path}"
+            )
+            if self.source_frame == 'browse_wz':
+                self.nav_manager.show_frame('browse_wz')
+            else:
+                self.nav_manager.show_frame('main_menu')
+
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Wystąpił błąd podczas generowania WZ:\n{e}")
             print(f"Error generating WZ: {e}")
