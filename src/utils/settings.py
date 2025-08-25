@@ -15,6 +15,14 @@ class SettingsManager:
     
     def __init__(self):
         self.settings = self.load_settings()
+
+    def reload(self):
+        """Reload settings from disk into memory, discarding in-memory changes."""
+        try:
+            self.settings = self.load_settings()
+        except Exception as e:
+            # Keep existing settings on failure and log
+            print(f"Error reloading settings: {e}")
     
     def load_settings(self):
         """Load settings from file or create default settings"""

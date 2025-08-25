@@ -53,57 +53,25 @@ BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
 WZ_BACKGROUND_IMAGE = get_resource_path('background_wz_1.png')
 
 def get_offers_folder():
-    """Get the current offers folder.
-    Order of precedence:
-    1) DB table Paths (Name='Offers_Folder') if available,
-    2) module fallback OFFERS_FOLDER.
-    Does not read app_settings.json for offers folder.
+    """Get the current offers folder from DB Paths or return empty string.
+    Does not use app_settings.json.
     """
-    # 1) Try DB Paths first
     try:
-        import sqlite3
-        from src.utils.settings import SettingsManager
-        sm = SettingsManager()
-        db_path = sm.get_database_path()
-        if db_path and os.path.exists(db_path):
-            conn = sqlite3.connect(db_path)
-            cur = conn.cursor()
-            cur.execute("SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Offers_Folder",))
-            row = cur.fetchone()
-            conn.close()
-            if row and row[0]:
-                return row[0]
+        from src.data.database_service import get_offers_root_from_db
+        return get_offers_root_from_db() or ''
     except Exception:
-        # Silently fallback to default if DB not available or query fails
-        pass
-
-    # 2) Fallback to module default
-    return ''
+        return ''
 
 
 def get_wz_folder():
-    """Get the current WZ folder.
-    Order of precedence:
-    1) DB table Paths (Name='Wz_Folder') if available,
-    2) module fallback '../FakeHantechServer/WZ'.
-    Does not read app_settings.json for WZ folder.
+    """Get the current WZ folder from DB Paths or return empty string.
+    Does not use app_settings.json.
     """
     try:
-        import sqlite3
-        from src.utils.settings import SettingsManager
-        sm = SettingsManager()
-        db_path = sm.get_database_path()
-        if db_path and os.path.exists(db_path):
-            conn = sqlite3.connect(db_path)
-            cur = conn.cursor()
-            cur.execute("SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Wz_Folder",))
-            row = cur.fetchone()
-            conn.close()
-            if row and row[0]:
-                return row[0]
+        from src.data.database_service import get_wz_root_from_db
+        return get_wz_root_from_db() or ''
     except Exception:
-        pass
-    return ''
+        return ''
 
 
 # UI Configuration

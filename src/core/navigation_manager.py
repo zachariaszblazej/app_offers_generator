@@ -26,6 +26,16 @@ class NavigationManager:
         
         # Show the requested frame
         if frame_name in self.frames:
+            # Always recreate Settings frame to discard any unsaved UI state
+            if frame_name == 'settings':
+                try:
+                    # Destroy old instance
+                    self.frames[frame_name].destroy()
+                except Exception:
+                    pass
+                # Recreate fresh instance
+                from src.ui.frames.settings_frame import SettingsFrame as _SettingsFrame
+                self.frames[frame_name] = _SettingsFrame(self.root, self)
             # Handle special cases with parameters
             if frame_name == 'offer_editor' and 'offer_path' in kwargs:
                 # Initialize editor with offer path using frame's method

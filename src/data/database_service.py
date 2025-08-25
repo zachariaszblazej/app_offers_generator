@@ -48,16 +48,39 @@ def get_database_path():
         return default_path
 
 
+def is_database_available() -> bool:
+    """Check if the configured database exists and is readable without creating it.
+    Uses a read-only SQLite URI to avoid implicit DB creation.
+    """
+    try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False
+        # Try read-only connection; will fail if file missing or not a valid SQLite DB
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        # Validate it's an app DB by ensuring required table exists
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
+        has_paths = cur.fetchone() is not None
+        conn.close()
+        return has_paths
+    except Exception:
+        return False
+
+
 # ------------------------------
 # Paths helpers (Offers root via DB Paths table)
 # ------------------------------
 
 def get_offers_root_from_db() -> str:
     """Get offers root folder from DB table `Paths` (Name='Offers_Folder').
-    No fallback to app_settings.json; returns empty string if not set.
+    Returns empty string if DB unavailable or path not set.
     """
     try:
-        conn = sqlite3.connect(get_database_path())
+        if not is_database_available():
+            return ''
+        path = get_database_path()
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Offers_Folder",)
@@ -67,9 +90,7 @@ def get_offers_root_from_db() -> str:
         if row and row[0]:
             return row[0]
     except Exception:
-        # Ignore and fallback below
         pass
-
     return ''
 
 # ------------------------------
@@ -78,10 +99,13 @@ def get_offers_root_from_db() -> str:
 
 def get_wz_root_from_db() -> str:
     """Get WZ root folder from DB table `Paths` (Name='Wz_Folder').
-    Returns empty string if not set.
+    Returns empty string if DB unavailable or not set.
     """
     try:
-        conn = sqlite3.connect(get_database_path())
+        if not is_database_available():
+            return ''
+        path = get_database_path()
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Wz_Folder",)
