@@ -2,7 +2,7 @@
 import subprocess
 import os
 
-BASE_VERSION = "1.0.1"
+BASE_VERSION = "1.0.1a"
 
 def _get_git_commit_hash():
     """Return short commit hash or 'unknown' if not a git repo."""
