@@ -23,8 +23,6 @@ DATABASE_PATH = 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {
-    'offers_folder': 'Y:/20. Oferty',
-    'wz_folder': 'Y:/40. WZ-ki',
     'database_path': 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
 }
 
@@ -54,7 +52,6 @@ DEFAULT_OFFER_DETAILS = {
 
 # File paths
 TEMPLATE_PATH = get_resource_path('templates/offer_template.docx')
-OFFERS_FOLDER = '../FakeHantechServer/Oferty'  # Fallback default
 BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
 WZ_BACKGROUND_IMAGE = get_resource_path('background_wz_1.png')
 
@@ -114,7 +111,6 @@ def get_wz_folder():
 
 # UI Configuration
 WINDOW_SIZE = "1600x1200"
-TAX_RATE = 0.18  # 18% VAT
 
 # Application Info
 from src.utils.version import get_version_string
