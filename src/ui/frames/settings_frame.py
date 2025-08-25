@@ -548,71 +548,7 @@ class SettingsFrame(Frame):
                     wz_folder_old = old_value
                 elif field == 'database_path' and new_value != old_value:
                     database_path_changed = True
-        
-        # Update app settings (but run migration for offers first if path changed)
-        migration_summary = None
-        wz_migration_summary = None
-        if offers_folder_changed and offers_folder_old:
-            try:
-                from src.utils.config import migrate_offers_folder
-                migration_summary = migrate_offers_folder(offers_folder_old, app_settings.get('offers_folder'))
-                # Persist report to app directory
-                try:
-                    report_path = os.path.join(os.path.abspath('.'), 'offers_migration_report.txt')
-                    with open(report_path, 'w', encoding='utf-8') as rf:
-                        rf.write('Raport migracji ofert\n')
-                        rf.write('='*60 + '\n')
-                        for key in ['checked','updated','skipped_not_found','errors']:
-                            if key in migration_summary:
-                                rf.write(f"{key}: {migration_summary[key]}\n")
-                        # List skipped
-                        skipped = migration_summary.get('skipped_files') or []
-                        if skipped:
-                            rf.write('\nPliki pominięte (nie znaleziono w nowej lokalizacji):\n')
-                            for p in skipped:
-                                rf.write(f" - {p}\n")
-                        error_files = migration_summary.get('error_files') or []
-                        if error_files:
-                            rf.write('\nPliki z błędami aktualizacji w bazie:\n')
-                            for p in error_files:
-                                rf.write(f" - {p}\n")
-                        rf.write('\nKoniec raportu.\n')
-                except Exception as rep_e:
-                    print(f"Nie udało się zapisać raportu migracji: {rep_e}")
-            except Exception as e:
-                print(f"Offers folder migration error: {e}")
-                migration_summary = {'error': str(e)}
-
-        # Run WZ migration if needed BEFORE saving (so we still have old path)
-        if wz_folder_changed and wz_folder_old:
-            try:
-                from src.utils.config import migrate_wz_folder
-                wz_migration_summary = migrate_wz_folder(wz_folder_old, app_settings.get('wz_folder'))
-                # Persist report
-                try:
-                    report_path = os.path.join(os.path.abspath('.'), 'wz_migration_report.txt')
-                    with open(report_path, 'w', encoding='utf-8') as rf:
-                        rf.write('Raport migracji WZ\n')
-                        rf.write('='*60 + '\n')
-                        for key in ['checked','updated','skipped_not_found','errors']:
-                            if key in wz_migration_summary:
-                                rf.write(f"{key}: {wz_migration_summary[key]}\n")
-                        skipped = wz_migration_summary.get('skipped_files') or []
-                        if skipped:
-                            rf.write('\nPliki pominięte (nie znaleziono w nowej lokalizacji):\n')
-                            for p in skipped:
-                                rf.write(f" - {p}\n")
-                        error_files = wz_migration_summary.get('error_files') or []
-                        if error_files:
-                            rf.write('\nPliki z błędami aktualizacji w bazie:\n')
-                            for p in error_files:
-                                rf.write(f" - {p}\n")
-                        rf.write('\nKoniec raportu.\n')
-                except Exception as rep_e:
-                    print(f"Nie udało się zapisać raportu migracji WZ: {rep_e}")
-            except Exception as e:
-                print(f"WZ folder migration error: {e}")
-                wz_migration_summary = {'error': str(e)}
+    # Update app settings (no DB path migrations for offers/WZ)
 
         self.settings_manager.update_app_settings(app_settings)
         
@@ -630,19 +566,7 @@ class SettingsFrame(Frame):
         if self.settings_manager.save_settings():
             # Check if app restart is needed
             if offers_folder_changed or wz_folder_changed or database_path_changed:
-                # Show migration results (offers and/or WZ) before restart prompt
-                try:
-                    details = []
-                    if migration_summary:
-                        details.append("Migracja ofert:\n" + "\n".join(f"- {k}: {v}" for k, v in migration_summary.items()))
-                    if wz_migration_summary:
-                        details.append("Migracja WZ:\n" + "\n".join(f"- {k}: {v}" for k, v in wz_migration_summary.items()))
-                    if details:
-                        tkinter.messagebox.showinfo("Migracja danych", "\n\n".join(details))
-                except Exception:
-                    pass
                 self.show_restart_prompt(database_path_changed)
-
             else:
                 # Refresh company data in any existing offer creation windows
                 self.refresh_offer_creation_data()

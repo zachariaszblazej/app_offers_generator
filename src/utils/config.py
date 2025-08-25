@@ -67,13 +67,6 @@ def get_offers_folder():
         # Fallback to default if settings not available
         return OFFERS_FOLDER
 
-def migrate_offers_folder(old_base: str, new_base: str) -> dict:
-    """Run migration for Offers table paths after folder change.
-
-    Returns summary dict with counts.
-    """
-    from src.data.database_service import migrate_offers_folder_path
-    return migrate_offers_folder_path(old_base, new_base)
 
 def get_wz_folder():
     """Get the current WZ folder from settings or return default"""
@@ -84,10 +77,6 @@ def get_wz_folder():
         # Fallback to default if settings not available
         return '../FakeHantechServer/WZ'
 
-def migrate_wz_folder(old_base: str, new_base: str) -> dict:
-    """Run migration for Wuzetkas table paths after WZ folder change."""
-    from src.data.database_service import migrate_wz_folder_path
-    return migrate_wz_folder_path(old_base, new_base)
 
 # UI Configuration
 WINDOW_SIZE = "1600x1200"
