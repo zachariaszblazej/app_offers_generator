@@ -99,6 +99,28 @@ def build_full_offer_path(rel_path: str) -> str:
     return os.path.join(base, rel_path) if rel_path else base
 
 
+def set_offers_root_in_db(new_path: str) -> bool:
+    """Set or update Offers_Folder path in Paths table."""
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        # Ensure table Paths exists (lightweight safeguard)
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS Paths (Name TEXT PRIMARY KEY, Path TEXT)"
+        )
+        # Upsert the Offers_Folder row
+        cursor.execute(
+            "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
+            ("Offers_Folder", new_path),
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Failed to set Offers_Folder in DB: {e}")
+        return False
+
+
 def get_clients_from_db(include_extended: bool = False):
     """Fetch all clients from the database.
     When include_extended=True, also return additional nullable text columns:

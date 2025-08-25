@@ -495,9 +495,22 @@ class SettingsFrame(Frame):
         
         # Load app settings data
         app_settings = self.settings_manager.get_all_app_settings()
-        app_fields = ['offers_folder', 'wz_folder', 'database_path']
-        
-        for field in app_fields:
+        # offers_folder comes from DB (Paths table)
+        try:
+            from src.data.database_service import get_offers_root_from_db
+            offers_folder = get_offers_root_from_db()
+            if 'offers_folder' in self.entries:
+                self.entries['offers_folder'].delete(0, END)
+                self.entries['offers_folder'].insert(0, offers_folder or '')
+        except Exception:
+            # Fallback to app settings if DB access fails
+            if 'offers_folder' in self.entries:
+                value = app_settings.get('offers_folder', '')
+                self.entries['offers_folder'].delete(0, END)
+                self.entries['offers_folder'].insert(0, value)
+
+        # The rest (wz_folder, database_path) still from app settings
+        for field in ['wz_folder', 'database_path']:
             if field in self.entries:
                 value = app_settings.get(field, '')
                 self.entries[field].delete(0, END)
@@ -526,7 +539,8 @@ class SettingsFrame(Frame):
         self.settings_manager.update_offer_details_settings(offer_details_settings)
         
         # Collect app settings and check if critical settings changed
-        app_fields = ['offers_folder', 'wz_folder', 'database_path']
+        # offers_folder is stored in DB (Paths); wz_folder and database_path in app settings
+        app_fields = ['wz_folder', 'database_path']
         app_settings = {}
         offers_folder_changed = False
         wz_folder_changed = False
@@ -534,21 +548,38 @@ class SettingsFrame(Frame):
         wz_folder_old = None
         database_path_changed = False
 
+        # First handle offers_folder via DB
+        new_offers_folder = ''
+        try:
+            from src.data.database_service import get_offers_root_from_db
+            offers_folder_old = get_offers_root_from_db()
+        except Exception:
+            offers_folder_old = ''
+        if 'offers_folder' in self.entries:
+            new_offers_folder = self.entries['offers_folder'].get().strip()
+            if new_offers_folder != offers_folder_old:
+                offers_folder_changed = True
+
+        # Handle remaining app fields
         for field in app_fields:
             if field in self.entries:
                 new_value = self.entries[field].get().strip()
                 old_value = self.settings_manager.get_app_setting(field)
                 app_settings[field] = new_value
 
-                if field == 'offers_folder' and new_value != old_value:
-                    offers_folder_changed = True
-                    offers_folder_old = old_value
-                elif field == 'wz_folder' and new_value != old_value:
+                if field == 'wz_folder' and new_value != old_value:
                     wz_folder_changed = True
                     wz_folder_old = old_value
                 elif field == 'database_path' and new_value != old_value:
                     database_path_changed = True
-    # Update app settings (no DB path migrations for offers/WZ)
+        # Update offers folder in DB and update app settings for remaining fields
+        if offers_folder_changed:
+            try:
+                from src.data.database_service import set_offers_root_in_db
+                set_offers_root_in_db(new_offers_folder)
+            except Exception as e:
+                print(f"Failed to update Offers_Folder in DB: {e}")
+        # Update app settings (no DB path migrations for offers/WZ)
 
         self.settings_manager.update_app_settings(app_settings)
         
