@@ -90,14 +90,7 @@ class ClientEditWindow:
             ent.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
             self.entries[key] = ent
 
-        # Prefill extended fields from settings only when adding
-        if mode == 'add':
-            offer_defaults = settings_manager.get_all_offer_details_settings()
-            for k in ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']:
-                val = offer_defaults.get(k, '')
-                if val is None:
-                    val = ''
-                self.entries[k].insert(0, val)
+    # No prefill in add mode: leave all fields empty
 
         # Pre-fill when editing
         if mode == 'edit' and client:
