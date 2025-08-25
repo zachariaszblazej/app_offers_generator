@@ -59,12 +59,36 @@ BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
 WZ_BACKGROUND_IMAGE = get_resource_path('background_wz_1.png')
 
 def get_offers_folder():
-    """Get the current offers folder from settings or return default"""
+    """Get the current offers folder.
+    Order of precedence:
+    1) DB table Paths (Name='Offers_Folder') if available,
+    2) app_settings.json ('offers_folder'),
+    3) module fallback OFFERS_FOLDER.
+    """
+    # 1) Try DB Paths first
+    try:
+        import sqlite3
+        from src.utils.settings import SettingsManager
+        sm = SettingsManager()
+        db_path = sm.get_database_path()
+        if db_path and os.path.exists(db_path):
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            cur.execute("SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Offers_Folder",))
+            row = cur.fetchone()
+            conn.close()
+            if row and row[0]:
+                return row[0]
+    except Exception:
+        # Silently fallback to settings if DB not available or query fails
+        pass
+
+    # 2) Fallback to app settings
     try:
         from src.utils.settings import settings_manager
         return settings_manager.get_app_setting('offers_folder')
     except ImportError:
-        # Fallback to default if settings not available
+        # 3) Fallback to module default if settings not available
         return OFFERS_FOLDER
 
 

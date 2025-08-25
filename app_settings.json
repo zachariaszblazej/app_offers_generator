@@ -20,7 +20,6 @@
         "cena": "Do ceny netto zostanie doliczony podatek VAT zgodnie z obowiązującymi przepisami."
     },
     "app_settings": {
-        "offers_folder": "Z:/PUBLIC/20. Oferty",
         "database_path": "Z:/PUBLIC/AplikacjaDokumenty/HantechDocumentsDatabase.db",
         "wz_folder": "Z:/PUBLIC/40. WZ-ki"
     }

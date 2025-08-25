@@ -26,6 +26,7 @@ from src.core.wz_generator_app import WzGeneratorApp
 from src.services.sync_service import OfferSyncService
 from src.utils.config import WINDOW_SIZE, BACKGROUND_IMAGE, TAX_RATE, APP_TITLE
 from src.utils.config import get_offers_folder, get_wz_folder
+from src.data.database_service import get_database_path
 
 
 def main():
@@ -112,8 +113,12 @@ class OfferGeneratorMainApp:
         self.offer_components_initialized = False
 
     def check_required_folders(self) -> bool:
-        """Check existence of offers and WZ folders. Show one combined warning if any missing and go to settings.
-        Returns True if missing (navigated), else False.
+        """Check existence of offers and WZ folders.
+        Logic:
+        - WZ folder must exist always (we can't infer it from DB), otherwise navigate to settings.
+        - Offers folder: if it doesn't exist but there are offers in DB, allow startup (files may be on a network share not mounted yet) and only show a non-blocking warning later on usage.
+          If there are no offers in DB and the folder is missing, navigate to settings.
+        Returns True if navigation to settings occurred, else False.
         """
         try:
             offers_ok = False
@@ -129,20 +134,39 @@ class OfferGeneratorMainApp:
             except Exception:
                 wz_ok = False
 
-            if offers_ok and wz_ok:
-                return False
-
-            import tkinter.messagebox
-            if not offers_ok and not wz_ok:
-                title = 'Brak folderów'
-                msg = 'Folder ofert oraz folder WZ nie istnieją. Zostaniesz przeniesiony do Ustawień aby wskazać poprawne foldery.'
-            elif not offers_ok:
-                title = 'Brak folderu ofert'
-                msg = 'Folder ofert nie istnieje. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
-            else:  # not wz_ok
+            # If WZ folder missing, block
+            if not wz_ok:
+                import tkinter.messagebox
                 title = 'Brak folderu WZ'
                 msg = 'Folder WZ nie istnieje. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
+                tkinter.messagebox.showwarning(title, msg)
+                self.nav_manager.show_frame('settings')
+                return True
 
+            # WZ is OK. If offers folder OK, proceed
+            if offers_ok:
+                return False
+
+            # Offers folder missing: check if there are offers in DB; if yes, allow startup
+            has_offers_in_db = False
+            try:
+                import sqlite3
+                conn = sqlite3.connect(get_database_path())
+                cur = conn.cursor()
+                cur.execute("SELECT 1 FROM Offers LIMIT 1")
+                has_offers_in_db = cur.fetchone() is not None
+                conn.close()
+            except Exception:
+                has_offers_in_db = False
+
+            if has_offers_in_db:
+                # Allow startup silently; users can set folder later in Settings if needed
+                return False
+
+            # No offers in DB and folder missing -> navigate to settings
+            import tkinter.messagebox
+            title = 'Brak folderu ofert'
+            msg = 'Folder ofert nie istnieje, a w bazie nie ma żadnych ofert. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
             tkinter.messagebox.showwarning(title, msg)
             self.nav_manager.show_frame('settings')
             return True
