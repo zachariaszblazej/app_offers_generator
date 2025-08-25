@@ -46,6 +46,59 @@ def get_database_path():
         return DATABASE_PATH
 
 
+# ------------------------------
+# Paths helpers (Offers root via DB Paths table)
+# ------------------------------
+
+def get_offers_root_from_db() -> str:
+    """Get offers root folder from DB table `Paths` (Name='Offers_Folder').
+    Falls back to settings manager 'offers_folder' if table or row missing.
+    """
+    try:
+        conn = sqlite3.connect(get_database_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Offers_Folder",)
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        # Ignore and fallback below
+        pass
+
+    try:
+        sm = SettingsManager()
+        return sm.get_app_setting('offers_folder')
+    except Exception:
+        return ''
+
+
+def normalize_offer_db_path(path: str) -> str:
+    """Convert an absolute or mixed path to DB-stored relative format 'YYYY/filename.docx'.
+    If already relative with a separator, return normalized.
+    If only a filename is provided, return just filename (legacy tolerance).
+    """
+    if not path:
+        return ''
+    p = path.replace('\\', '/')
+    # Strip leading base offers root if present
+    base = get_offers_root_from_db().replace('\\', '/')
+    if base and p.startswith(base.rstrip('/') + '/'):
+        p = p[len(base.rstrip('/') + '/'):]
+    # Remove any leading slashes
+    p = p.lstrip('/')
+    # Normalize to at most one directory level (year) + filename; keep as-is otherwise
+    return p
+
+
+def build_full_offer_path(rel_path: str) -> str:
+    """Compose full absolute path from relative OfferFilePath using Offers_Folder base."""
+    base = get_offers_root_from_db()
+    return os.path.join(base, rel_path) if rel_path else base
+
+
 def get_clients_from_db(include_extended: bool = False):
     """Fetch all clients from the database.
     When include_extended=True, also return additional nullable text columns:
@@ -158,8 +211,12 @@ def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
         if offer_context:
             context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
 
-        cursor.execute("INSERT INTO Offers (OfferYearNumber, OfferOrderNumber, OfferFilePath, OfferContext) VALUES (?, ?, ?, ?)",
-                       (offer_year, offer_order_number, offer_file_path, context_json))
+        # Store relative path in DB
+        rel_path = normalize_offer_db_path(offer_file_path)
+        cursor.execute(
+            "INSERT INTO Offers (OfferYearNumber, OfferOrderNumber, OfferFilePath, OfferContext) VALUES (?, ?, ?, ?)",
+            (offer_year, offer_order_number, rel_path, context_json),
+        )
         conn.commit()
         conn.close()
         return True
@@ -172,11 +229,12 @@ def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
 
 
 def get_offer_context_from_db(offer_file_path):
-    """Get offer context from database by file path"""
+    """Get offer context from database by file path (accepts full or relative)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT OfferContext FROM Offers WHERE OfferFilePath = ?", (offer_file_path,))
+        rel_path = normalize_offer_db_path(offer_file_path)
+        cursor.execute("SELECT OfferContext FROM Offers WHERE OfferFilePath = ?", (rel_path,))
         result = cursor.fetchone()
         conn.close()
         
@@ -193,7 +251,7 @@ def get_offer_context_from_db(offer_file_path):
 
 
 def update_offer_context_in_db(offer_file_path, offer_context):
-    """Update offer context in database"""
+    """Update offer context in database (accepts full or relative path)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
@@ -201,8 +259,11 @@ def update_offer_context_in_db(offer_file_path, offer_context):
         # Convert context to JSON
         context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
         
-        cursor.execute("UPDATE Offers SET OfferContext = ? WHERE OfferFilePath = ?", 
-                      (context_json, offer_file_path))
+        rel_path = normalize_offer_db_path(offer_file_path)
+        cursor.execute(
+            "UPDATE Offers SET OfferContext = ? WHERE OfferFilePath = ?",
+            (context_json, rel_path),
+        )
         conn.commit()
         conn.close()
         return True
@@ -590,13 +651,14 @@ def get_default_supplier():
 
 
 def delete_offer_from_db(offer_file_path):
-    """Delete offer from database based on file path"""
+    """Delete offer from database based on file path (accepts full or relative)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Delete offer by file path
-        cursor.execute("DELETE FROM Offers WHERE OfferFilePath = ?", (offer_file_path,))
+        rel_path = normalize_offer_db_path(offer_file_path)
+        cursor.execute("DELETE FROM Offers WHERE OfferFilePath = ?", (rel_path,))
         
         if cursor.rowcount == 0:
             conn.close()
@@ -611,14 +673,16 @@ def delete_offer_from_db(offer_file_path):
 
 
 def find_offer_by_filename(filename):
-    """Find offer in database by filename"""
+    """Find offer in database by filename (matches end of relative path)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
         # Search for offer by filename (using LIKE to match the end of the path)
-        cursor.execute("SELECT OfferOrderNumber, OfferFilePath FROM Offers WHERE OfferFilePath LIKE ?", 
-                      (f"%{filename}",))
+        cursor.execute(
+            "SELECT OfferOrderNumber, OfferFilePath FROM Offers WHERE OfferFilePath LIKE ?",
+            (f"%{filename}",),
+        )
         result = cursor.fetchone()
         conn.close()
         
@@ -628,7 +692,7 @@ def find_offer_by_filename(filename):
 
 
 def get_all_offer_file_paths():
-    """Get all offer file paths from database"""
+    """Get all offer file paths from database (relative paths)."""
     try:
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()

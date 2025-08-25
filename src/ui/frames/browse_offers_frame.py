@@ -10,8 +10,12 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from src.utils.config import get_offers_folder
-from src.data.database_service import delete_offer_from_db, find_offer_by_filename
+from src.data.database_service import (
+    delete_offer_from_db,
+    find_offer_by_filename,
+    get_all_offer_file_paths,
+    get_offers_root_from_db,
+)
 
 
 class BrowseOffersFrame(Frame):
@@ -102,11 +106,9 @@ class BrowseOffersFrame(Frame):
             self.tree.delete(iid)
         self.offers_list.clear()
 
-        offers_root = get_offers_folder()
+        offers_root = get_offers_root_from_db()
         if not os.path.isdir(offers_root):
             return
-
-        from src.data.database_service import get_all_offer_file_paths
 
         if self.current_year_folder is None:
             try:
@@ -119,22 +121,23 @@ class BrowseOffersFrame(Frame):
                 print(f'Year folder listing error: {e}')
 
         try:
-            db_paths = get_all_offer_file_paths()
-            scope = offers_root if self.current_year_folder is None else os.path.join(offers_root, self.current_year_folder)
-            if not os.path.isdir(scope):
-                return
+            db_paths = get_all_offer_file_paths()  # now relative like 'YYYY/filename.docx'
             file_infos = []
-            for p in db_paths:
-                name = os.path.basename(p)
+            for rel in db_paths:
+                # Expect either 'YYYY/filename' or just 'filename'
+                parts = rel.replace('\\', '/').split('/')
                 if self.current_year_folder is None:
-                    candidate = os.path.join(offers_root, name)
-                    if not os.path.exists(candidate):
-                        continue  # skip year-scoped entries
-                    full = candidate
-                else:
-                    full = os.path.join(offers_root, self.current_year_folder, name)
-                    if not os.path.exists(full):
+                    # At root: show only legacy files directly in root (no year in path)
+                    if len(parts) != 1:
                         continue
+                    name = parts[-1]
+                    full = os.path.join(offers_root, name)
+                else:
+                    # Inside a year: show only files for that year
+                    if len(parts) != 2 or parts[0] != self.current_year_folder:
+                        continue
+                    _, name = parts
+                    full = os.path.join(offers_root, self.current_year_folder, name)
                 if name.endswith('.docx') and os.path.isfile(full):
                     st = os.stat(full)
                     file_infos.append({'filename': name, 'filepath': full, 'mtime': st.st_mtime})
@@ -152,7 +155,7 @@ class BrowseOffersFrame(Frame):
 
     # Helpers ----------------------------------------------------------
     def _build_offer_path(self, filename: str) -> str:
-        base = get_offers_folder()
+        base = get_offers_root_from_db()
         if self.current_year_folder:
             return os.path.join(base, self.current_year_folder, filename)
         return os.path.join(base, filename)
@@ -212,7 +215,7 @@ class BrowseOffersFrame(Frame):
 
     def open_offers_folder(self):
         try:
-            folder = get_offers_folder()
+            folder = get_offers_root_from_db()
             if platform.system() == 'Darwin':
                 subprocess.call(['open', folder])
             elif platform.system() == 'Windows':

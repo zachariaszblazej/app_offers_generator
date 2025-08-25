@@ -45,7 +45,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import TEMPLATE_PATH, get_offers_folder
-from src.data.database_service import get_next_offer_number_for_year, save_offer_to_db
+from src.data.database_service import (
+    get_next_offer_number_for_year,
+    save_offer_to_db,
+    normalize_offer_db_path,
+)
 
 
 def convert_date(date: datetime.datetime) -> str:
@@ -216,7 +220,8 @@ def generate_offer_document(context_data):
             if isinstance(date_obj, datetime.datetime):
                 storage_context['date'] = date_obj.isoformat()
             
-            if not save_offer_to_db(order_number, file_path, storage_context):
+            rel_db_path = normalize_offer_db_path(file_path)
+            if not save_offer_to_db(order_number, rel_db_path, storage_context):
                 tkinter.messagebox.showwarning("Warning", "Offer generated but failed to save to database")
         
         # Return success status and details instead of showing message here

@@ -128,7 +128,17 @@ class OfferSyncService:
         
         try:
             if os.path.exists(self.offers_folder):
-                files = [f for f in os.listdir(self.offers_folder) if f.endswith('.docx')]
+                # Include year subfolders
+                files = []
+                for entry in os.listdir(self.offers_folder):
+                    year_dir = os.path.join(self.offers_folder, entry)
+                    if os.path.isdir(year_dir) and entry.isdigit() and len(entry) == 4:
+                        for f in os.listdir(year_dir):
+                            if f.endswith('.docx'):
+                                files.append(f"{entry}/{f}")
+                    else:
+                        if entry.endswith('.docx'):
+                            files.append(entry)
         except Exception as e:
             print(f"Error reading offers folder: {e}")
         
@@ -140,8 +150,14 @@ class OfferSyncService:
         context = offer['context']
         
         # Extract filename from path
-        filename = os.path.basename(file_path)
-        full_path = os.path.join(self.offers_folder, filename)
+        # file_path from DB may be relative 'YYYY/filename' or filename only
+        parts = (file_path or '').replace('\\', '/').split('/')
+        if len(parts) == 2:
+            full_path = os.path.join(self.offers_folder, parts[0], parts[1])
+            filename = parts[1]
+        else:
+            filename = parts[-1]
+            full_path = os.path.join(self.offers_folder, filename)
         
         # Check if file exists
         if not os.path.exists(full_path):
