@@ -5,7 +5,7 @@ from tkinter import *
 
 
 class NavigationManager:
-    """Manages navigation between different screens/frames"""
+    """Manages navigation between different screens/frames in the application"""
     
     def __init__(self, root_window):
         self.root = root_window
