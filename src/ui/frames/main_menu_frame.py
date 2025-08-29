@@ -243,8 +243,8 @@ class MainMenuFrame(Frame):
         except Exception:
             pass
         tkinter.messagebox.showerror(
-            "Brak bazy danych",
-            "Aby przejść dalej, ustaw najpierw właściwą bazę danych."
+            "Brak dostępu do bazy danych",
+            "Funkcja niedostępna. Brak połączenia z bazą danych lub baza danych nieprawidłowo ustawiona."
         )
         return False
 
@@ -256,8 +256,8 @@ class MainMenuFrame(Frame):
             path = ''
         if not path or not os.path.isdir(path):
             tkinter.messagebox.showerror(
-                "Brak folderu ofert",
-                "Ustaw najpierw właściwą ścieżkę do folderu ofert."
+                "Brak dostępu do folderu ofert",
+                "Funkcja niedostępna. Połączono z bazą danych, ale brak dostępu do folderu z ofertami lub ścieżka do folderu nieprawidłowo ustawiona."
             )
             return False
         return True
@@ -270,8 +270,8 @@ class MainMenuFrame(Frame):
             path = ''
         if not path or not os.path.isdir(path):
             tkinter.messagebox.showerror(
-                "Brak folderu WZ",
-                "Ustaw najpierw właściwą ścieżkę do folderu WZek."
+                "Brak dostępu do folderu WZ",
+                "Funkcja niedostępna. Połączono z bazą danych, ale brak dostępu do folderu z WZ lub ścieżka do folderu nieprawidłowo ustawiona."
             )
             return False
         return True
