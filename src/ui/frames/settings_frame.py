@@ -23,6 +23,24 @@ class SettingsFrame(Frame):
         self.entries = {}
         self.create_ui()
         self.load_current_settings()
+
+    def _set_entry_value(self, key: str, value: str):
+        """Set text of an Entry widget regardless of its state (handles readonly/disabled)."""
+        if key not in self.entries:
+            return
+        entry = self.entries[key]
+        try:
+            prev_state = str(entry.cget('state'))
+            if prev_state in ('readonly', 'disabled'):
+                entry.config(state=NORMAL)
+            entry.delete(0, END)
+            if value:
+                entry.insert(0, value)
+            # Restore state
+            entry.config(state=prev_state)
+        except Exception:
+            # Fallback: ignore failures quietly
+            pass
     
     def create_ui(self):
         """Create the settings UI"""
@@ -289,109 +307,109 @@ class SettingsFrame(Frame):
         self.entries['cena'].pack(fill=X, pady=(5, 0))
     
     def create_app_settings_section(self, parent):
-        """Create app settings section"""
-        # Section title
-        app_title = Label(parent, text="Inne ustawienia aplikacji", 
-                         font=("Arial", 16, "bold"), 
-                         bg='#f0f0f0', fg='#333333')
-        app_title.pack(anchor=W, pady=(20, 20))
-        
-        # Main form frame with border
-        form_frame = Frame(parent, bg='#ffffff', relief=RIDGE, bd=2)
-        form_frame.pack(fill=X, pady=(0, 30))
-        
-        # Inner frame with padding
-        inner_frame = Frame(form_frame, bg='#ffffff')
-        inner_frame.pack(fill=X, padx=20, pady=20)
-        
-        # Offers folder
-        offers_folder_frame = Frame(inner_frame, bg='#ffffff')
-        offers_folder_frame.pack(fill=X, pady=5)
-        
-        # Label and description
-        label_frame = Frame(offers_folder_frame, bg='#ffffff')
-        label_frame.pack(fill=X, pady=(0, 5))
-        Label(label_frame, text="Folder z ofertami:", 
-              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane oferty", 
-              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
-        
-        # Entry and browse button
-        entry_frame = Frame(offers_folder_frame, bg='#ffffff')
-        entry_frame.pack(fill=X, pady=(5, 0))
-        
-        self.entries['offers_folder'] = Entry(entry_frame, width=50, font=("Arial", 11))
-        self.entries['offers_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
-        
-        browse_btn = Button(entry_frame, text="Przeglądaj...",
-                           font=("Arial", 10),
-                           fg='white',
-                           padx=15, pady=5,
-                           command=self.browse_offers_folder,
-                           cursor='hand2')
-        browse_btn.pack(side=RIGHT)
-        
-        # Separator
-        separator = Frame(inner_frame, height=1, bg='#dddddd')
-        separator.pack(fill=X, pady=20)
-        
-        # WZ folder
-        wz_folder_frame = Frame(inner_frame, bg='#ffffff')
-        wz_folder_frame.pack(fill=X, pady=5)
-        
-        # Label and description
-        label_frame = Frame(wz_folder_frame, bg='#ffffff')
-        label_frame.pack(fill=X, pady=(0, 5))
-        Label(label_frame, text="Folder WZ:", 
-              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane dokumenty WZ", 
-              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
-        
-        # Entry and browse button
-        entry_frame = Frame(wz_folder_frame, bg='#ffffff')
-        entry_frame.pack(fill=X, pady=(5, 0))
-        
-        self.entries['wz_folder'] = Entry(entry_frame, width=50, font=("Arial", 11))
-        self.entries['wz_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
-        
-        browse_btn = Button(entry_frame, text="Przeglądaj...",
-                           font=("Arial", 10),
-                           fg='white',
-                           padx=15, pady=5,
-                           command=self.browse_wz_folder,
-                           cursor='hand2')
-        browse_btn.pack(side=RIGHT)
-        
-        # Separator
-        separator2 = Frame(inner_frame, height=1, bg='#dddddd')
-        separator2.pack(fill=X, pady=20)
-        
-        # Database path
-        database_path_frame = Frame(inner_frame, bg='#ffffff')
-        database_path_frame.pack(fill=X, pady=5)
-        
-        # Label and description
-        label_frame = Frame(database_path_frame, bg='#ffffff')
-        label_frame.pack(fill=X, pady=(0, 5))
-        Label(label_frame, text="Ścieżka do bazy danych:", 
-              font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
-        Label(label_frame, text="Ścieżka do pliku bazy danych SQLite (.db)", 
-              font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
-        
-        # Entry and browse button
-        db_entry_frame = Frame(database_path_frame, bg='#ffffff')
-        db_entry_frame.pack(fill=X, pady=(5, 0))
-        
-        self.entries['database_path'] = Entry(db_entry_frame, width=50, font=("Arial", 11))
-        self.entries['database_path'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
-        
-        browse_db_btn = Button(db_entry_frame, text="Przeglądaj...",
-                              font=("Arial", 10),
-                              fg='white',
-                              padx=15, pady=5,
-                              command=self.browse_database_file,
-                              cursor='hand2')
-        browse_db_btn.pack(side=RIGHT)
+      """Create app settings section"""
+      # Section title
+      app_title = Label(parent, text="Inne ustawienia aplikacji",
+                  font=("Arial", 16, "bold"),
+                  bg='#f0f0f0', fg='#333333')
+      app_title.pack(anchor=W, pady=(20, 20))
+
+      # Main form frame with border
+      form_frame = Frame(parent, bg='#ffffff', relief=RIDGE, bd=2)
+      form_frame.pack(fill=X, pady=(0, 30))
+
+      # Inner frame with padding
+      inner_frame = Frame(form_frame, bg='#ffffff')
+      inner_frame.pack(fill=X, padx=20, pady=20)
+
+      # Offers folder
+      offers_folder_frame = Frame(inner_frame, bg='#ffffff')
+      offers_folder_frame.pack(fill=X, pady=5)
+
+      # Label and description
+      label_frame = Frame(offers_folder_frame, bg='#ffffff')
+      label_frame.pack(fill=X, pady=(0, 5))
+      Label(label_frame, text="Folder z ofertami:",
+          font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+      Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane oferty",
+          font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+
+      # Entry and browse button
+      entry_frame = Frame(offers_folder_frame, bg='#ffffff')
+      entry_frame.pack(fill=X, pady=(5, 0))
+
+      self.entries['offers_folder'] = Entry(entry_frame, width=50, font=("Arial", 11), state='readonly')
+      self.entries['offers_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+
+      browse_btn = Button(entry_frame, text="Przeglądaj...",
+                    font=("Arial", 10),
+                    fg='white',
+                    padx=15, pady=5,
+                    command=self.browse_offers_folder,
+                    cursor='hand2')
+      browse_btn.pack(side=RIGHT)
+
+      # Separator
+      separator = Frame(inner_frame, height=1, bg='#dddddd')
+      separator.pack(fill=X, pady=20)
+
+      # WZ folder
+      wz_folder_frame = Frame(inner_frame, bg='#ffffff')
+      wz_folder_frame.pack(fill=X, pady=5)
+
+      # Label and description
+      label_frame = Frame(wz_folder_frame, bg='#ffffff')
+      label_frame.pack(fill=X, pady=(0, 5))
+      Label(label_frame, text="Folder WZ:",
+          font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+      Label(label_frame, text="Ścieżka do folderu gdzie są przechowywane dokumenty WZ",
+          font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+
+      # Entry and browse button
+      entry_frame = Frame(wz_folder_frame, bg='#ffffff')
+      entry_frame.pack(fill=X, pady=(5, 0))
+
+      self.entries['wz_folder'] = Entry(entry_frame, width=50, font=("Arial", 11), state='readonly')
+      self.entries['wz_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+
+      browse_btn = Button(entry_frame, text="Przeglądaj...",
+                    font=("Arial", 10),
+                    fg='white',
+                    padx=15, pady=5,
+                    command=self.browse_wz_folder,
+                    cursor='hand2')
+      browse_btn.pack(side=RIGHT)
+
+      # Separator
+      separator2 = Frame(inner_frame, height=1, bg='#dddddd')
+      separator2.pack(fill=X, pady=20)
+
+      # Database path
+      database_path_frame = Frame(inner_frame, bg='#ffffff')
+      database_path_frame.pack(fill=X, pady=5)
+
+      # Label and description
+      label_frame = Frame(database_path_frame, bg='#ffffff')
+      label_frame.pack(fill=X, pady=(0, 5))
+      Label(label_frame, text="Ścieżka do bazy danych:",
+          font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+      Label(label_frame, text="Ścieżka do pliku bazy danych SQLite (.db)",
+          font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+
+      # Entry and browse button
+      db_entry_frame = Frame(database_path_frame, bg='#ffffff')
+      db_entry_frame.pack(fill=X, pady=(5, 0))
+
+      self.entries['database_path'] = Entry(db_entry_frame, width=50, font=("Arial", 11), state='readonly')
+      self.entries['database_path'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+
+      browse_db_btn = Button(db_entry_frame, text="Przeglądaj...",
+                     font=("Arial", 10),
+                     fg='white',
+                     padx=15, pady=5,
+                     command=self.browse_database_file,
+                     cursor='hand2')
+      browse_db_btn.pack(side=RIGHT)
 
     def browse_offers_folder(self):
         """Open folder browser for offers folder"""
@@ -405,8 +423,10 @@ class SettingsFrame(Frame):
         )
         
         if folder_path:
-            self.entries['offers_folder'].delete(0, END)
-            self.entries['offers_folder'].insert(0, folder_path)
+            if not os.path.isdir(folder_path):
+                tkinter.messagebox.showerror("Nieprawidłowa ścieżka", "Wybierz istniejący folder dla ofert.")
+                return
+            self._set_entry_value('offers_folder', folder_path)
     
     def browse_wz_folder(self):
         """Open folder browser for WZ folder"""
@@ -420,8 +440,10 @@ class SettingsFrame(Frame):
         )
         
         if folder_path:
-            self.entries['wz_folder'].delete(0, END)
-            self.entries['wz_folder'].insert(0, folder_path)
+            if not os.path.isdir(folder_path):
+                tkinter.messagebox.showerror("Nieprawidłowa ścieżka", "Wybierz istniejący folder dla dokumentów WZ.")
+                return
+            self._set_entry_value('wz_folder', folder_path)
     
     def browse_database_file(self):
         """Open file browser for database file"""
@@ -450,8 +472,10 @@ class SettingsFrame(Frame):
         )
         
         if file_path:
-            self.entries['database_path'].delete(0, END)
-            self.entries['database_path'].insert(0, file_path)
+            if not os.path.isfile(file_path) or not file_path.lower().endswith('.db'):
+                tkinter.messagebox.showerror("Nieprawidłowa ścieżka", "Wybierz istniejący plik bazy danych z rozszerzeniem .db.")
+                return
+            self._set_entry_value('database_path', file_path)
     
     def create_buttons_section(self, parent):
         """Create buttons section"""
@@ -498,7 +522,7 @@ class SettingsFrame(Frame):
                 value = offer_details_settings.get(field, '')
                 self.entries[field].insert(0, value)
         
-        # Load app settings data (but not offers_folder)
+    # Load app settings data (but not offers_folder)
         app_settings = self.settings_manager.get_all_app_settings()
 
         # Offers/WZ folders come only from DB (Paths table); if DB is unavailable, set empty
@@ -516,15 +540,13 @@ class SettingsFrame(Frame):
             except Exception:
                 offers_folder = ''
         if 'offers_folder' in self.entries:
-            self.entries['offers_folder'].delete(0, END)
-            if offers_folder:
-                self.entries['offers_folder'].insert(0, offers_folder)
+            self._set_entry_value('offers_folder', offers_folder)
 
         # database_path still from app settings; wz_folder from DB Paths
         for field in ['database_path']:
             if field in self.entries:
                 value = app_settings.get(field, '')
-                self.entries[field].insert(0, value)
+                self._set_entry_value(field, value)
 
         # Load WZ folder from DB Paths
         wz_folder = ''
@@ -534,9 +556,7 @@ class SettingsFrame(Frame):
             except Exception:
                 wz_folder = ''
         if 'wz_folder' in self.entries:
-            self.entries['wz_folder'].delete(0, END)
-            if wz_folder:
-                self.entries['wz_folder'].insert(0, wz_folder)
+            self._set_entry_value('wz_folder', wz_folder)
     
     def save_settings(self):
         """Save settings to file"""
