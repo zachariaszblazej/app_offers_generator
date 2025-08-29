@@ -25,7 +25,7 @@ from src.core.offer_generator_app import OfferGeneratorApp
 from src.core.wz_generator_app import WzGeneratorApp
 from src.utils.config import WINDOW_SIZE, APP_TITLE
 from src.utils.config import get_offers_folder, get_wz_folder
-from src.data.database_service import get_database_path
+from src.data.database_service import get_database_path, is_database_available
 import src.data.database_service as _dbs
 
 
@@ -62,6 +62,13 @@ class OfferGeneratorMainApp:
         missing = self.check_required_folders()
         if not missing:
             self.nav_manager.show_frame('main_menu')
+
+        # Enable DB popups after initial UI is ready
+        try:
+            import src.data.database_service as _dbs
+            _dbs.DB_POPUPS_ENABLED = True
+        except Exception:
+            pass
 
         # Enable DB error popups after initial navigation has been decided
         try:
@@ -119,65 +126,22 @@ class OfferGeneratorMainApp:
         self.offer_components_initialized = False
 
     def check_required_folders(self) -> bool:
-        """Check existence of offers and WZ folders.
-        Logic:
-        - WZ folder must exist always (we can't infer it from DB), otherwise navigate to settings.
-        - Offers folder: if it doesn't exist but there are offers in DB, allow startup (files may be on a network share not mounted yet) and only show a non-blocking warning later on usage.
-          If there are no offers in DB and the folder is missing, navigate to settings.
-        Returns True if navigation to settings occurred, else False.
+        """Startup check for folders; do not show prompts at startup.
+        - If database is unavailable, skip all prompts and allow startup.
+        - If database is available, don't show popup prompts or auto-navigate; allow startup.
+        Returns True if we explicitly navigate away (we won't), else False to show main menu.
         """
         try:
-            offers_ok = False
-            wz_ok = False
-            try:
-                offers_path = get_offers_folder()
-                offers_ok = bool(offers_path and os.path.isdir(offers_path))
-            except Exception:
-                offers_ok = False
-            try:
-                # Validation based on presence in DB (Paths.Name='Wz_Folder'), not filesystem
-                from src.data.database_service import get_wz_root_from_db
-                wz_path = get_wz_root_from_db()
-                wz_ok = bool(wz_path)
-            except Exception:
-                wz_ok = False
-
-            # If WZ folder path missing in DB, block
-            if not wz_ok:
-                import tkinter.messagebox
-                title = 'Brak folderu WZ'
-                msg = 'W bazie danych nie ustawiono ścieżki do folderu WZ. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
-                tkinter.messagebox.showwarning(title, msg)
-                self.nav_manager.show_frame('settings')
-                return True
-
-            # WZ is OK. If offers folder OK, proceed
-            if offers_ok:
+            # If DB isn't available, allow startup silently
+            if not is_database_available():
                 return False
 
-            # Offers folder missing: check if there are offers in DB; if yes, allow startup
-            has_offers_in_db = False
-            try:
-                import sqlite3
-                conn = sqlite3.connect(get_database_path())
-                cur = conn.cursor()
-                cur.execute("SELECT 1 FROM Offers LIMIT 1")
-                has_offers_in_db = cur.fetchone() is not None
-                conn.close()
-            except Exception:
-                has_offers_in_db = False
-
-            if has_offers_in_db:
-                # Allow startup silently; users can set folder later in Settings if needed
-                return False
-
-            # No offers in DB and folder missing -> navigate to settings
-            import tkinter.messagebox
-            title = 'Brak folderu ofert'
-            msg = 'Folder ofert nie istnieje, a w bazie nie ma żadnych ofert. Zostaniesz przeniesiony do Ustawień aby wskazać poprawny folder.'
-            tkinter.messagebox.showwarning(title, msg)
-            self.nav_manager.show_frame('settings')
-            return True
+            # When DB is available, we still avoid popups and auto-navigation at startup.
+            # We can perform lightweight checks without side effects.
+            _ = get_offers_folder()
+            from src.data.database_service import get_wz_root_from_db as _get_wz_root
+            _ = _get_wz_root()
+            return False
         except Exception as e:
             print(f"Required folders check error: {e}")
             return False
