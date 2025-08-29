@@ -15,6 +15,20 @@ from src.utils.config import DEFAULT_APP_SETTINGS
 from src.utils.settings import SettingsManager
 import re
 
+def _should_show_db_error_popup() -> bool:
+    """Return True if DB error popups should be shown now.
+    We suppress them during early startup before the main menu is ready.
+    The main app can enable popups by setting database_service.DB_POPUPS_ENABLED = True.
+    """
+    try:
+        import tkinter as _tk
+        # If there is no active Tk root yet, suppress
+        if getattr(_tk, '_default_root', None) is None:
+            return False
+        return bool(globals().get('DB_POPUPS_ENABLED', False))
+    except Exception:
+        return False
+
 def get_database_path():
     """Get the current database path from settings or fallback to config"""
     try:
@@ -259,7 +273,8 @@ def get_clients_from_db(include_extended: bool = False):
         conn.close()
         return clients
     except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        if _should_show_db_error_popup():
+            tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
         return []
 
 
@@ -273,7 +288,8 @@ def get_suppliers_from_db():
         conn.close()
         return suppliers
     except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        if _should_show_db_error_popup():
+            tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
         return []
 
 
@@ -290,7 +306,8 @@ def get_next_offer_number():
         # If no offers exist, start with 1, otherwise increment
         return 1 if result is None else result + 1
     except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
+        if _should_show_db_error_popup():
+            tkinter.messagebox.showerror("Database Error", f"Error accessing database: {e}")
         return 1
 
 def get_next_offer_number_for_year(year: int):
@@ -374,7 +391,8 @@ def get_offer_context_from_db(offer_file_path):
             return json.loads(result[0])
         return None
     except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error retrieving offer context: {e}")
+        if _should_show_db_error_popup():
+            tkinter.messagebox.showerror("Database Error", f"Error retrieving offer context: {e}")
         return None
     except json.JSONDecodeError as e:
         tkinter.messagebox.showerror("Data Error", f"Error parsing offer context: {e}")
@@ -399,7 +417,8 @@ def update_offer_context_in_db(offer_file_path, offer_context):
         conn.close()
         return True
     except sqlite3.Error as e:
-        tkinter.messagebox.showerror("Database Error", f"Error updating offer context: {e}")
+        if _should_show_db_error_popup():
+            tkinter.messagebox.showerror("Database Error", f"Error updating offer context: {e}")
         return False
 
 

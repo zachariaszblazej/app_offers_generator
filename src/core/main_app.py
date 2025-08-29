@@ -26,6 +26,7 @@ from src.core.wz_generator_app import WzGeneratorApp
 from src.utils.config import WINDOW_SIZE, APP_TITLE
 from src.utils.config import get_offers_folder, get_wz_folder
 from src.data.database_service import get_database_path
+import src.data.database_service as _dbs
 
 
 def main():
@@ -61,6 +62,12 @@ class OfferGeneratorMainApp:
         missing = self.check_required_folders()
         if not missing:
             self.nav_manager.show_frame('main_menu')
+
+        # Enable DB error popups after initial navigation has been decided
+        try:
+            _dbs.DB_POPUPS_ENABLED = True
+        except Exception:
+            pass
 
         # Initialize offer creation components (but don't show them yet)
         self.setup_offer_components()
