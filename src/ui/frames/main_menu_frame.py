@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from src.utils.config import APP_VERSION
 from src.data.database_service import is_database_available
+from src.data.database_service import is_database_available, get_offers_root_from_db, get_wz_root_from_db
 
 
 class MainMenuFrame(Frame):
@@ -177,11 +178,15 @@ class MainMenuFrame(Frame):
         """Navigate to offer creation screen"""
         if not self._require_database_ready():
             return
+        if not self._require_offers_folder_ready():
+            return
         self.nav_manager.show_frame('offer_creation')
     
     def view_offers(self):
         """Navigate to browse offers screen"""
         if not self._require_database_ready():
+            return
+        if not self._require_offers_folder_ready():
             return
         self.nav_manager.show_frame('browse_offers')
     
@@ -189,11 +194,15 @@ class MainMenuFrame(Frame):
         """Navigate to WZ creation screen"""
         if not self._require_database_ready():
             return
+        if not self._require_wz_folder_ready():
+            return
         self.nav_manager.show_frame('wz_creation')
     
     def view_wz(self):
         """Navigate to browse WZ screen"""
         if not self._require_database_ready():
+            return
+        if not self._require_wz_folder_ready():
             return
         self.nav_manager.show_frame('browse_wz')
     
@@ -238,3 +247,31 @@ class MainMenuFrame(Frame):
             "Aby przejść dalej, ustaw najpierw właściwą bazę danych."
         )
         return False
+
+    def _require_offers_folder_ready(self) -> bool:
+        """Ensure Offers_Folder is configured and exists when DB is available."""
+        try:
+            path = get_offers_root_from_db()
+        except Exception:
+            path = ''
+        if not path or not os.path.isdir(path):
+            tkinter.messagebox.showerror(
+                "Brak folderu ofert",
+                "Ustaw najpierw właściwą ścieżkę do folderu ofert."
+            )
+            return False
+        return True
+
+    def _require_wz_folder_ready(self) -> bool:
+        """Ensure Wz_Folder is configured and exists when DB is available."""
+        try:
+            path = get_wz_root_from_db()
+        except Exception:
+            path = ''
+        if not path or not os.path.isdir(path):
+            tkinter.messagebox.showerror(
+                "Brak folderu WZ",
+                "Ustaw najpierw właściwą ścieżkę do folderu WZek."
+            )
+            return False
+        return True
