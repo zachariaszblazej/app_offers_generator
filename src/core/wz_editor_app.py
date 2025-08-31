@@ -134,11 +134,10 @@ class WzEditorApp:
             context_data = get_wz_context_from_db(self.wz_path)
             
             if not context_data:
-                tkinter.messagebox.showwarning("Brak danych kontekstu", 
-                    f"Nie znaleziono danych kontekstu dla WZ:\n{os.path.basename(self.wz_path)}\n\n" +
-                    "To WZ zostało prawdopodobnie utworzone przed implementacją zapisywania kontekstu.\n" +
-                    "Musisz wprowadzić dane ręcznie.")
-                
+                tkinter.messagebox.showwarning("Brak danych w bazie", 
+                    f"Nie znaleziono danych w bazie dla WZ: {os.path.basename(self.wz_path)}" +
+                    "Ta WZka została prawdopodobnie utworzona poza aplikacją.")
+
                 # Still set editor mode for consistent UI
                 self.ui.set_editor_mode()
                 return

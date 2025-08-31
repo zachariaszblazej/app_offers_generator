@@ -124,10 +124,9 @@ class OfferEditorApp:
             context_data = get_offer_context_from_db(self.offer_path)
             
             if not context_data:
-                tkinter.messagebox.showwarning("Brak danych kontekstu", 
-                    f"Nie znaleziono danych kontekstu dla oferty:\\n{os.path.basename(self.offer_path)}\\n\\n" +
-                    "Ta oferta została prawdopodobnie utworzona przed implementacją zapisywania kontekstu.\\n" +
-                    "Musisz wprowadzić dane ręcznie.")
+                tkinter.messagebox.showwarning("Brak danych w bazie", 
+                    f"Nie znaleziono danych w bazie dla oferty {os.path.basename(self.offer_path)}" +
+                    "Ta oferta została prawdopodobnie utworzona poza aplikacją.")
                 
                 # Still set editor mode for consistent UI
                 self.ui.set_editor_mode()
