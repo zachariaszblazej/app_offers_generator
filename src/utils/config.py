@@ -20,7 +20,7 @@ def get_data_dir():
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {
-    'database_path': 'Y:/AplikacjaDokumenty/HantechDocumentsDatabase.db'
+    'database_path': "Z:/PUBLIC/AplikacjaDokumenty/HantechDocumentsDatabase.db"
 }
 
 # Default company data
