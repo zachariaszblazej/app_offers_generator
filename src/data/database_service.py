@@ -250,6 +250,9 @@ def get_clients_from_db(include_extended: bool = False):
     TerminRealizacji, TerminPlatnosci, WarunkiDostawy, WaznoscOferty, Gwarancja, Cena
     """
     try:
+        # Do not create DB file implicitly when path is invalid
+        if not is_database_available():
+            return []
         db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -281,6 +284,9 @@ def get_clients_from_db(include_extended: bool = False):
 def get_suppliers_from_db():
     """Get all suppliers from the database"""
     try:
+        # Do not create DB file implicitly when path is invalid
+        if not is_database_available():
+            return []
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, COALESCE(IsDefault, 0) FROM Suppliers ORDER BY CompanyName")
@@ -296,6 +302,8 @@ def get_suppliers_from_db():
 def get_next_offer_number():
     """Get the next offer order number from the database"""
     try:
+        if not is_database_available():
+            return 1
         db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -315,6 +323,8 @@ def get_next_offer_number_for_year(year: int):
     Legacy fallback removed intentionally – database must be migrated.
     """
     try:
+        if not is_database_available():
+            raise RuntimeError("Database unavailable")
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("PRAGMA table_info(Offers)")
@@ -334,6 +344,10 @@ def get_next_offer_number_for_year(year: int):
 def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
     """Save offer (assumes OfferYearNumber column already exists and composite UNIQUE set)."""
     try:
+        # Prevent creating DB when path invalid
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            raise sqlite3.Error("Database file not found")
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
 
@@ -379,6 +393,8 @@ def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
 def get_offer_context_from_db(offer_file_path):
     """Get offer context from database by file path (accepts full or relative)."""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         rel_path = normalize_offer_db_path(offer_file_path)
@@ -402,6 +418,8 @@ def get_offer_context_from_db(offer_file_path):
 def update_offer_context_in_db(offer_file_path, offer_context):
     """Update offer context in database (accepts full or relative path)."""
     try:
+        if not is_database_available():
+            return False
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -425,6 +443,8 @@ def update_offer_context_in_db(offer_file_path, offer_context):
 def get_wz_context_from_db(wz_file_path):
     """Get WZ context from database by file path (accepts full or relative)."""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         rel_path = normalize_wz_db_path(wz_file_path)
@@ -447,6 +467,8 @@ def get_wz_context_from_db(wz_file_path):
 def update_wz_context_in_db(wz_file_path, wz_context):
     """Update WZ context in database (accepts full or relative path)."""
     try:
+        if not is_database_available():
+            return False
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -498,6 +520,9 @@ def validate_alias(alias):
 def add_client_to_db(nip, company_name, address_p1, address_p2, alias):
     """Add a new client to the database"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         # Validate NIP
         nip_valid, nip_message = validate_nip(nip)
         if not nip_valid:
@@ -531,6 +556,8 @@ def validate_supplier_nip(nip):
     
     # Check if NIP already exists in supplier database
     try:
+        if not is_database_available():
+            return False, "Baza danych jest niedostępna"
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM Suppliers WHERE Nip = ?", (nip,))
@@ -548,6 +575,9 @@ def validate_supplier_nip(nip):
 def add_supplier_to_db(nip, company_name, address_p1, address_p2):
     """Add a new supplier to the database"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         # Validate NIP
         nip_valid, nip_message = validate_supplier_nip(nip)
         if not nip_valid:
@@ -571,6 +601,8 @@ def add_supplier_to_db(nip, company_name, address_p1, address_p2):
 def get_client_by_nip(nip):
     """Get client data by NIP"""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, Alias FROM Clients WHERE Nip = ?", (nip,))
@@ -585,6 +617,9 @@ def get_client_by_nip(nip):
 def update_client_in_db(nip, company_name, address_p1, address_p2, alias):
     """Update client data (NIP cannot be changed)"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         # Validate alias (but allow current alias to remain the same)
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
@@ -620,6 +655,9 @@ def update_client_in_db(nip, company_name, address_p1, address_p2, alias):
 def delete_client_from_db(nip):
     """Delete client from database"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -663,6 +701,9 @@ def set_client_extended_fields(nip, termin_realizacji=None, termin_platnosci=Non
     All parameters are optional; missing values will be set to NULL.
     """
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute(
@@ -696,6 +737,8 @@ def set_client_extended_fields(nip, termin_realizacji=None, termin_platnosci=Non
 def get_supplier_by_nip(nip):
     """Get supplier data by NIP"""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, COALESCE(IsDefault, 0) FROM Suppliers WHERE Nip = ?", (nip,))
@@ -710,6 +753,9 @@ def get_supplier_by_nip(nip):
 def update_supplier_in_db(nip, company_name, address_p1, address_p2):
     """Update supplier data (NIP cannot be changed)"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -735,6 +781,9 @@ def update_supplier_in_db(nip, company_name, address_p1, address_p2):
 def delete_supplier_from_db(nip):
     """Delete supplier from database"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -766,6 +815,9 @@ def delete_supplier_from_db(nip):
 def set_default_supplier(nip):
     """Set supplier as default (only one can be default at a time)"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -790,6 +842,8 @@ def set_default_supplier(nip):
 def get_default_supplier():
     """Get the current default supplier"""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("SELECT Nip, CompanyName, AddressP1, AddressP2, IsDefault FROM Suppliers WHERE IsDefault = 1")
@@ -804,6 +858,9 @@ def get_default_supplier():
 def delete_offer_from_db(offer_file_path):
     """Delete offer from database based on file path (accepts full or relative)."""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -826,6 +883,8 @@ def delete_offer_from_db(offer_file_path):
 def find_offer_by_filename(filename):
     """Find offer in database by filename (matches end of relative path)."""
     try:
+        if not is_database_available():
+            return None
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -845,6 +904,8 @@ def find_offer_by_filename(filename):
 def get_all_offer_file_paths():
     """Get all offer file paths from database (relative paths)."""
     try:
+        if not is_database_available():
+            return []
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -868,6 +929,8 @@ def get_all_offer_file_paths():
 def get_next_wz_number(year: int):
     """Get next WZ sequential number for a given year (requires WzYearNumber column)."""
     try:
+        if not is_database_available():
+            return 1
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("PRAGMA table_info(Wuzetkas)")
@@ -887,6 +950,9 @@ def get_next_wz_number(year: int):
 def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
     """Save WZ (assumes WzYearNumber column exists after migration)."""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         cursor.execute("PRAGMA table_info(Wuzetkas)")
@@ -949,6 +1015,8 @@ def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
 def get_all_wz():
     """Get all WZ from database"""
     try:
+        if not is_database_available():
+            return []
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -1000,6 +1068,9 @@ def get_all_wz():
 def delete_wz(wz_id):
     """Delete WZ from database"""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         
@@ -1021,6 +1092,9 @@ def delete_wz(wz_id):
 def delete_wz_by_file_path(wz_file_path: str):
     """Delete a single WZ row using its unique file path (safer with year-based numbering)."""
     try:
+        path = get_database_path()
+        if not path or not os.path.exists(path):
+            return False, "Baza danych jest niedostępna lub nie istnieje."
         conn = sqlite3.connect(get_database_path())
         cursor = conn.cursor()
         rel = normalize_wz_db_path(wz_file_path)
