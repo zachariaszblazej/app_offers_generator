@@ -67,11 +67,11 @@ class ClientEditWindow:
 
         # Fields
         rows = [
-            ('nip', 'NIP (10 cyfr):', True if mode == 'edit' else False),
-            ('company_name', 'Nazwa firmy:', False),
-            ('address_p1', 'Adres (linia 1):', False),
-            ('address_p2', 'Adres (linia 2):', False),
-            ('alias', 'Alias:', False),
+            ('nip', 'NIP (10 cyfr)*:', True if mode == 'edit' else False),
+            ('company_name', 'Nazwa firmy*:', False),
+            ('address_p1', 'Adres (linia 1)*:', False),
+            ('address_p2', 'Adres (linia 2)*:', False),
+            ('alias', 'Alias*:', False),
             # Extended fields
             ('termin_realizacji', 'Termin realizacji:', False),
             ('termin_platnosci', 'Termin płatności:', False),
@@ -91,6 +91,18 @@ class ClientEditWindow:
             self.entries[key] = ent
 
     # No prefill in add mode: leave all fields empty
+
+        # Info label about required fields
+        try:
+            info_lbl = Label(
+                form,
+                text="Pola oznaczone gwiazdką (*) są wymagane.",
+                font=("Arial", 10),
+                bg='white', fg='#555555'
+            )
+            info_lbl.grid(row=len(rows), column=0, columnspan=2, sticky=W, padx=12, pady=(4, 12))
+        except Exception:
+            pass
 
         # Pre-fill when editing
         if mode == 'edit' and client:
