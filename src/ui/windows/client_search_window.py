@@ -81,6 +81,33 @@ class ClientSearchWindow:
         
         # Bind double-click to select client
         client_listbox.bind('<Double-1>', lambda event: self._on_client_select(event, search_window, client_listbox, self.current_clients))
+
+        # Capture mouse wheel events so only this window scrolls (and not the underlying editor)
+        def _on_wheel(event, lstbox=client_listbox):
+            try:
+                if getattr(event, 'delta', 0):
+                    delta = event.delta
+                    step = -1 if delta > 0 else 1
+                elif getattr(event, 'num', None) == 4:
+                    step = -1
+                elif getattr(event, 'num', None) == 5:
+                    step = 1
+                else:
+                    step = 0
+                if step:
+                    lstbox.yview_scroll(step, 'units')
+            except Exception:
+                pass
+            return 'break'  # prevent propagation to global bindings
+
+        # Bind wheel to this dialog and relevant children
+        for w in (search_window, main_frame, list_frame, client_listbox):
+            try:
+                w.bind('<MouseWheel>', _on_wheel)
+                w.bind('<Button-4>', _on_wheel)
+                w.bind('<Button-5>', _on_wheel)
+            except Exception:
+                pass
         
         # Add select button
         button_frame = Frame(main_frame)
