@@ -21,6 +21,7 @@ from src.ui.components.product_table import ProductTable
 from src.services.offer_editor_service import update_offer_document
 from src.data.database_service import get_offer_context_from_db
 from src.utils.config import BACKGROUND_IMAGE
+from src.utils.os_utils import open_document
 
 
 class OfferEditorApp:
@@ -395,6 +396,11 @@ class OfferEditorApp:
                     tkinter.messagebox.showinfo("Sukces", 
                         "Oferta została pomyślnie zaktualizowana!\\n\\n" +
                         "Dokument Word oraz kontekst w bazie danych zostały nadpisane.")
+                    # Auto-open updated document
+                    try:
+                        open_document(self.offer_path)
+                    except Exception as _e:
+                        print(f"Auto-open failed: {_e}")
                     self.nav_manager.show_frame('browse_offers')
                 else:
                     tkinter.messagebox.showerror("Błąd", 

@@ -18,6 +18,7 @@ from src.ui.components.wz_product_table import WzProductTable
 from src.services.wz_generator_service import generate_wz_document
 from src.data.database_service import get_next_wz_number, save_wz_to_db, normalize_wz_db_path
 from src.utils.config import WZ_BACKGROUND_IMAGE
+from src.utils.os_utils import open_document
 
 
 class WzGeneratorApp:
@@ -264,6 +265,11 @@ class WzGeneratorApp:
                 "Sukces",
                 f"WZ zostało wygenerowane i zapisane do: {output_path}"
             )
+            # Auto-open in Word/default app
+            try:
+                open_document(output_path)
+            except Exception as _e:
+                print(f"Auto-open failed: {_e}")
             if self.source_frame == 'browse_wz':
                 self.nav_manager.show_frame('browse_wz')
             else:

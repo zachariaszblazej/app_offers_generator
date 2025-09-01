@@ -23,6 +23,7 @@ from src.services.wz_editor_service import update_wz_document
 from src.services.wz_editor_service import update_wz_document
 from src.data.database_service import get_wz_context_from_db
 from src.utils.config import WZ_BACKGROUND_IMAGE
+from src.utils.os_utils import open_document
 
 
 class WzEditorApp:
@@ -389,6 +390,11 @@ class WzEditorApp:
                     tkinter.messagebox.showinfo("Sukces", 
                         "WZ zostało pomyślnie zaktualizowane!\n\n" +
                         "Dokument Word oraz kontekst w bazie danych zostały nadpisane.")
+                    # Auto-open updated document
+                    try:
+                        open_document(self.wz_path)
+                    except Exception as _e:
+                        print(f"Auto-open failed: {_e}")
                     self.nav_manager.show_frame('browse_wz')
                 else:
                     tkinter.messagebox.showerror("Błąd", 

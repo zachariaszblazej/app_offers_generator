@@ -17,6 +17,7 @@ from src.ui.windows.product_edit_window import ProductEditWindow
 from src.ui.components.product_table import ProductTable
 from src.services.offer_generator_service import generate_offer_document
 from src.utils.config import BACKGROUND_IMAGE
+from src.utils.os_utils import open_document
 
 
 class OfferGeneratorApp:
@@ -411,6 +412,11 @@ class OfferGeneratorApp:
                                       f"Offer generated successfully!\n"
                                       f"Offer number: {result['offer_number']}\n"
                                       f"File saved to: {result['file_path']}")
+            # Auto-open in Word/default app
+            try:
+                open_document(result.get('file_path'))
+            except Exception as _e:
+                print(f"Auto-open failed: {_e}")
             
             # Navigate back to appropriate frame based on source
             if self.nav_manager:
