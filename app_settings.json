@@ -20,5 +20,7 @@
     },
     "app_settings": {
         "database_path": "Z:/PUBLIC/AplikacjaDokumenty/HantechDocumentsDatabase.db"
+        "db_backup_enabled": false,
+        "db_backup_folder": ""
     }
 }

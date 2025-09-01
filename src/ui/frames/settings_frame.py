@@ -411,6 +411,53 @@ class SettingsFrame(Frame):
                      cursor='hand2')
       browse_db_btn.pack(side=RIGHT)
 
+      # Separator
+      separator3 = Frame(inner_frame, height=1, bg='#dddddd')
+      separator3.pack(fill=X, pady=20)
+
+      # Database backup settings
+      backup_frame = Frame(inner_frame, bg='#ffffff')
+      backup_frame.pack(fill=X, pady=5)
+
+      # Enable backup checkbox
+      self.db_backup_var = BooleanVar(value=False)
+      chk = Checkbutton(backup_frame, text="Rób kopię zapasową bazy danych przy uruchomieniu",
+                        variable=self.db_backup_var, onvalue=True, offvalue=False,
+                        bg='#ffffff', font=("Arial", 11))
+      chk.pack(anchor=W)
+
+      # Backup folder picker (conditionally visible)
+      self.backup_folder_container = Frame(inner_frame, bg='#ffffff')
+      # Label and description
+      label_bkp = Frame(self.backup_folder_container, bg='#ffffff')
+      label_bkp.pack(fill=X, pady=(10, 5))
+      Label(label_bkp, text="Folder kopii zapasowych bazy danych:",
+            font=("Arial", 11, "bold"), bg='#ffffff').pack(anchor=W)
+      Label(label_bkp, text="Wybierz folder, do którego będzie kopiowany plik bazy danych",
+            font=("Arial", 9), bg='#ffffff', fg='#666666').pack(anchor=W)
+
+      entry_bkp = Frame(self.backup_folder_container, bg='#ffffff')
+      entry_bkp.pack(fill=X, pady=(5, 0))
+      self.entries['db_backup_folder'] = Entry(entry_bkp, width=50, font=("Arial", 11), state='readonly')
+      self.entries['db_backup_folder'].pack(side=LEFT, fill=X, expand=True, padx=(0, 10))
+      browse_bkp_btn = Button(entry_bkp, text="Przeglądaj...",
+                              font=("Arial", 10), fg='white', padx=15, pady=5,
+                              command=self.browse_backup_folder, cursor='hand2')
+      browse_bkp_btn.pack(side=RIGHT)
+
+      # React to checkbox changes
+      def _toggle_backup_folder(*_):
+          if self.db_backup_var.get():
+              self.backup_folder_container.pack(fill=X, pady=5)
+          else:
+              try:
+                  self.backup_folder_container.pack_forget()
+              except Exception:
+                  pass
+      self.db_backup_var.trace_add('write', lambda *_: _toggle_backup_folder())
+      # Initialize visibility
+      _toggle_backup_folder()
+
     def browse_offers_folder(self):
         """Open folder browser for offers folder"""
         from tkinter import filedialog
@@ -476,6 +523,20 @@ class SettingsFrame(Frame):
                 tkinter.messagebox.showerror("Nieprawidłowa ścieżka", "Wybierz istniejący plik bazy danych z rozszerzeniem .db.")
                 return
             self._set_entry_value('database_path', file_path)
+
+    def browse_backup_folder(self):
+        """Open folder browser for DB backup folder"""
+        from tkinter import filedialog
+        current_folder = self.entries.get('db_backup_folder').get() if 'db_backup_folder' in self.entries else ''
+        folder_path = filedialog.askdirectory(
+            title="Wybierz folder dla kopii zapasowych bazy",
+            initialdir=current_folder if os.path.exists(current_folder) else os.path.expanduser("~")
+        )
+        if folder_path:
+            if not os.path.isdir(folder_path):
+                tkinter.messagebox.showerror("Nieprawidłowa ścieżka", "Wybierz istniejący folder na kopie zapasowe.")
+                return
+            self._set_entry_value('db_backup_folder', folder_path)
     
     def create_buttons_section(self, parent):
         """Create buttons section"""
@@ -542,11 +603,19 @@ class SettingsFrame(Frame):
         if 'offers_folder' in self.entries:
             self._set_entry_value('offers_folder', offers_folder)
 
-        # database_path still from app settings; wz_folder from DB Paths
+        # database_path and backup settings still from app settings; wz_folder from DB Paths
         for field in ['database_path']:
             if field in self.entries:
                 value = app_settings.get(field, '')
                 self._set_entry_value(field, value)
+
+        # Backup settings
+        try:
+            enabled = bool(app_settings.get('db_backup_enabled', False))
+        except Exception:
+            enabled = False
+        self.db_backup_var.set(enabled)
+        self._set_entry_value('db_backup_folder', app_settings.get('db_backup_folder', ''))
 
         # Load WZ folder from DB Paths
         wz_folder = ''
@@ -582,7 +651,7 @@ class SettingsFrame(Frame):
 
         # Collect app settings and check if critical settings changed
         # offers_folder and wz_folder are stored ONLY in DB (Paths); database_path in app settings
-        app_fields = ['database_path']
+        app_fields = ['database_path', 'db_backup_enabled', 'db_backup_folder']
         app_settings = {}
         offers_folder_changed = False
         wz_folder_changed = False
@@ -609,8 +678,14 @@ class SettingsFrame(Frame):
         if new_wz_folder != wz_folder_old:
             wz_folder_changed = True
 
-        # Handle app fields (database_path only)
+        # Handle app fields (database_path + backup)
         for field in app_fields:
+            if field == 'db_backup_enabled':
+                # Boolean value comes from variable, not Entry
+                new_value = bool(self.db_backup_var.get())
+                old_value = bool(self.settings_manager.get_app_setting('db_backup_enabled'))
+                app_settings['db_backup_enabled'] = new_value
+                continue
             if field in self.entries:
                 new_value = self.entries[field].get().strip()
                 old_value = self.settings_manager.get_app_setting(field)

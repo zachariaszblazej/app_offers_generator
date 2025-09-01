@@ -27,6 +27,9 @@ from src.utils.config import WINDOW_SIZE, APP_TITLE
 from src.utils.config import get_offers_folder, get_wz_folder
 from src.data.database_service import get_database_path, is_database_available
 import src.data.database_service as _dbs
+from src.utils.settings import settings_manager
+import shutil
+from datetime import datetime
 
 
 def main():
@@ -78,6 +81,13 @@ class OfferGeneratorMainApp:
 
         # Initialize offer creation components (but don't show them yet)
         self.setup_offer_components()
+
+        # Perform optional database backup after UI initialized
+        try:
+            self.perform_database_backup_on_start()
+        except Exception as e:
+            # Non-fatal: log to console
+            print(f"Database backup on start failed: {e}")
     
     def setup_frames(self):
         """Setup navigation frames"""
@@ -124,6 +134,39 @@ class OfferGeneratorMainApp:
         """Setup offer creation components"""
         # These will be initialized when needed
         self.offer_components_initialized = False
+
+    def perform_database_backup_on_start(self):
+        """If enabled in settings, copy DB file to backup folder with date suffix.
+        Overwrite if exists. Date format DD_MM_YYYY. Filename: {name}_{date}{ext}
+        """
+        try:
+            enabled = bool(settings_manager.get_app_setting('db_backup_enabled'))
+            backup_folder = settings_manager.get_app_setting('db_backup_folder') or ''
+        except Exception:
+            return
+        if not enabled:
+            return
+        # Only proceed if application has access to the configured database
+        try:
+            if not is_database_available():
+                return
+        except Exception:
+            return
+        db_path = get_database_path()
+        if not db_path or not os.path.exists(db_path):
+            return
+        if not backup_folder:
+            return
+        try:
+            os.makedirs(backup_folder, exist_ok=True)
+        except Exception:
+            pass
+        base = os.path.basename(db_path)
+        name, ext = os.path.splitext(base)
+        today = datetime.now().strftime('%d_%m_%Y')
+        dest_name = f"{name}_{today}{ext}"
+        dest_path = os.path.join(backup_folder, dest_name)
+        shutil.copy2(db_path, dest_path)
 
     def check_required_folders(self) -> bool:
         """Startup check for folders; do not show prompts at startup.
