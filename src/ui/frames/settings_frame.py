@@ -634,6 +634,22 @@ class SettingsFrame(Frame):
     
     def save_settings(self):
         """Save settings to file"""
+        # Pre-validate: if DB backup is enabled, backup folder must be provided
+        try:
+            if bool(self.db_backup_var.get()):
+                bkp = ''
+                if 'db_backup_folder' in self.entries:
+                    bkp = (self.entries['db_backup_folder'].get() or '').strip()
+                if not bkp:
+                    tkinter.messagebox.showwarning(
+                        "Brak folderu kopii zapasowej",
+                        "Wybierz folder do zapisywania kopii zapasowej bazy danych"
+                    )
+                    return  # Abort saving
+        except Exception:
+            # If validation fails unexpectedly, do not block saves
+            pass
+
         # Collect company data settings
         company_fields = ['town', 'address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
         company_settings = {}
