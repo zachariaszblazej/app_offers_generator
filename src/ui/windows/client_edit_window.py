@@ -84,11 +84,17 @@ class ClientEditWindow:
         self.entries = {}
         for idx, (key, label, readonly) in enumerate(rows):
             Label(form, text=label, font=("Arial", 12), bg='white').grid(row=idx, column=0, sticky=W, padx=12, pady=6)
-            ent = Entry(form, font=("Arial", 12), width=40)
-            if readonly:
-                ent.config(state='readonly', bg='#e9ecef')
-            ent.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
-            self.entries[key] = ent
+            if key == 'company_name':
+                # Multi-line Text for company name; will be saved with literal \n between lines
+                txt = Text(form, font=("Arial", 12), width=40, height=3, wrap=WORD)
+                txt.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
+                self.entries[key] = txt
+            else:
+                ent = Entry(form, font=("Arial", 12), width=40)
+                if readonly:
+                    ent.config(state='readonly', bg='#e9ecef')
+                ent.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
+                self.entries[key] = ent
 
     # No prefill in add mode: leave all fields empty
 
@@ -111,7 +117,13 @@ class ClientEditWindow:
             self.entries['nip'].delete(0, END)
             self.entries['nip'].insert(0, client.get('nip', ''))
             self.entries['nip'].config(state='readonly')
-            self.entries['company_name'].insert(0, client.get('company_name', ''))
+            # Show multi-line name by converting literal \n markers to actual newlines
+            try:
+                display_name = (client.get('company_name', '') or '').replace('\\n', '\n')
+                self.entries['company_name'].delete('1.0', END)
+                self.entries['company_name'].insert('1.0', display_name)
+            except Exception:
+                pass
             self.entries['address_p1'].insert(0, client.get('address_p1', ''))
             self.entries['address_p2'].insert(0, client.get('address_p2', ''))
             self.entries['alias'].insert(0, client.get('alias', ''))
@@ -154,14 +166,27 @@ class ClientEditWindow:
         self.window.bind('<KP_Enter>', lambda e: self._save())
 
         # Focus
-        (self.entries['company_name'] if mode == 'edit' else self.entries['nip']).focus_set()
+        try:
+            (self.entries['company_name'] if self.mode == 'edit' else self.entries['nip']).focus_set()
+        except Exception:
+            pass
 
     def _save(self):
         """Collect form data and call the provided save callback"""
         # Read fields
         keys = ['nip', 'company_name', 'address_p1', 'address_p2', 'alias',
                 'termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
-        data = {k: self.entries[k].get().strip() for k in keys}
+        data = {}
+        for k in keys:
+            if k == 'company_name':
+                # Convert actual newlines to literal \n before saving to DB
+                try:
+                    raw = self.entries['company_name'].get('1.0', 'end-1c')
+                except Exception:
+                    raw = ''
+                data['company_name'] = (raw or '').strip().replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+            else:
+                data[k] = self.entries[k].get().strip()
 
         # Basic validation
         required_ok = all(
