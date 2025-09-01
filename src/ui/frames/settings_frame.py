@@ -454,6 +454,11 @@ class SettingsFrame(Frame):
                   self.backup_folder_container.pack_forget()
               except Exception:
                   pass
+              # Also clear the backup folder path when disabling backups
+              try:
+                  self._set_entry_value('db_backup_folder', '')
+              except Exception:
+                  pass
       self.db_backup_var.trace_add('write', lambda *_: _toggle_backup_folder())
       # Initialize visibility
       _toggle_backup_folder()
@@ -692,6 +697,10 @@ class SettingsFrame(Frame):
                 app_settings[field] = new_value
                 if field == 'database_path' and new_value != old_value:
                     database_path_changed = True
+
+        # If backups are disabled, clear the backup folder regardless of UI content
+        if not app_settings.get('db_backup_enabled', False):
+            app_settings['db_backup_folder'] = ''
 
         # Update app settings first so availability checks use the latest value
         self.settings_manager.update_app_settings(app_settings)
