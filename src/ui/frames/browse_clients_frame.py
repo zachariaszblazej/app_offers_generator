@@ -198,9 +198,11 @@ class BrowseClientsFrame(Frame):
         
         # Populate tree with current data
         for client in self.clients_data:
+            # Use display-safe company name (strip literal \n markers)
+            display_company = str(client['Nazwa firmy'] or '').replace('\\n', ' ')
             self.clients_tree.insert('', 'end', values=(
                 client['NIP'],
-                client['Nazwa firmy'],
+                display_company,
                 client['Adres 1'],
                 client['Adres 2'],
                 client['Alias'],
@@ -223,8 +225,14 @@ class BrowseClientsFrame(Frame):
             self.sort_column = column
             self.sort_reverse = False
         
-        # Sort the data
-        self.clients_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
+        # Sort the data (for 'Nazwa firmy' sort by display value without literal \n)
+        if column == 'Nazwa firmy':
+            self.clients_data.sort(
+                key=lambda x: str((x[column] or '')).replace('\\n', ' ').lower(),
+                reverse=self.sort_reverse
+            )
+        else:
+            self.clients_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
         
         # Update column headers to show sort direction
         self.update_column_headers()
@@ -267,18 +275,24 @@ class BrowseClientsFrame(Frame):
         item = self.clients_tree.item(selection[0])
         values = item['values']
         if values:
+            nip = values[0]
+            # Find raw client data by NIP to preserve original values (including literal \n)
+            src = next((c for c in self.clients_data if str(c['NIP']) == str(nip)), None)
+            if not src:
+                tkinter.messagebox.showerror("Błąd", "Nie udało się znaleźć danych klienta do edycji.")
+                return
             client = {
-                'nip': values[0],
-                'company_name': values[1],
-                'address_p1': values[2],
-                'address_p2': values[3],
-                'alias': values[4],
-                'termin_realizacji': values[5] if len(values) > 5 else '',
-                'termin_platnosci': values[6] if len(values) > 6 else '',
-                'warunki_dostawy': values[7] if len(values) > 7 else '',
-                'waznosc_oferty': values[8] if len(values) > 8 else '',
-                'gwarancja': values[9] if len(values) > 9 else '',
-                'cena': values[10] if len(values) > 10 else '',
+                'nip': src['NIP'],
+                'company_name': src['Nazwa firmy'],
+                'address_p1': src['Adres 1'],
+                'address_p2': src['Adres 2'],
+                'alias': src['Alias'],
+                'termin_realizacji': src.get('Termin realizacji', ''),
+                'termin_platnosci': src.get('Termin płatności', ''),
+                'warunki_dostawy': src.get('Warunki dostawy', ''),
+                'waznosc_oferty': src.get('Ważność oferty', ''),
+                'gwarancja': src.get('Gwarancja', ''),
+                'cena': src.get('Cena', ''),
             }
             if self.client_window is None:
                 self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
@@ -398,18 +412,23 @@ class BrowseClientsFrame(Frame):
                 # EDIT column is the 12th column (index #12)
                 if column == "#12":  
                     # Open edit modal for this client
+                    nip = values[0]
+                    src = next((c for c in self.clients_data if str(c['NIP']) == str(nip)), None)
+                    if not src:
+                        tkinter.messagebox.showerror("Błąd", "Nie udało się znaleźć danych klienta do edycji.")
+                        return
                     client = {
-                        'nip': values[0],
-                        'company_name': values[1],
-                        'address_p1': values[2],
-                        'address_p2': values[3],
-                        'alias': values[4],
-                        'termin_realizacji': values[5] if len(values) > 5 else '',
-                        'termin_platnosci': values[6] if len(values) > 6 else '',
-                        'warunki_dostawy': values[7] if len(values) > 7 else '',
-                        'waznosc_oferty': values[8] if len(values) > 8 else '',
-                        'gwarancja': values[9] if len(values) > 9 else '',
-                        'cena': values[10] if len(values) > 10 else '',
+                        'nip': src['NIP'],
+                        'company_name': src['Nazwa firmy'],
+                        'address_p1': src['Adres 1'],
+                        'address_p2': src['Adres 2'],
+                        'alias': src['Alias'],
+                        'termin_realizacji': src.get('Termin realizacji', ''),
+                        'termin_platnosci': src.get('Termin płatności', ''),
+                        'warunki_dostawy': src.get('Warunki dostawy', ''),
+                        'waznosc_oferty': src.get('Ważność oferty', ''),
+                        'gwarancja': src.get('Gwarancja', ''),
+                        'cena': src.get('Cena', ''),
                     }
                     if self.client_window is None:
                         self.client_window = ClientEditWindow(self.winfo_toplevel(), self._handle_client_save, validate_alias)
