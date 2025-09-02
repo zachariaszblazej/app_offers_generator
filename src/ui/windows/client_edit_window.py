@@ -161,9 +161,6 @@ class ClientEditWindow:
         )
         cancel_btn.place(relx=0.68, rely=0.5, anchor=CENTER)
 
-        # Shortcuts
-        self.window.bind('<Return>', lambda e: self._save())
-        self.window.bind('<KP_Enter>', lambda e: self._save())
 
         # Focus
         try:
