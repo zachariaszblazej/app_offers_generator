@@ -196,7 +196,10 @@ class ClientSearchWindow:
         
         # Sort clients based on selection
         if sort_by == "name":
-            sorted_clients = sorted(clients, key=lambda x: x[1].lower() if x[1] else "")
+            sorted_clients = sorted(
+                clients,
+                key=lambda x: ((x[1] or '').replace('\\n', ' ').lower()),
+            )
         elif sort_by == "nip":
             sorted_clients = sorted(clients, key=lambda x: x[0] if x[0] else "")
         else:
@@ -210,7 +213,8 @@ class ClientSearchWindow:
         for client in sorted_clients:
             nip = client[0]
             company_name = client[1]
-            display_text = f"{company_name} (NIP: {nip})"
+            company_name_disp = (company_name or '').replace('\\n', ' ')
+            display_text = f"{company_name_disp} (NIP: {nip})"
             listbox.insert(END, display_text)
 
     def _on_client_select(self, event, search_window, client_listbox, clients):
