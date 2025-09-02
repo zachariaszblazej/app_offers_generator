@@ -10,7 +10,14 @@ import os
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from src.data.database_service import get_clients_from_db
+from src.data.database_service import (
+    get_clients_from_db,
+    add_client_to_db,
+    update_client_in_db,
+    set_client_extended_fields,
+    validate_alias,
+)
+from src.ui.windows.client_edit_window import ClientEditWindow
 
 
 class ClientSearchWindow:
@@ -19,6 +26,8 @@ class ClientSearchWindow:
     def __init__(self, parent_window, client_fill_callback):
         self.parent_window = parent_window
         self.client_fill_callback = client_fill_callback
+        self.client_window = None
+        self._all_clients = []
     
     def open_client_search(self):
         """Open client search window"""
@@ -27,60 +36,67 @@ class ClientSearchWindow:
         if not clients:
             tkinter.messagebox.showinfo("No Clients", "No clients found in database.")
             return
-        
-        # Sort clients alphabetically by company name (index 1)
-        clients_sorted = sorted(clients, key=lambda x: x[1].lower() if x[1] else "")
-        
+        self._all_clients = clients
+
         # Create search window
         search_window = Toplevel(self.parent_window)
         search_window.title("Wybierz klienta")
         search_window.geometry("700x450")
         search_window.grab_set()  # Make window modal
-        
+
         # Main container
         main_frame = Frame(search_window)
         main_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
-        
+
         # Header
         Label(main_frame, text="Wybierz klienta z listy:", font=("Arial", 12, "bold")).pack(pady=(0, 10))
-        
+
         # Sorting options
         sort_frame = Frame(main_frame)
         sort_frame.pack(fill=X, pady=(0, 10))
-        
+
         Label(sort_frame, text="Sortowanie:", font=("Arial", 10)).pack(side=LEFT)
-        
+
         self.sort_var = StringVar(value="name")
         sort_options = [
             ("Nazwa firmy", "name"),
             ("NIP", "nip")
         ]
-        
-        for text, value in sort_options:
-            rb = Radiobutton(sort_frame, text=text, variable=self.sort_var, value=value,
-                           command=lambda: self._update_client_list(clients, client_listbox))
-            rb.pack(side=LEFT, padx=10)
-        
+
         # Create listbox with scrollbar
         list_frame = Frame(main_frame)
         list_frame.pack(fill=BOTH, expand=True)
-        
+
         scrollbar = Scrollbar(list_frame)
         scrollbar.pack(side=RIGHT, fill=Y)
-        
+
         client_listbox = Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Arial", 10))
         client_listbox.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.config(command=client_listbox.yview)
-        
+
+        # Sorting radio buttons (after listbox is defined so lambda captures it)
+        for text, value in sort_options:
+            rb = Radiobutton(
+                sort_frame,
+                text=text,
+                variable=self.sort_var,
+                value=value,
+                command=lambda: self._update_client_list(self._all_clients, client_listbox),
+            )
+            rb.pack(side=LEFT, padx=10)
+
         # Store clients data and listbox for sorting
         self.current_clients = clients
         self.current_listbox = client_listbox
-        
-    # Populate listbox with sorted client data
-        self._update_client_list(clients, client_listbox)
-        
+
+        # Populate listbox with sorted client data
+        self._update_client_list(self._all_clients, client_listbox)
+
         # Bind double-click to select client
-        client_listbox.bind('<Double-1>', lambda event: self._on_client_select(event, search_window, client_listbox, self.current_clients))
+        client_listbox.bind(
+            '<Double-1>',
+            lambda event: self._on_client_select(event, search_window, client_listbox, self.current_clients),
+        )
 
         # Capture mouse wheel events so only this window scrolls (and not the underlying editor)
         def _on_wheel(event, lstbox=client_listbox):
@@ -108,17 +124,71 @@ class ClientSearchWindow:
                 w.bind('<Button-5>', _on_wheel)
             except Exception:
                 pass
-        
-        # Add select button
+
+        # Buttons
         button_frame = Frame(main_frame)
         button_frame.pack(pady=10)
-        
-        select_button = Button(button_frame, text="Wybierz", 
-                              command=lambda: self._on_client_select(None, search_window, client_listbox, self.current_clients))
+
+        add_button = Button(
+            button_frame,
+            text="Dodaj nowego klienta",
+            command=lambda: self._open_add_client(search_window),
+        )
+        add_button.pack(side=LEFT, padx=5)
+
+        select_button = Button(
+            button_frame,
+            text="Wybierz",
+            command=lambda: self._on_client_select(None, search_window, client_listbox, self.current_clients),
+        )
         select_button.pack(side=LEFT, padx=5)
-        
+
         cancel_button = Button(button_frame, text="Anuluj", command=search_window.destroy)
         cancel_button.pack(side=LEFT, padx=5)
+
+        # Keep references for refresh after adding a new client
+        self._search_window = search_window
+        self._main_frame = main_frame
+        self._list_frame = list_frame
+        self.current_listbox = client_listbox
+
+    def _open_add_client(self, parent_window):
+        """Open the add-client modal from within the search dialog"""
+        if self.client_window is None:
+            self.client_window = ClientEditWindow(parent_window, self._handle_client_save, validate_alias)
+        self.client_window.open(mode='add')
+
+    def _handle_client_save(self, mode, data):
+        """Save callback for ClientEditWindow opened from search; refresh list on success"""
+        if mode == 'add':
+            result = add_client_to_db(
+                data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
+            )
+            if result[0]:
+                set_client_extended_fields(
+                    data['nip'], data.get('termin_realizacji'), data.get('termin_platnosci'),
+                    data.get('warunki_dostawy'), data.get('waznosc_oferty'), data.get('gwarancja'), data.get('cena')
+                )
+        else:
+            result = update_client_in_db(
+                data['nip'], data['company_name'], data['address_p1'], data['address_p2'], data['alias']
+            )
+            if result[0]:
+                set_client_extended_fields(
+                    data['nip'], data.get('termin_realizacji'), data.get('termin_platnosci'),
+                    data.get('warunki_dostawy'), data.get('waznosc_oferty'), data.get('gwarancja'), data.get('cena')
+                )
+
+        # On success, refresh list
+        if result[0]:
+            try:
+                clients = get_clients_from_db(include_extended=True)
+                self._all_clients = clients
+                # Reuse current sorting setting
+                self._update_client_list(self._all_clients, self.current_listbox)
+            except Exception:
+                pass
+        return result
     
     def _update_client_list(self, clients, listbox):
         """Update client list based on selected sorting"""
