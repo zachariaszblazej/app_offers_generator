@@ -40,6 +40,12 @@ class OfferGeneratorApp:
         # Clear client and supplier NIP fields if this is a new offer (no template context)
         if not self.template_context:
             self.clear_client_supplier_data()
+            # Auto-load default supplier for fresh creation (parity with WZ)
+            try:
+                if hasattr(self.ui, 'load_default_supplier'):
+                    self.ui.load_default_supplier()
+            except Exception as e:
+                print(f"Could not auto-load default supplier: {e}")
         
         # Initialize calculation variables
         self.count = 0
@@ -277,7 +283,14 @@ class OfferGeneratorApp:
                 client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
                 for field in client_fields:
                     if field in self.ui.entries:
-                        value = self.ui.entries[field].get().strip()
+                        # client_name is a Text widget; others are Entry
+                        if field == 'client_name':
+                            try:
+                                value = self.ui.entries[field].get('1.0', 'end-1c').strip()
+                            except Exception:
+                                value = ''
+                        else:
+                            value = self.ui.entries[field].get().strip()
                         if value:  # If any client field has content
                             return True
                 
@@ -314,7 +327,14 @@ class OfferGeneratorApp:
                 client_fields = ['client_name', 'client_address_1', 'client_address_2']
                 for field_name in client_fields:
                     if field_name in self.ui.entries:
-                        self.ui.entries[field_name].delete(0, 'end')
+                        # client_name is a Text widget, others are Entry
+                        if field_name == 'client_name':
+                            try:
+                                self.ui.entries[field_name].delete('1.0', 'end')
+                            except Exception:
+                                pass
+                        else:
+                            self.ui.entries[field_name].delete(0, 'end')
                 
                 # Clear client NIP (need to temporarily enable it)
                 if 'client_nip' in self.ui.entries:
@@ -357,13 +377,14 @@ class OfferGeneratorApp:
                 # Fields to clear
                 fields_to_clear = [
                     'client_name', 'client_address_1', 'client_address_2', 'client_nip',
-                    'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip','uwagi'
+                    'supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip',
+                    'uwagi'
                 ]
                 
                 # Clear all specified fields
                 for field_name in fields_to_clear:
                     if field_name in self.ui.entries:
-                        if field_name == 'uwagi':  # Text widget
+                        if field_name in ('uwagi', 'client_name'):  # Text widgets
                             self.ui.entries[field_name].delete('1.0', 'end')
                         else:  # Entry widget
                             self.ui.entries[field_name].delete(0, 'end')

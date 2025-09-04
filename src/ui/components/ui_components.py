@@ -163,7 +163,8 @@ class UIComponents:
         self.entries['supplier_nip'].place(x=60, y=360)
 
         # Client entries
-        self.entries['client_name'] = Entry(self.window, width=45)
+    # Multi-line Text for client name; convert to literal \n on read for context
+        self.entries['client_name'] = Text(self.window, width=45, height=2, wrap=WORD)
         self.entries['client_name'].place(x=660, y=270)
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
@@ -236,7 +237,10 @@ class UIComponents:
         self.selected_client_alias = alias
         
         # Clear existing data
-        self.entries['client_name'].delete(0, END)
+        try:
+            self.entries['client_name'].delete('1.0', END)
+        except Exception:
+            pass
         self.entries['client_address_1'].delete(0, END)
         self.entries['client_address_2'].delete(0, END)
         
@@ -244,8 +248,12 @@ class UIComponents:
         self.entries['client_nip'].config(state='normal')
         self.entries['client_nip'].delete(0, END)
         
-        # Fill with selected client data
-        self.entries['client_name'].insert(0, company_name)
+        # Fill with selected client data (render literal \n as newlines)
+        try:
+            disp_name = (company_name or '').replace('\\n', '\n')
+            self.entries['client_name'].insert('1.0', disp_name)
+        except Exception:
+            pass
         self.entries['client_address_1'].insert(0, address1)
         self.entries['client_address_2'].insert(0, address2)
         self.entries['client_nip'].insert(0, str(nip))
@@ -331,7 +339,11 @@ class UIComponents:
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),
             'supplier_nip': format_nip(self.entries['supplier_nip'].get()),
-            'client_name': self.entries['client_name'].get(),
+            # Convert actual newlines to literal \n for downstream services/templates
+            'client_name': (
+                self.entries['client_name'].get('1.0', 'end-1c')
+                .replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+            ),
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
             'client_nip': format_nip(self.entries['client_nip'].get()),
@@ -389,8 +401,18 @@ class UIComponents:
                         self.entries[field].insert(0, context_data.get(field, ''))
                         self.entries[field].config(state='readonly')
                     else:
-                        self.entries[field].delete(0, END)
-                        self.entries[field].insert(0, context_data.get(field, ''))
+                        try:
+                            # For client_name Text, render literal \n as newlines
+                            if field == 'client_name':
+                                self.entries[field].delete('1.0', END)
+                                val = context_data.get(field, '')
+                                self.entries[field].insert('1.0', (val or '').replace('\\n', '\n'))
+                            else:
+                                self.entries[field].delete(0, END)
+                                self.entries[field].insert(0, context_data.get(field, ''))
+                        except Exception:
+                            self.entries[field].delete(0, END)
+                            self.entries[field].insert(0, context_data.get(field, ''))
             
             # Store client alias for new offer generation
             if 'client_alias' in context_data:
