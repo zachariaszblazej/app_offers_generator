@@ -130,7 +130,7 @@ class SupplierSearchWindow:
         add_button = Button(
             button_frame,
             text="Dodaj nowego dostawcę",
-            command=lambda: SupplierEditWindow(self.parent_window, _on_added).open('add')
+            command=lambda: SupplierEditWindow(search_window, _on_added).open('add')
         )
         add_button.pack(side=LEFT, padx=5)
 
