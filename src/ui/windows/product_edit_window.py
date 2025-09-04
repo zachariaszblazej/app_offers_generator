@@ -19,20 +19,18 @@ class ProductEditWindow:
         if not product_data:
             tkinter.messagebox.showwarning("Uwaga", "Najpierw zaznacz produkt do edycji!")
             return
-            
-        self.item_id = product_data['item_id']
         
+        self.item_id = product_data['item_id']
         print("DEBUG: Opening product edit window")  # Debug
         
         # Create product edit window
         product_window = Toplevel(self.parent_window)
         product_window.title("Edytuj produkt")
-        product_window.geometry("700x500")  # Same size as add window
+        product_window.geometry("700x650")  # Taller to fit 7-line name and buttons
         product_window.resizable(False, False)
         product_window.grab_set()  # Make window modal
         product_window.transient(self.parent_window)
         product_window.configure(bg='#f8f9fa')  # Light background
-        
         print("DEBUG: Product edit window created")  # Debug
         
         # Center the window
@@ -107,17 +105,16 @@ class ProductEditWindow:
         buttons_frame.pack(fill=X, pady=(0, 20))
         buttons_frame.pack_propagate(False)  # Maintain frame size
         
-        # Center the buttons using place instead of pack
-        # Update button - make it very prominent and centered
+        # Update button
         update_btn = Button(buttons_frame, text="✓ ZATWIERDŹ ZMIANY", 
                            font=("Arial", 16, "bold"),
-                           fg='black',  # Orange color to make it very visible
+                           fg='black',
                            padx=40, pady=15,
                            command=lambda: self._update_product(product_window),
                            cursor='hand2',
                            relief=RAISED,
                            bd=4)
-        update_btn.place(relx=0.3, rely=0.5, anchor=CENTER)  # Center left
+        update_btn.place(relx=0.3, rely=0.5, anchor=CENTER)
         
         # Cancel button
         cancel_btn = Button(buttons_frame, text="✗ Anuluj", 
@@ -126,7 +123,7 @@ class ProductEditWindow:
                            padx=25, pady=12,
                            command=product_window.destroy,
                            cursor='hand2')
-        cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)  # Center right
+        cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)
         
         print("DEBUG: Product edit window UI created")  # Debug
     

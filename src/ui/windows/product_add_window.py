@@ -20,7 +20,7 @@ class ProductAddWindow:
         # Create product add window
         product_window = Toplevel(self.parent_window)
         product_window.title("Dodaj produkt")
-        product_window.geometry("700x500")
+        product_window.geometry("700x650")
         product_window.resizable(False, False)
         product_window.grab_set()  # Make window modal
         product_window.transient(self.parent_window)
