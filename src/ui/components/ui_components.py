@@ -152,22 +152,31 @@ class UIComponents:
     
     def create_offer_section(self):
         """Create the offer/supplier/client section"""
+        # Supplier entries as a one-column table with header (mirrors client layout)
+        supplier_frame = Frame(self.window, bg='white')
+        supplier_frame.place(x=60, y=220)  # Align Y with client_frame; positioned on the left
 
-        # Supplier entries
-        self.entries['supplier_name'] = Entry(self.window, width=45)
-        self.entries['supplier_name'].place(x=60, y=270)
+        # Header row
+        Label(supplier_frame, text='DOSTAWCA', font=("Arial", 16, "bold"), bg='white').grid(row=0, column=0, sticky='w', pady=(0, 6))
+
+        # Row 1: Text for supplier name (2 lines like client name)
+        self.entries['supplier_name'] = Text(supplier_frame, width=45, height=2, wrap=WORD)
+        self.entries['supplier_name'].grid(row=1, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_1'] = Entry(self.window, width=45)
-        self.entries['supplier_address_1'].place(x=60, y=300)
+        # Row 2: Entry for address 1
+        self.entries['supplier_address_1'] = Entry(supplier_frame, width=45)
+        self.entries['supplier_address_1'].grid(row=2, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_2'] = Entry(self.window, width=45)
-        self.entries['supplier_address_2'].place(x=60, y=330)
+        # Row 3: Entry for address 2
+        self.entries['supplier_address_2'] = Entry(supplier_frame, width=45)
+        self.entries['supplier_address_2'].grid(row=3, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
-        self.entries['supplier_nip'].place(x=60, y=360)
+        # Row 4: Entry for NIP (readonly)
+        self.entries['supplier_nip'] = Entry(supplier_frame, width=25, state='readonly', bg='#f0f0f0')
+        self.entries['supplier_nip'].grid(row=4, column=0, sticky='w')
 
         # Client entries as a one-column table with header
         client_frame = Frame(self.window, bg='white')
@@ -311,7 +320,10 @@ class UIComponents:
         nip, company_name, address1, address2 = supplier_data
         
         # Clear existing data
-        self.entries['supplier_name'].delete(0, END)
+        try:
+            self.entries['supplier_name'].delete('1.0', END)
+        except Exception:
+            pass
         self.entries['supplier_address_1'].delete(0, END)
         self.entries['supplier_address_2'].delete(0, END)
         
@@ -320,7 +332,11 @@ class UIComponents:
         self.entries['supplier_nip'].delete(0, END)
         
         # Fill with selected supplier data
-        self.entries['supplier_name'].insert(0, company_name)
+        try:
+            disp_name = (company_name or '').replace('\\n', '\n')
+            self.entries['supplier_name'].insert('1.0', disp_name)
+        except Exception:
+            pass
         self.entries['supplier_address_1'].insert(0, address1)
         self.entries['supplier_address_2'].insert(0, address2)
         self.entries['supplier_nip'].insert(0, str(nip))
@@ -359,7 +375,11 @@ class UIComponents:
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
             'date': parsed_date,
-            'supplier_name': self.entries['supplier_name'].get(),
+            # Convert actual newlines to literal \n for downstream services/templates
+            'supplier_name': (
+                self.entries['supplier_name'].get('1.0', 'end-1c')
+                .replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+            ),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),
             'supplier_nip': format_nip(self.entries['supplier_nip'].get()),
@@ -470,8 +490,19 @@ class UIComponents:
                         self.entries[field].insert(0, context_data.get(field, ''))
                         self.entries[field].config(state='readonly')
                     else:
-                        self.entries[field].delete(0, END)
-                        self.entries[field].insert(0, context_data.get(field, ''))
+                        try:
+                            if field == 'supplier_name':
+                                # Render literal \n as newlines for Text widget
+                                self.entries[field].delete('1.0', END)
+                                val = context_data.get(field, '')
+                                self.entries[field].insert('1.0', (val or '').replace('\\n', '\n'))
+                            else:
+                                self.entries[field].delete(0, END)
+                                self.entries[field].insert(0, context_data.get(field, ''))
+                        except Exception:
+                            # Fallback to Entry semantics if unexpected
+                            self.entries[field].delete(0, END)
+                            self.entries[field].insert(0, context_data.get(field, ''))
             
             # Load offer details
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 
