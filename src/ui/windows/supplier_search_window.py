@@ -11,6 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from src.data.database_service import get_suppliers_from_db
+from src.ui.windows.supplier_edit_window import SupplierEditWindow
 
 
 class SupplierSearchWindow:
@@ -111,14 +112,36 @@ class SupplierSearchWindow:
             except Exception:
                 pass
         
-        # Add select button
+        # Add select and add-new buttons
         button_frame = Frame(main_frame)
         button_frame.pack(pady=10)
-        
-        select_button = Button(button_frame, text="Wybierz", 
-                              command=lambda: self._on_supplier_select(None, search_window, supplier_listbox, self.current_suppliers))
+
+        def _on_added(mode, data):
+            from src.data.database_service import add_supplier_to_db
+            # company_name already normalized to literal \n by the modal
+            ok, msg = add_supplier_to_db(data['nip'], data['company_name'], data['address_p1'], data['address_p2'])
+            if ok:
+                # refresh list content after successful add
+                suppliers2 = get_suppliers_from_db()
+                self._update_supplier_list(suppliers2, supplier_listbox)
+            return ok, msg
+
+        # Add-new button first from the left (like in client search window)
+        add_button = Button(
+            button_frame,
+            text="Dodaj nowego dostawcę",
+            command=lambda: SupplierEditWindow(self.parent_window, _on_added).open('add')
+        )
+        add_button.pack(side=LEFT, padx=5)
+
+        # Select button next
+        select_button = Button(
+            button_frame,
+            text="Wybierz",
+            command=lambda: self._on_supplier_select(None, search_window, supplier_listbox, self.current_suppliers)
+        )
         select_button.pack(side=LEFT, padx=5)
-        
+
         cancel_button = Button(button_frame, text="Anuluj", command=search_window.destroy)
         cancel_button.pack(side=LEFT, padx=5)
     
