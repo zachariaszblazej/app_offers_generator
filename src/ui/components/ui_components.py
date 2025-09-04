@@ -84,9 +84,15 @@ class UIComponents:
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
             for field in offer_fields:
                 if field in self.entries:
-                    self.entries[field].delete(0, END)
+                    widget = self.entries[field]
                     value = self.offer_details_data.get(field, '')
-                    self.entries[field].insert(0, value)
+                    if isinstance(widget, Text):
+                        widget.delete('1.0', END)
+                        if value:
+                            widget.insert('1.0', value)
+                    else:
+                        widget.delete(0, END)
+                        widget.insert(0, value)
     
     def create_upper_section(self, show_offer_number=False):
         """Create the upper section of the form"""
@@ -180,37 +186,37 @@ class UIComponents:
         self.entries['client_nip'].place(x=660, y=360)
     
     def create_offer_details_section(self):
-        """Create additional offer details section under EDYTUJ PRODUKT button"""
-        self.entries['termin_realizacji'] = Entry(self.window, width=50)
-        self.entries['termin_realizacji'].place(x=260, y=810)
-        self.entries['termin_realizacji'].insert(0, self.offer_details_data.get('termin_realizacji', 'p1'))
-        self.entries['termin_realizacji'].bind('<KeyRelease>', self._on_field_modified)
-        
-        self.entries['termin_platnosci'] = Entry(self.window, width=50)
-        self.entries['termin_platnosci'].place(x=260, y=840)
-        self.entries['termin_platnosci'].insert(0, self.offer_details_data.get('termin_platnosci', 'p1'))
-        self.entries['termin_platnosci'].bind('<KeyRelease>', self._on_field_modified)
-        
-        self.entries['warunki_dostawy'] = Entry(self.window, width=50)
-        self.entries['warunki_dostawy'].place(x=260, y=870)
-        self.entries['warunki_dostawy'].insert(0, self.offer_details_data.get('warunki_dostawy', 'p1'))
-        
-        self.entries['waznosc_oferty'] = Entry(self.window, width=50)
-        self.entries['waznosc_oferty'].place(x=260, y=900)
-        self.entries['waznosc_oferty'].insert(0, self.offer_details_data.get('waznosc_oferty', 'p1'))
-        
-        self.entries['gwarancja'] = Entry(self.window, width=50)
-        self.entries['gwarancja'].place(x=260, y=930)
-        self.entries['gwarancja'].insert(0, self.offer_details_data.get('gwarancja', 'p1'))
-        
-        self.entries['cena'] = Entry(self.window, width=50)
-        self.entries['cena'].place(x=260, y=960)
-        self.entries['cena'].insert(0, self.offer_details_data.get('cena', 'p1'))
-        
-        # Multi-line text field for notes (no default value)
-        self.entries['uwagi'] = Text(self.window, width=50, height=3)
-        self.entries['uwagi'].place(x=260, y=990)
-        self.entries['uwagi'].bind('<KeyRelease>', self._on_field_modified)
+        """Create additional offer details as a two-column table (Label | Text)."""
+        # Container frame placed once; inside we use grid for neat layout
+        details_frame = Frame(self.window)
+        details_frame.place(x=240, y=800)
+
+        # Define rows: (key, label)
+        rows = [
+            ('termin_realizacji', 'Termin realizacji'),
+            ('termin_platnosci', 'Termin płatności'),
+            ('warunki_dostawy', 'Warunki dostawy'),
+            ('waznosc_oferty', 'Ważność oferty'),
+            ('gwarancja', 'Gwarancja'),
+            ('cena', 'Cena'),
+            ('uwagi', 'Uwagi'),
+        ]
+
+        for r, (key, label_text) in enumerate(rows):
+            lbl = Label(details_frame, text=label_text + ':', font=("Arial", 10))
+            lbl.grid(row=r, column=0, sticky='ne', padx=(0, 10), pady=(2, 2))
+            txt = Text(details_frame, width=50, height=3)
+            txt.grid(row=r, column=1, sticky='w', pady=(2, 2))
+            txt.bind('<KeyRelease>', self._on_field_modified)
+            self.entries[key] = txt
+            # Defaults: all except 'uwagi' can preload from settings
+            if key != 'uwagi':
+                try:
+                    default_val = self.offer_details_data.get(key, '')
+                except Exception:
+                    default_val = ''
+                if default_val:
+                    txt.insert('1.0', default_val)
     
     def create_totals_section(self):
         """Create the totals section"""
@@ -274,11 +280,16 @@ class UIComponents:
                 ]
                 for key, val in mapping:
                     if key in self.entries:
-                        self.entries[key].delete(0, END)
+                        widget = self.entries[key]
                         # Fallback to defaults from settings when value is None/empty
                         default_val = settings_manager.get_offer_details_setting(key)
                         use_val = val if (val is not None and str(val).strip() != '') else default_val
-                        self.entries[key].insert(0, str(use_val or ''))
+                        if isinstance(widget, Text):
+                            widget.delete('1.0', END)
+                            widget.insert('1.0', str(use_val or ''))
+                        else:
+                            widget.delete(0, END)
+                            widget.insert(0, str(use_val or ''))
             except Exception as e:
                 print(f"Debug: could not fill extended client fields: {e}")
     
@@ -348,12 +359,12 @@ class UIComponents:
             'client_address_2': self.entries['client_address_2'].get(),
             'client_nip': format_nip(self.entries['client_nip'].get()),
             'client_alias': self.selected_client_alias,  # Add client alias
-            'termin_realizacji': self.entries['termin_realizacji'].get(),
-            'termin_platnosci': self.entries['termin_platnosci'].get(),
-            'warunki_dostawy': self.entries['warunki_dostawy'].get(),
-            'waznosc_oferty': self.entries['waznosc_oferty'].get(),
-            'gwarancja': self.entries['gwarancja'].get(),
-            'cena': self.entries['cena'].get(),
+            'termin_realizacji': self.entries['termin_realizacji'].get('1.0', 'end-1c'),
+            'termin_platnosci': self.entries['termin_platnosci'].get('1.0', 'end-1c'),
+            'warunki_dostawy': self.entries['warunki_dostawy'].get('1.0', 'end-1c'),
+            'waznosc_oferty': self.entries['waznosc_oferty'].get('1.0', 'end-1c'),
+            'gwarancja': self.entries['gwarancja'].get('1.0', 'end-1c'),
+            'cena': self.entries['cena'].get('1.0', 'end-1c'),
             'uwagi': self.entries['uwagi'].get("1.0", "end-1c"),  # Get text from Text widget
             'offer_number': self.offer_number,  # Preserve original offer number
             'products': []  # Initialize empty products list
@@ -454,8 +465,14 @@ class UIComponents:
                           'waznosc_oferty', 'gwarancja', 'cena']
             for field in offer_fields:
                 if field in context_data and field in self.entries:
-                    self.entries[field].delete(0, END)
-                    self.entries[field].insert(0, context_data.get(field, ''))
+                    widget = self.entries[field]
+                    val = context_data.get(field, '')
+                    if isinstance(widget, Text):
+                        widget.delete('1.0', END)
+                        widget.insert('1.0', val)
+                    else:
+                        widget.delete(0, END)
+                        widget.insert(0, val)
             
             # Load town
             if 'town' in context_data and 'town' in self.entries:
