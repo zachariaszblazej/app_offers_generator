@@ -49,12 +49,21 @@ class ProductTable:
     def create_table(self):
         """Create the product table"""
         # Create and configure the treeview
-        self.tree = ttk.Treeview(self.parent_window, columns=TABLE_COLUMNS, show='headings', height=10)
+        # Bump row height to accommodate up to ~7 lines (approx 18px per line)
+        try:
+            style = ttk.Style()
+            base = style.lookup('Treeview', 'rowheight') or 20
+            style.configure('Offers.Treeview', rowheight=int(18 * 7))
+            tree_style = 'Offers.Treeview'
+        except Exception:
+            tree_style = 'Treeview'
+
+        self.tree = ttk.Treeview(self.parent_window, columns=TABLE_COLUMNS, show='headings', height=10, style=tree_style)
         self.tree.place(x=50, y=410, width=950, height=300)
 
         # Configure columns
         self.tree.column('PID', minwidth=50, width=50, stretch=NO)
-        self.tree.column('PNAME', minwidth=250, width=280, stretch=YES)
+        self.tree.column('PNAME', minwidth=250, width=280, stretch=YES, anchor=W)
         self.tree.column('UNIT', minwidth=60, width=60, stretch=NO)
         self.tree.column('QTY', minwidth=60, width=80, stretch=NO)
         self.tree.column('U_PRICE', minwidth=100, width=100, stretch=NO)
@@ -119,6 +128,7 @@ class ProductTable:
                 unit_price_display = format_currency(unit_price)
                 total_display = format_currency(total)
                 
+                # Insert product name as-is (may include newlines); Treeview will display multi-line when rowheight allows
                 self.tree.insert('', index=END, iid=self.count,
                                values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "Edytuj", "Usuń"))
                 self.count += 1
@@ -323,7 +333,14 @@ class ProductTable:
                 
                 # Fallback: check if there are many items (more than estimated visible)
                 visible_height = self.tree.winfo_height()
-                item_height = 20  # Approximate height of one item in treeview
+                # Use actual rowheight from style if available
+                try:
+                    style = ttk.Style()
+                    style_name = self.tree.cget('style') or 'Treeview'
+                    rh = style.lookup(style_name, 'rowheight')
+                    item_height = int(rh) if rh else 20
+                except Exception:
+                    item_height = 20  # Approximate height of one item in treeview
                 visible_items = max(8, visible_height // item_height) if visible_height > 0 else 8
                 
                 return len(all_children) > visible_items

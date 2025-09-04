@@ -51,11 +51,15 @@ class ProductEditWindow:
         form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
         
-        # Product name
+        # Product name (multi-line up to ~7 lines)
         Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(row=0, column=0, sticky=W, padx=5, pady=12)
-        self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
+        self.entries['product_name'] = Text(form_frame, width=40, height=7, font=("Arial", 11), wrap=WORD)
         self.entries['product_name'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
-        self.entries['product_name'].insert(0, product_data['product_name'])
+        try:
+            # Insert existing name preserving newlines
+            self.entries['product_name'].insert('1.0', product_data['product_name'])
+        except Exception:
+            pass
         
         # Unit
         Label(form_frame, text="j.m.", font=("Arial", 11)).grid(row=1, column=0, sticky=W, padx=5, pady=12)
@@ -75,9 +79,20 @@ class ProductEditWindow:
         self.entries['unit_price'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
         self.entries['unit_price'].insert(0, product_data['unit_price'])
         
-        # Bind Enter key to all entry fields
-        for entry in self.entries.values():
-            entry.bind('<Return>', lambda event: self._update_product(product_window))
+        # Bind Enter key to all fields except product_name Text (allow newline there)
+        def _on_return(event):
+            try:
+                if event.widget is self.entries.get('product_name'):
+                    return
+                self._update_product(product_window)
+            except Exception:
+                pass
+
+        for key, entry in self.entries.items():
+            try:
+                entry.bind('<Return>', _on_return)
+            except Exception:
+                pass
         
         # Bind Enter key to update product
         product_window.bind('<Return>', lambda event: self._update_product(product_window))
@@ -121,8 +136,15 @@ class ProductEditWindow:
             print("DEBUG: _update_product called")  # Debug
             
             # Get product data (without product_id since position is auto-managed)
+            # Read multi-line product name from Text and normalize trailing newline
+            name_widget = self.entries.get('product_name')
+            if hasattr(name_widget, 'get') and name_widget.winfo_class() == 'Text':
+                pname = name_widget.get('1.0', END).rstrip('\n')
+            else:
+                pname = self.entries['product_name'].get()
+
             product_data = [
-                self.entries['product_name'].get(),
+                pname,
                 self.entries['unit'].get(),
                 self.entries['quantity'].get(),
                 self.entries['unit_price'].get()

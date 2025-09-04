@@ -26,9 +26,6 @@ class ProductAddWindow:
         product_window.transient(self.parent_window)
         product_window.configure(bg='#f8f9fa')
 
-        # Bind Enter key to the window for global shortcut
-        product_window.bind('<Return>', lambda event: self._add_product(product_window))
-
         print("DEBUG: Product window created")  # Debug
 
         # Center the window
@@ -53,11 +50,11 @@ class ProductAddWindow:
         form_frame = Frame(product_window, bg='white', relief=RIDGE, bd=2)
         form_frame.pack(pady=20, padx=40, fill=BOTH, expand=True)
 
-        # Product name
+        # Product name (multi-line up to ~7 lines)
         Label(form_frame, text="Nazwa", font=("Arial", 11)).grid(
             row=0, column=0, sticky=W, padx=5, pady=12
         )
-        self.entries['product_name'] = Entry(form_frame, width=35, font=("Arial", 11))
+        self.entries['product_name'] = Text(form_frame, width=40, height=7, font=("Arial", 11), wrap=WORD)
         self.entries['product_name'].grid(row=0, column=1, padx=5, pady=12, sticky=W)
 
         # Unit
@@ -85,9 +82,21 @@ class ProductAddWindow:
         self.entries['unit_price'] = Entry(form_frame, width=15, font=("Arial", 11))
         self.entries['unit_price'].grid(row=3, column=1, padx=5, pady=12, sticky=W)
 
-        # Bind Enter key to all entry fields
-        for entry in self.entries.values():
-            entry.bind('<Return>', lambda event: self._add_product(product_window))
+        # Bind Enter key to all entry fields except product_name Text (allow newline there)
+        def _on_return(event):
+            try:
+                # If focus is on the multi-line name Text, don't submit
+                if event.widget is self.entries.get('product_name'):
+                    return
+                self._add_product(product_window)
+            except Exception:
+                pass
+
+        for key, entry in self.entries.items():
+            try:
+                entry.bind('<Return>', _on_return)
+            except Exception:
+                pass
 
         # Add separator line
         separator = Frame(product_window, height=2, bg='#cccccc')
@@ -126,9 +135,9 @@ class ProductAddWindow:
         )
         cancel_btn.place(relx=0.7, rely=0.5, anchor=CENTER)
 
-        # Bind Enter key to add product
-        product_window.bind('<Return>', lambda event: self._add_product(product_window))
-        product_window.bind('<KP_Enter>', lambda event: self._add_product(product_window))
+        # Bind Enter on window to add product only when focus is not in the name Text
+        product_window.bind('<Return>', _on_return)
+        product_window.bind('<KP_Enter>', _on_return)
 
         # Set focus to first field
         self.entries['product_name'].focus_set()
@@ -137,8 +146,14 @@ class ProductAddWindow:
         """Handle product addition"""
         print("DEBUG: _add_product called")  # Debug
         # Get product data (without product_id since it's auto-generated)
+        # Read multi-line product name from Text and normalize newlines
+        name_widget = self.entries.get('product_name')
+        if hasattr(name_widget, 'get') and name_widget.winfo_class() == 'Text':
+            pname = name_widget.get('1.0', END).rstrip('\n')
+        else:
+            pname = self.entries['product_name'].get()
         product_data = [
-            self.entries['product_name'].get(),
+            pname,
             self.entries['unit'].get(),
             self.entries['quantity'].get(),
             self.entries['unit_price'].get()
@@ -163,9 +178,15 @@ class ProductAddWindow:
         
         # Call the callback function to add product
         if self.product_add_callback(product_data):
-            # Clear fields after successful addition
+            # Clear fields after successful addition (handle Text vs Entry)
             for entry in self.entries.values():
-                entry.delete(0, END)
+                try:
+                    if entry.winfo_class() == 'Text':
+                        entry.delete('1.0', END)
+                    else:
+                        entry.delete(0, END)
+                except Exception:
+                    pass
             # Close window
             product_window.destroy()
         else:
