@@ -342,7 +342,14 @@ class OfferGeneratorApp:
                 supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2']
                 for field_name in supplier_fields:
                     if field_name in self.ui.entries:
-                        self.ui.entries[field_name].delete(0, 'end')
+                        # supplier_name is a Text widget, others are Entry
+                        if field_name == 'supplier_name':
+                            try:
+                                self.ui.entries[field_name].delete('1.0', 'end')
+                            except Exception:
+                                pass
+                        else:
+                            self.ui.entries[field_name].delete(0, 'end')
                 
                 # Clear supplier NIP (need to temporarily enable it)
                 if 'supplier_nip' in self.ui.entries:

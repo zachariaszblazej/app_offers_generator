@@ -185,19 +185,26 @@ class OfferEditorApp:
                             widget.delete(0, END)
                             widget.insert(0, val)
             
-            # Load supplier data
+            # Load supplier data (handle Text for supplier_name)
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
             for field in supplier_fields:
                 if field in context_data and field in self.ui.entries:
+                    widget = self.ui.entries[field]
                     # Handle readonly NIP field
                     if field == 'supplier_nip':
-                        self.ui.entries[field].config(state='normal')
-                        self.ui.entries[field].delete(0, END)
-                        self.ui.entries[field].insert(0, context_data.get(field, ''))
-                        self.ui.entries[field].config(state='readonly')
+                        widget.config(state='normal')
+                        widget.delete(0, END)
+                        widget.insert(0, context_data.get(field, ''))
+                        widget.config(state='readonly')
                     else:
-                        self.ui.entries[field].delete(0, END)
-                        self.ui.entries[field].insert(0, context_data.get(field, ''))
+                        val = context_data.get(field, '')
+                        if isinstance(widget, Text):
+                            # Render literal \n as real newlines for display (supplier_name is Text)
+                            widget.delete('1.0', END)
+                            widget.insert('1.0', str(val or '').replace('\\n', '\n'))
+                        else:
+                            widget.delete(0, END)
+                            widget.insert(0, val)
             
             # Load offer details (all are Text now)
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 
