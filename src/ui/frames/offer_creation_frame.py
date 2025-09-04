@@ -26,22 +26,28 @@ class OfferCreationFrame(Frame):
         # Create a container for the offer app
         self.offer_container = Frame(self, bg='white')
         self.offer_container.pack(fill=BOTH, expand=True)
-        
+
         # Back button frame (top-left) - this stays fixed at top
         back_frame = Frame(self.offer_container, bg='white', height=40)
         back_frame.pack(fill=X, padx=10, pady=5)
         back_frame.pack_propagate(False)
-        
+        # Expose header frame for children (apps) to add actions
+        self.header_frame = back_frame
+
         # Create back button - text and behavior will be updated when offer app is created
-        self.back_btn = Button(back_frame, 
-                              text="← Powrót do menu głównego",
-                              font=("Arial", 12),
-                              bg='#9E9E9E', fg='black',
-                              padx=15, pady=5,
-                              command=self.return_to_source,
-                              cursor='hand2')
+        self.back_btn = Button(
+            back_frame,
+            text="← Powrót do menu głównego",
+            font=("Arial", 12),
+            bg='#9E9E9E', fg='black',
+            padx=15, pady=5,
+            command=self.return_to_source,
+            cursor='hand2'
+        )
         self.back_btn.pack(side=LEFT)
-        
+        # Placeholder for action button (created after app instance exists)
+        self.action_btn = None
+
         # Create scrollable content area
         self.create_scrollable_content()
     
@@ -173,11 +179,43 @@ class OfferCreationFrame(Frame):
             
             # Update back button text based on source
             self.update_back_button_text()
+            # Add/refresh header action button (Generate)
+            self.setup_header_actions()
             
             # Start mouse position checking
             self.start_mouse_position_checking()
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się załadować interfejsu tworzenia oferty: {e}")
+
+    def setup_header_actions(self):
+        """Create or refresh the header action button next to back button."""
+        try:
+            # Ensure we have the app instance and header frame
+            if not hasattr(self, 'offer_app_instance') or not self.offer_app_instance:
+                return
+            if not hasattr(self, 'header_frame') or self.header_frame is None:
+                return
+
+            # If already created, just rebind command
+            if self.action_btn and self.action_btn.winfo_exists():
+                try:
+                    self.action_btn.config(command=self.offer_app_instance.generate_offer)
+                except Exception:
+                    pass
+                return
+
+            # Create the action button
+            self.action_btn = Button(self.header_frame,
+                                     text="Generuj ofertę",
+                                     font=("Arial", 12, "bold"),
+                                     bg='#ffcc00', fg='black',
+                                     padx=15, pady=5,
+                                     command=self.offer_app_instance.generate_offer,
+                                     cursor='hand2')
+            # Place it next to back button on the left
+            self.action_btn.pack(side=LEFT, padx=(10, 0))
+        except Exception:
+            pass
     
     def update_back_button_text(self):
         """Update back button text based on source frame"""

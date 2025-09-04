@@ -111,12 +111,7 @@ class OfferEditorApp:
                command=self.move_product_down,
                cursor='hand2').place(x=320, y=740)
         
-        # Update offer button (instead of generate)
-        update_offer_button = Button(self.window, text="Zapisz zmiany", 
-                                   font=("Arial", 12, "bold"),
-                                   bg='#ff6600', fg='black',
-                                   command=self.update_offer)
-        update_offer_button.place(x=700, y=980)
+    # Save button moved to header in OfferEditorFrame
     
     def load_offer_data(self):
         """Load data from existing offer context stored in database"""

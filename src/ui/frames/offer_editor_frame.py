@@ -37,15 +37,28 @@ class OfferEditorFrame(Frame):
         back_frame = Frame(self.offer_container, bg='white', height=40)
         back_frame.pack(fill=X, padx=10, pady=5)
         back_frame.pack_propagate(False)
-        
-        back_btn = Button(back_frame, 
-                         text="← Powrót do przeglądania ofert",
-                         font=("Arial", 12),
-                         bg='#9E9E9E', fg='black',
-                         padx=15, pady=5,
-                         command=self.return_to_browse_offers,
-                         cursor='hand2')
+
+        back_btn = Button(
+            back_frame,
+            text="← Powrót do przeglądania ofert",
+            font=("Arial", 12),
+            bg='#9E9E9E', fg='black',
+            padx=15, pady=5,
+            command=self.return_to_browse_offers,
+            cursor='hand2'
+        )
         back_btn.pack(side=LEFT)
+
+        # Placeholder for header action (save)
+        self.action_btn = Button(
+            back_frame,
+            text="Zapisz zmiany",
+            font=("Arial", 12, "bold"),
+            bg='#ffcc00', fg='black',
+            padx=15, pady=5,
+            cursor='hand2'
+        )
+        self.action_btn.pack(side=LEFT, padx=(10, 0))
         
         # Title indicating this is edit mode
         title_label = Label(back_frame, 
@@ -270,6 +283,13 @@ class OfferEditorFrame(Frame):
                 self.offer_app_instance = OfferEditorApp(self, self.nav_manager, offer_path or self.offer_path)
                 # Update scroll region after content is loaded
                 self.after(100, self.update_scroll_region)
+                
+                # Wire header action button to app's update_offer now that instance exists
+                try:
+                    if hasattr(self, 'action_btn') and self.action_btn.winfo_exists():
+                        self.action_btn.config(command=self.offer_app_instance.update_offer)
+                except Exception:
+                    pass
                 
                 # Start mouse position checking
                 self.start_mouse_position_checking()

@@ -131,11 +131,7 @@ class OfferGeneratorApp:
                                       command=self.supplier_search.open_supplier_search)
         search_supplier_button.place(x=300, y=360)
         
-        # Generate offer button
-        generate_offer_button = Button(self.window, text="Generuj ofertę", 
-                                     font=("Arial", 12, "bold"),
-                                     command=self.generate_offer)
-        generate_offer_button.place(x=700, y=1180)
+    # Generate button moved to header in OfferCreationFrame
     
     def insert_product(self, product_data):
         """Insert a new product into the table"""
