@@ -82,10 +82,18 @@ class ClientEditWindow:
         ]
 
         self.entries = {}
+        multiline_keys = {
+            'termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena'
+        }
         for idx, (key, label, readonly) in enumerate(rows):
             Label(form, text=label, font=("Arial", 12), bg='white').grid(row=idx, column=0, sticky=W, padx=12, pady=6)
             if key == 'company_name':
                 # Multi-line Text for company name; will be saved with literal \n between lines
+                txt = Text(form, font=("Arial", 12), width=40, height=3, wrap=WORD)
+                txt.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
+                self.entries[key] = txt
+            elif key in multiline_keys:
+                # 3-line Text widgets for extended fields
                 txt = Text(form, font=("Arial", 12), width=40, height=3, wrap=WORD)
                 txt.grid(row=idx, column=1, sticky=W, padx=12, pady=6)
                 self.entries[key] = txt
@@ -127,13 +135,28 @@ class ClientEditWindow:
             self.entries['address_p1'].insert(0, client.get('address_p1', ''))
             self.entries['address_p2'].insert(0, client.get('address_p2', ''))
             self.entries['alias'].insert(0, client.get('alias', ''))
-            # Extended
-            self.entries['termin_realizacji'].insert(0, client.get('termin_realizacji', ''))
-            self.entries['termin_platnosci'].insert(0, client.get('termin_platnosci', ''))
-            self.entries['warunki_dostawy'].insert(0, client.get('warunki_dostawy', ''))
-            self.entries['waznosc_oferty'].insert(0, client.get('waznosc_oferty', ''))
-            self.entries['gwarancja'].insert(0, client.get('gwarancja', ''))
-            self.entries['cena'].insert(0, client.get('cena', ''))
+            # Extended (fill Text widgets)
+            try:
+                self.entries['termin_realizacji'].delete('1.0', END)
+                self.entries['termin_realizacji'].insert('1.0', client.get('termin_realizacji', '') or '')
+                self.entries['termin_platnosci'].delete('1.0', END)
+                self.entries['termin_platnosci'].insert('1.0', client.get('termin_platnosci', '') or '')
+                self.entries['warunki_dostawy'].delete('1.0', END)
+                self.entries['warunki_dostawy'].insert('1.0', client.get('warunki_dostawy', '') or '')
+                self.entries['waznosc_oferty'].delete('1.0', END)
+                self.entries['waznosc_oferty'].insert('1.0', client.get('waznosc_oferty', '') or '')
+                self.entries['gwarancja'].delete('1.0', END)
+                self.entries['gwarancja'].insert('1.0', client.get('gwarancja', '') or '')
+                self.entries['cena'].delete('1.0', END)
+                self.entries['cena'].insert('1.0', client.get('cena', '') or '')
+            except Exception:
+                # Fallback if any widget is not Text (shouldn't happen after changes)
+                for k in ['termin_realizacji','termin_platnosci','warunki_dostawy','waznosc_oferty','gwarancja','cena']:
+                    try:
+                        self.entries[k].delete(0, END)
+                        self.entries[k].insert(0, client.get(k, '') or '')
+                    except Exception:
+                        pass
 
         # Buttons
         buttons = Frame(self.window, bg='#f8f9fa', height=90)
@@ -175,15 +198,22 @@ class ClientEditWindow:
                 'termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 'waznosc_oferty', 'gwarancja', 'cena']
         data = {}
         for k in keys:
-            if k == 'company_name':
+            widget = self.entries.get(k)
+            if k == 'company_name' and isinstance(widget, Text):
                 # Convert actual newlines to literal \n before saving to DB
                 try:
-                    raw = self.entries['company_name'].get('1.0', 'end-1c')
+                    raw = widget.get('1.0', 'end-1c')
                 except Exception:
                     raw = ''
                 data['company_name'] = (raw or '').strip().replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+            elif isinstance(widget, Text):
+                # Read raw multi-line text for extended fields
+                try:
+                    data[k] = widget.get('1.0', 'end-1c').strip()
+                except Exception:
+                    data[k] = ''
             else:
-                data[k] = self.entries[k].get().strip()
+                data[k] = (widget.get().strip() if widget is not None else '')
 
         # Basic validation
         required_ok = all(
