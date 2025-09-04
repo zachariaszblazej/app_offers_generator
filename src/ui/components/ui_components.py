@@ -115,7 +115,7 @@ class UIComponents:
             self.entries['offer_number_display'] = Entry(self.window, width=20, state='readonly', 
                                                        font=("Arial", 12, "bold"), justify='center',
                                                        bg='#f8f9fa', relief='flat')
-            self.entries['offer_number_display'].place(x=400, y=200)
+            self.entries['offer_number_display'].place(x=400, y=180)
 
         # Company info entries
         address1_value = StringVar(self.window, value=self.text_data['address_1'])
