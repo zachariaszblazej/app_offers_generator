@@ -588,27 +588,16 @@ class SettingsFrame(Frame):
                 value = offer_details_settings.get(field, '')
                 self.entries[field].insert(0, value)
         
-    # Load app settings data (but not offers_folder)
+    # Load app settings data (now includes offers_folder and wz_folder)
         app_settings = self.settings_manager.get_all_app_settings()
-
-        # Offers/WZ folders come only from DB (Paths table); if DB is unavailable, set empty
-        try:
-            from src.data.database_service import get_offers_root_from_db, get_wz_root_from_db, is_database_available
-            db_ok = is_database_available()
-        except Exception:
-            db_ok = False
-
-        # Offers folder
-        offers_folder = ''
-        if db_ok:
-            try:
-                offers_folder = get_offers_root_from_db() or ''
-            except Exception:
-                offers_folder = ''
+        
+        # Offers and WZ folders are now stored in local app settings
         if 'offers_folder' in self.entries:
-            self._set_entry_value('offers_folder', offers_folder)
+            self._set_entry_value('offers_folder', app_settings.get('offers_folder', ''))
+        if 'wz_folder' in self.entries:
+            self._set_entry_value('wz_folder', app_settings.get('wz_folder', ''))
 
-        # database_path and backup settings still from app settings; wz_folder from DB Paths
+        # database_path and backup settings from app settings
         for field in ['database_path']:
             if field in self.entries:
                 value = app_settings.get(field, '')
@@ -621,16 +610,7 @@ class SettingsFrame(Frame):
             enabled = False
         self.db_backup_var.set(enabled)
         self._set_entry_value('db_backup_folder', app_settings.get('db_backup_folder', ''))
-
-        # Load WZ folder from DB Paths
-        wz_folder = ''
-        if db_ok:
-            try:
-                wz_folder = get_wz_root_from_db() or ''
-            except Exception:
-                wz_folder = ''
-        if 'wz_folder' in self.entries:
-            self._set_entry_value('wz_folder', wz_folder)
+        
     
     def save_settings(self):
         """Save settings to file"""
@@ -671,25 +651,19 @@ class SettingsFrame(Frame):
         self.settings_manager.update_offer_details_settings(offer_details_settings)
 
         # Collect app settings and check if critical settings changed
-        # offers_folder and wz_folder are stored ONLY in DB (Paths); database_path in app settings
-        app_fields = ['database_path', 'db_backup_enabled', 'db_backup_folder']
+        # offers_folder and wz_folder are now also in app settings
+        app_fields = ['database_path', 'db_backup_enabled', 'db_backup_folder', 'offers_folder', 'wz_folder']
         app_settings = {}
         offers_folder_changed = False
         wz_folder_changed = False
-        # Track whether changes were actually applied (written) to DB
+        # Track whether changes were actually applied (written) to settings
         offers_folder_applied = False
         wz_folder_applied = False
         database_path_changed = False
-
-        # Read current folders from DB (if accessible) for change detection
-        offers_folder_old = ''
-        wz_folder_old = ''
-        try:
-            from src.data.database_service import get_offers_root_from_db, get_wz_root_from_db
-            offers_folder_old = get_offers_root_from_db() or ''
-            wz_folder_old = get_wz_root_from_db() or ''
-        except Exception:
-            pass
+        
+        # Read current folders from settings for change detection
+        offers_folder_old = self.settings_manager.get_app_setting('offers_folder') or ''
+        wz_folder_old = self.settings_manager.get_app_setting('wz_folder') or ''
 
         new_offers_folder = self.entries['offers_folder'].get().strip() if 'offers_folder' in self.entries else ''
         new_wz_folder = self.entries['wz_folder'].get().strip() if 'wz_folder' in self.entries else ''
@@ -699,59 +673,33 @@ class SettingsFrame(Frame):
         if new_wz_folder != wz_folder_old:
             wz_folder_changed = True
 
-        # Handle app fields (database_path + backup)
+        # Handle app fields (database_path + backup + folders)
         for field in app_fields:
             if field == 'db_backup_enabled':
-                # Boolean value comes from variable, not Entry
                 new_value = bool(self.db_backup_var.get())
-                old_value = bool(self.settings_manager.get_app_setting('db_backup_enabled'))
                 app_settings['db_backup_enabled'] = new_value
                 continue
             if field in self.entries:
-                new_value = self.entries[field].get().strip()
-                old_value = self.settings_manager.get_app_setting(field)
-                app_settings[field] = new_value
-                if field == 'database_path' and new_value != old_value:
+                app_settings[field] = self.entries[field].get().strip()
+            else:
+                app_settings[field] = self.settings_manager.get_app_setting(field)
+            if field == 'database_path':
+                old_value = self.settings_manager.get_app_setting('database_path')
+                if app_settings[field] != (old_value or ''):
                     database_path_changed = True
 
         # If backups are disabled, clear the backup folder regardless of UI content
         if not app_settings.get('db_backup_enabled', False):
             app_settings['db_backup_folder'] = ''
 
-        # Update app settings first so availability checks use the latest value
+        # Update app settings
         self.settings_manager.update_app_settings(app_settings)
 
-        # Check DB availability before attempting to save Offers/WZ folders
-        from src.data.database_service import is_database_available
-        db_ok = is_database_available()
-
-        # Update offers folder in DB only if changed and DB is available
+        # Consider folders applied if saved to settings
         if offers_folder_changed:
-            if not db_ok:
-                tkinter.messagebox.showerror(
-                    "Błąd bazy danych",
-                    "Nie można zapisać folderu ofert, ponieważ baza danych jest niedostępna."
-                )
-            else:
-                try:
-                    from src.data.database_service import set_offers_root_in_db
-                    offers_folder_applied = bool(set_offers_root_in_db(new_offers_folder))
-                except Exception as e:
-                    print(f"Failed to update Offers_Folder in DB: {e}")
-
-        # Update WZ folder in DB only if changed and DB is available
+            offers_folder_applied = True
         if wz_folder_changed:
-            if not db_ok:
-                tkinter.messagebox.showerror(
-                    "Błąd bazy danych",
-                    "Nie można zapisać folderu WZ, ponieważ baza danych jest niedostępna."
-                )
-            else:
-                try:
-                    from src.data.database_service import set_wz_root_in_db
-                    wz_folder_applied = bool(set_wz_root_in_db(new_wz_folder))
-                except Exception as e:
-                    print(f"Failed to update Wz_Folder in DB: {e}")
+            wz_folder_applied = True
 
         # Validate database path if it changed
         if database_path_changed:
@@ -770,7 +718,7 @@ class SettingsFrame(Frame):
             if database_path_changed:
                 self.show_restart_prompt(database_path_changed)
             else:
-                # Don't show success if user changed folders but they couldn't be saved to DB
+                # Don't show success if user changed folders but they couldn't be saved
                 failed_folder_changes = (
                     (offers_folder_changed and not offers_folder_applied) or
                     (wz_folder_changed and not wz_folder_applied)

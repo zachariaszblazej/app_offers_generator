@@ -21,6 +21,9 @@ def get_data_dir():
 # Default application settings
 DEFAULT_APP_SETTINGS = {
     'database_path': "Z:/PUBLIC/AplikacjaDokumenty/HantechDocumentsDatabase.db",
+    # Locations for generated documents (now stored in local settings, not DB Paths)
+    'offers_folder': "",
+    'wz_folder': "",
     # Automatic database backup on app start
     'db_backup_enabled': False,
     'db_backup_folder': ""
@@ -56,23 +59,21 @@ BACKGROUND_IMAGE = get_resource_path('background_offer_1.png')
 WZ_BACKGROUND_IMAGE = get_resource_path('background_wz_1.png')
 
 def get_offers_folder():
-    """Get the current offers folder from DB Paths or return empty string.
-    Does not use app_settings.json.
-    """
+    """Get the current offers folder from local app settings (app_settings.json)."""
     try:
-        from src.data.database_service import get_offers_root_from_db
-        return get_offers_root_from_db() or ''
+        from src.utils.settings import SettingsManager
+        sm = SettingsManager()
+        return sm.get_app_setting('offers_folder') or ''
     except Exception:
         return ''
 
 
 def get_wz_folder():
-    """Get the current WZ folder from DB Paths or return empty string.
-    Does not use app_settings.json.
-    """
+    """Get the current WZ folder from local app settings (app_settings.json)."""
     try:
-        from src.data.database_service import get_wz_root_from_db
-        return get_wz_root_from_db() or ''
+        from src.utils.settings import SettingsManager
+        sm = SettingsManager()
+        return sm.get_app_setting('wz_folder') or ''
     except Exception:
         return ''
 
