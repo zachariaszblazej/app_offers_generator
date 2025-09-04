@@ -3,6 +3,7 @@ Main application entry point and core application classes
 """
 from tkinter import *
 from tkinter import ttk
+import tkinter.font as tkfont
 import locale
 import sys
 import os
@@ -47,6 +48,14 @@ class OfferGeneratorMainApp:
 
         # Create main window
         self.window = Tk()
+        # Ensure all multiline Text widgets use the same default font as Entry across the whole app
+        try:
+            default_font = tkfont.nametofont("TkDefaultFont")
+            # Apply to all classic Tk Text widgets created afterwards
+            self.window.option_add("*Text*font", default_font)
+        except Exception:
+            # Non-fatal if fonts aren't available yet
+            pass
         try:
             from src.utils.version import get_version_string
             version_str = get_version_string()
