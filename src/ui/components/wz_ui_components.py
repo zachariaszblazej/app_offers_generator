@@ -117,38 +117,56 @@ class WzUIComponents:
         self.entries['account_number'].bind('<KeyRelease>', self._on_field_modified)
     
     def create_wz_section(self):
-        """Create the supplier/client section with search buttons"""
-        # Supplier entries
-        self.entries['supplier_name'] = Entry(self.window, width=45)
-        self.entries['supplier_name'].place(x=60, y=270)
+        """Create the supplier/client section using one-column tables with 2-line Text for names (like offers)"""
+        # Supplier entries as a one-column table with header
+        supplier_frame = Frame(self.window, bg='white')
+        supplier_frame.place(x=60, y=220)
+
+        Label(supplier_frame, text='DOSTAWCA', font=("Arial", 16, "bold"), bg='white').grid(row=0, column=0, sticky='w', pady=(0, 6))
+
+        # Row 1: Text for supplier name (2 lines)
+        self.entries['supplier_name'] = Text(supplier_frame, width=45, height=2, wrap=WORD)
+        self.entries['supplier_name'].grid(row=1, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_1'] = Entry(self.window, width=45)
-        self.entries['supplier_address_1'].place(x=60, y=300)
+        # Row 2: Entry for address 1
+        self.entries['supplier_address_1'] = Entry(supplier_frame, width=45)
+        self.entries['supplier_address_1'].grid(row=2, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_address_2'] = Entry(self.window, width=45)
-        self.entries['supplier_address_2'].place(x=60, y=330)
+        # Row 3: Entry for address 2
+        self.entries['supplier_address_2'] = Entry(supplier_frame, width=45)
+        self.entries['supplier_address_2'].grid(row=3, column=0, sticky='w', pady=(0, 6))
         self.entries['supplier_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
-        self.entries['supplier_nip'].place(x=60, y=360)
+        # Row 4: Entry for NIP (readonly)
+        self.entries['supplier_nip'] = Entry(supplier_frame, width=25, state='readonly', bg='#f0f0f0')
+        self.entries['supplier_nip'].grid(row=4, column=0, sticky='w')
 
-        # Client entries
-        self.entries['client_name'] = Entry(self.window, width=45)
-        self.entries['client_name'].place(x=660, y=270)
+        # Client entries as a one-column table with header
+        client_frame = Frame(self.window, bg='white')
+        client_frame.place(x=600, y=220)
+
+        Label(client_frame, text='KLIENT', font=("Arial", 16, "bold"), bg='white').grid(row=0, column=0, sticky='w', pady=(0, 6))
+
+        # Row 1: Text for client name (2 lines)
+        self.entries['client_name'] = Text(client_frame, width=45, height=2, wrap=WORD)
+        self.entries['client_name'].grid(row=1, column=0, sticky='w', pady=(0, 6))
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_1'] = Entry(self.window, width=45)
-        self.entries['client_address_1'].place(x=660, y=300)
+        # Row 2: Entry for address 1
+        self.entries['client_address_1'] = Entry(client_frame, width=45)
+        self.entries['client_address_1'].grid(row=2, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_2'] = Entry(self.window, width=45)
-        self.entries['client_address_2'].place(x=660, y=330)
+        # Row 3: Entry for address 2
+        self.entries['client_address_2'] = Entry(client_frame, width=45)
+        self.entries['client_address_2'].grid(row=3, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
-        self.entries['client_nip'].place(x=660, y=360)
+        # Row 4: Entry for NIP (readonly)
+        self.entries['client_nip'] = Entry(client_frame, width=25, state='readonly', bg='#f0f0f0')
+        self.entries['client_nip'].grid(row=4, column=0, sticky='w')
     
     def create_action_buttons(self):
         """Create action buttons for WZ operations"""
@@ -202,7 +220,9 @@ class WzUIComponents:
             if isinstance(entry, Entry):
                 data[key] = entry.get()
             elif isinstance(entry, Text):
-                data[key] = entry.get("1.0", END).strip()
+                raw = entry.get("1.0", END).strip()
+                # Normalize to literal \n markers for downstream processing
+                data[key] = raw.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
         return data
     
     def get_field_value(self, field_name):
@@ -223,7 +243,10 @@ class WzUIComponents:
         self.selected_client_alias = alias
         
         # Clear existing data
-        self.entries['client_name'].delete(0, END)
+        if isinstance(self.entries.get('client_name'), Text):
+            self.entries['client_name'].delete('1.0', END)
+        else:
+            self.entries['client_name'].delete(0, END)
         self.entries['client_address_1'].delete(0, END)
         self.entries['client_address_2'].delete(0, END)
         
@@ -232,7 +255,11 @@ class WzUIComponents:
         self.entries['client_nip'].delete(0, END)
         
         # Fill with selected client data
-        self.entries['client_name'].insert(0, company_name)
+        disp_name = str(company_name or '').replace('\\n', '\n')
+        if isinstance(self.entries.get('client_name'), Text):
+            self.entries['client_name'].insert('1.0', disp_name)
+        else:
+            self.entries['client_name'].insert(0, disp_name)
         self.entries['client_address_1'].insert(0, address1)
         self.entries['client_address_2'].insert(0, address2)
         self.entries['client_nip'].insert(0, str(nip))
@@ -252,7 +279,10 @@ class WzUIComponents:
         self.selected_supplier_alias = company_name  # Use company name as alias
         
         # Clear existing data
-        self.entries['supplier_name'].delete(0, END)
+        if isinstance(self.entries.get('supplier_name'), Text):
+            self.entries['supplier_name'].delete('1.0', END)
+        else:
+            self.entries['supplier_name'].delete(0, END)
         self.entries['supplier_address_1'].delete(0, END)
         self.entries['supplier_address_2'].delete(0, END)
         
@@ -261,7 +291,11 @@ class WzUIComponents:
         self.entries['supplier_nip'].delete(0, END)
         
         # Fill with selected supplier data
-        self.entries['supplier_name'].insert(0, company_name)
+        disp_name = str(company_name or '').replace('\\n', '\n')
+        if isinstance(self.entries.get('supplier_name'), Text):
+            self.entries['supplier_name'].insert('1.0', disp_name)
+        else:
+            self.entries['supplier_name'].insert(0, disp_name)
         self.entries['supplier_address_1'].insert(0, address1)
         self.entries['supplier_address_2'].insert(0, address2)
         self.entries['supplier_nip'].insert(0, str(nip))
@@ -434,6 +468,16 @@ class WzUIComponents:
                     print(f"Warning: Could not parse date '{date_str}', using current date")
                     parsed_date = datetime.now().date()
         
+        # Helper to read name fields and normalize newlines to literal markers
+        def _name_value(field: str) -> str:
+            widget = self.entries.get(field)
+            if isinstance(widget, Text):
+                raw = widget.get('1.0', END).strip()
+                return raw.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+            if isinstance(widget, Entry):
+                return widget.get()
+            return ''
+
         context = {
             'town': self.entries['town'].get(),
             'address_1': self.entries['address_1'].get(),
@@ -445,11 +489,11 @@ class WzUIComponents:
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
             'date': parsed_date,
-            'supplier_name': self.entries['supplier_name'].get(),
+            'supplier_name': _name_value('supplier_name'),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),
             'supplier_nip': self.entries['supplier_nip'].get(),
-            'client_name': self.entries['client_name'].get(),
+            'client_name': _name_value('client_name'),
             'client_address_1': self.entries['client_address_1'].get(),
             'client_address_2': self.entries['client_address_2'].get(),
             'client_nip': self.entries['client_nip'].get(),
@@ -479,8 +523,12 @@ class WzUIComponents:
                         self.entries[field].insert(0, context_data.get(field, ''))
                         self.entries[field].config(state='readonly')
                     else:
-                        self.entries[field].delete(0, END)
-                        self.entries[field].insert(0, context_data.get(field, ''))
+                        if isinstance(self.entries[field], Text):
+                            self.entries[field].delete('1.0', END)
+                            self.entries[field].insert('1.0', str(context_data.get(field, '') or '').replace('\\n', '\n'))
+                        else:
+                            self.entries[field].delete(0, END)
+                            self.entries[field].insert(0, context_data.get(field, ''))
             
             # Store client alias for new WZ generation
             if 'client_alias' in context_data:
@@ -510,8 +558,12 @@ class WzUIComponents:
                         self.entries[field].insert(0, context_data.get(field, ''))
                         self.entries[field].config(state='readonly')
                     else:
-                        self.entries[field].delete(0, END)
-                        self.entries[field].insert(0, context_data.get(field, ''))
+                        if isinstance(self.entries[field], Text):
+                            self.entries[field].delete('1.0', END)
+                            self.entries[field].insert('1.0', str(context_data.get(field, '') or '').replace('\\n', '\n'))
+                        else:
+                            self.entries[field].delete(0, END)
+                            self.entries[field].insert(0, context_data.get(field, ''))
         
             
             # Load town
@@ -553,7 +605,8 @@ class WzUIComponents:
                 # Recalculate totals
                 if hasattr(self.product_table, 'calculate_totals'):
                     total = self.product_table.calculate_totals()
-                    self.update_suma(total)
+                    if hasattr(self, 'update_suma'):
+                        self.update_suma(total)
                     
             return True
             

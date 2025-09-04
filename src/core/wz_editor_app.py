@@ -107,10 +107,10 @@ class WzEditorApp:
         # Create search buttons (not provided by WzUIComponents)
         supplier_search_btn = Button(self.window, text="Szukaj dostawcy", font=("Arial", 10),
                                      command=self.supplier_search.open_supplier_search)
-        supplier_search_btn.place(x=300, y=360)
+        supplier_search_btn.place(x=380, y=400)
         client_search_btn = Button(self.window, text="Szukaj klienta", font=("Arial", 10),
                                    command=self.client_search.open_client_search)
-        client_search_btn.place(x=900, y=360)
+        client_search_btn.place(x=980, y=400)
 
         # Expose for potential external use
         self.ui.supplier_search_btn = supplier_search_btn
@@ -183,8 +183,15 @@ class WzEditorApp:
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_phone_number']
             for field in client_fields:
                 if field in context_data and field in self.ui.entries:
-                    self.ui.entries[field].delete(0, END)
-                    self.ui.entries[field].insert(0, context_data.get(field, ''))
+                    widget = self.ui.entries[field]
+                    value = context_data.get(field, '')
+                    # Convert literal \n to real newlines for display in Text
+                    if hasattr(widget, 'winfo_class') and widget.winfo_class() == 'Text':
+                        widget.delete('1.0', END)
+                        widget.insert('1.0', str(value or '').replace('\\n', '\n'))
+                    else:
+                        widget.delete(0, END)
+                        widget.insert(0, value)
             
             # Load client NIP separately (needs temporary unlock)
             if 'client_nip' in context_data and 'client_nip' in self.ui.entries:
@@ -203,8 +210,14 @@ class WzEditorApp:
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_phone_number']
             for field in supplier_fields:
                 if field in context_data and field in self.ui.entries:
-                    self.ui.entries[field].delete(0, END)
-                    self.ui.entries[field].insert(0, context_data.get(field, ''))
+                    widget = self.ui.entries[field]
+                    value = context_data.get(field, '')
+                    if hasattr(widget, 'winfo_class') and widget.winfo_class() == 'Text':
+                        widget.delete('1.0', END)
+                        widget.insert('1.0', str(value or '').replace('\\n', '\n'))
+                    else:
+                        widget.delete(0, END)
+                        widget.insert(0, value)
             
             # Load supplier NIP separately (needs temporary unlock)
             if 'supplier_nip' in context_data and 'supplier_nip' in self.ui.entries:

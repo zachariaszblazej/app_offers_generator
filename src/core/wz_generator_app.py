@@ -100,50 +100,50 @@ class WzGeneratorApp:
         self.create_buttons()
 
     def create_buttons(self):
-        """Create all buttons"""
-        # Product management buttons
-        Button(self.window, text="DODAJ POZYCJĘ", 
-               font=("Arial", 12, "bold"),
-               bg='#28a745', fg='black',
-               padx=15, pady=8,
-               command=self.product_add.show,
-               cursor='hand2').place(x=50, y=740)
-        
-        # Product movement buttons
-        Button(self.window, text="▲", anchor='center',
-               font=("Arial", 16, "bold"),
-               bg='#6c757d', fg='black',
-               width=3, height=1,
-               command=self.move_product_up,
-               cursor='hand2').place(x=250, y=740)
-        
-        Button(self.window, text="▼", anchor='center',
-               font=("Arial", 16, "bold"),
-               bg='#6c757d', fg='black',
-               width=3, height=1,
-               command=self.move_product_down,
-               cursor='hand2').place(x=320, y=740)
-        
-        # Client search button
-        search_client_button = Button(self.window, text="Szukaj klienta", 
-                                    font=("Arial", 10),
-                                    command=self.client_search.open_client_search)
-        search_client_button.place(x=900, y=360)
-        
-        # Supplier search button
-        search_supplier_button = Button(self.window, text="Szukaj dostawcy", 
-                                      font=("Arial", 10),
-                                      command=self.supplier_search.open_supplier_search)
-        search_supplier_button.place(x=300, y=360)
-        
-        # Generate offer button
-        generate_offer_button = Button(self.window, text="Generuj WZ", 
-                                     font=("Arial", 12, "bold"),
-                                     command=self.generate_wz)
-        generate_offer_button.place(x=700, y=740)
-        
-        if hasattr(self.ui, 'generate_btn'):
-            self.ui.generate_btn.config(command=self.generate_wz)
+     """Create all buttons"""
+     # Product management buttons
+     Button(self.window, text="DODAJ POZYCJĘ", 
+         font=("Arial", 12, "bold"),
+         bg='#28a745', fg='black',
+         padx=15, pady=8,
+         command=self.product_add.show,
+         cursor='hand2').place(x=50, y=740)
+
+     # Product movement buttons
+     Button(self.window, text="▲", anchor='center',
+         font=("Arial", 16, "bold"),
+         bg='#6c757d', fg='black',
+         width=3, height=1,
+         command=self.move_product_up,
+         cursor='hand2').place(x=250, y=740)
+
+     Button(self.window, text="▼", anchor='center',
+         font=("Arial", 16, "bold"),
+         bg='#6c757d', fg='black',
+         width=3, height=1,
+         command=self.move_product_down,
+         cursor='hand2').place(x=320, y=740)
+
+     # Client search button
+     search_client_button = Button(self.window, text="Szukaj klienta",
+                       font=("Arial", 10),
+                       command=self.client_search.open_client_search)
+     search_client_button.place(x=980, y=400)
+
+     # Supplier search button
+     search_supplier_button = Button(self.window, text="Szukaj dostawcy",
+                         font=("Arial", 10),
+                         command=self.supplier_search.open_supplier_search)
+     search_supplier_button.place(x=380, y=400)
+
+     # Generate WZ button
+     generate_offer_button = Button(self.window, text="Generuj WZ",
+                        font=("Arial", 12, "bold"),
+                        command=self.generate_wz)
+     generate_offer_button.place(x=700, y=740)
+
+     if hasattr(self.ui, 'generate_btn'):
+         self.ui.generate_btn.config(command=self.generate_wz)
     
     def mark_as_modified(self):
         """Mark that user has made modifications"""
@@ -156,7 +156,17 @@ class WzGeneratorApp:
         for field in supplier_fields:
             if field in self.ui.entries:
                 self.ui.entries[field].config(state='normal')
-                self.ui.entries[field].delete(0, END)
+                widget = self.ui.entries[field]
+                try:
+                    if widget.winfo_class() == 'Text':
+                        widget.delete('1.0', END)
+                    else:
+                        widget.delete(0, END)
+                except Exception:
+                    try:
+                        widget.delete(0, END)
+                    except Exception:
+                        pass
                 if field == 'supplier_nip':
                     self.ui.entries[field].config(state='readonly')
         
@@ -165,7 +175,17 @@ class WzGeneratorApp:
         for field in client_fields:
             if field in self.ui.entries:
                 self.ui.entries[field].config(state='normal')
-                self.ui.entries[field].delete(0, END)
+                widget = self.ui.entries[field]
+                try:
+                    if widget.winfo_class() == 'Text':
+                        widget.delete('1.0', END)
+                    else:
+                        widget.delete(0, END)
+                except Exception:
+                    try:
+                        widget.delete(0, END)
+                    except Exception:
+                        pass
                 if field == 'client_nip':
                     self.ui.entries[field].config(state='readonly')
 
@@ -179,8 +199,20 @@ class WzGeneratorApp:
                 nip, company_name, address1, address2, _ = supplier
                 # Fill fields
                 if 'supplier_name' in self.ui.entries:
-                    self.ui.entries['supplier_name'].delete(0, END)
-                    self.ui.entries['supplier_name'].insert(0, company_name)
+                    widget = self.ui.entries['supplier_name']
+                    try:
+                        if widget.winfo_class() == 'Text':
+                            widget.delete('1.0', END)
+                            widget.insert('1.0', str(company_name or '').replace('\\n', '\n'))
+                        else:
+                            widget.delete(0, END)
+                            widget.insert(0, company_name)
+                    except Exception:
+                        try:
+                            widget.delete(0, END)
+                            widget.insert(0, company_name)
+                        except Exception:
+                            pass
                 if 'supplier_address_1' in self.ui.entries:
                     self.ui.entries['supplier_address_1'].delete(0, END)
                     self.ui.entries['supplier_address_1'].insert(0, address1)
