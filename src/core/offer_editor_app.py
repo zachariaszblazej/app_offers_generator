@@ -164,19 +164,26 @@ class OfferEditorApp:
                 self.ui.entries['offer_number_display'].insert(0, self.ui.offer_number)
                 self.ui.entries['offer_number_display'].config(state='readonly')
             
-            # Load client data
+            # Load client data (handle Text for client_name)
             client_fields = ['client_name', 'client_address_1', 'client_address_2', 'client_nip']
             for field in client_fields:
                 if field in context_data and field in self.ui.entries:
+                    widget = self.ui.entries[field]
                     # Handle readonly NIP field
                     if field == 'client_nip':
-                        self.ui.entries[field].config(state='normal')
-                        self.ui.entries[field].delete(0, END)
-                        self.ui.entries[field].insert(0, context_data.get(field, ''))
-                        self.ui.entries[field].config(state='readonly')
+                        widget.config(state='normal')
+                        widget.delete(0, END)
+                        widget.insert(0, context_data.get(field, ''))
+                        widget.config(state='readonly')
                     else:
-                        self.ui.entries[field].delete(0, END)
-                        self.ui.entries[field].insert(0, context_data.get(field, ''))
+                        val = context_data.get(field, '')
+                        if isinstance(widget, Text):
+                            # Render literal \n as real newlines for display
+                            widget.delete('1.0', END)
+                            widget.insert('1.0', str(val or '').replace('\\n', '\n'))
+                        else:
+                            widget.delete(0, END)
+                            widget.insert(0, val)
             
             # Load supplier data
             supplier_fields = ['supplier_name', 'supplier_address_1', 'supplier_address_2', 'supplier_nip']
@@ -192,13 +199,19 @@ class OfferEditorApp:
                         self.ui.entries[field].delete(0, END)
                         self.ui.entries[field].insert(0, context_data.get(field, ''))
             
-            # Load offer details
+            # Load offer details (all are Text now)
             offer_fields = ['termin_realizacji', 'termin_platnosci', 'warunki_dostawy', 
                           'waznosc_oferty', 'gwarancja', 'cena']
             for field in offer_fields:
                 if field in context_data and field in self.ui.entries:
-                    self.ui.entries[field].delete(0, END)
-                    self.ui.entries[field].insert(0, context_data.get(field, ''))
+                    widget = self.ui.entries[field]
+                    val = context_data.get(field, '')
+                    if isinstance(widget, Text):
+                        widget.delete('1.0', END)
+                        widget.insert('1.0', val)
+                    else:
+                        widget.delete(0, END)
+                        widget.insert(0, val)
             
             # Load town
             if 'town' in context_data and 'town' in self.ui.entries:
