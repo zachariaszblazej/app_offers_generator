@@ -179,6 +179,8 @@ def prepare_wz_context(context_data):
         return rt
 
     template_context['client_name'] = _to_richtext_with_newlines(template_context.get('client_name', ''))
+    # Apply the same newline conversion for supplier_name so it renders multiline in Word
+    template_context['supplier_name'] = _to_richtext_with_newlines(template_context.get('supplier_name', ''))
 
 
     # Format NIPs (supplier & client) to XXX-XXX-XX-XX like offers

@@ -172,8 +172,8 @@ def generate_offer_document(context_data):
         
         # Utwórz ścieżkę do wybranego szablonu
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
-        
-    # Convert client_name '\n' markers to real line breaks using RichText
+
+        # Convert client_name and supplier_name '\n' markers to real line breaks using RichText
         def _to_richtext_with_newlines(value):
             if value is None:
                 return ""
@@ -186,6 +186,7 @@ def generate_offer_document(context_data):
             return rt
 
         context_data['client_name'] = _to_richtext_with_newlines(context_data.get('client_name', ''))
+        context_data['supplier_name'] = _to_richtext_with_newlines(context_data.get('supplier_name', ''))
 
         # Generate document
         doc = DocxTemplate(template_path)
