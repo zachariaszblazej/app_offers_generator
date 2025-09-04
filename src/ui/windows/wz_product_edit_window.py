@@ -18,20 +18,20 @@ class WzProductEditWindow:
     def show(self, item_id, product_data):
         """Show the edit product window with existing data"""
         self.current_item_id = item_id
-        
+
         if self.window:
             self.window.lift()
             return
-        
+
         self.window = Toplevel(self.parent_window)
         self.window.title("Edytuj produkt WZ")
-        self.window.geometry("450x250")
+        self.window.geometry("700x650")
         self.window.resizable(False, False)
         self.window.grab_set()  # Make window modal
-        
+
         # Center the window
         self.window.transient(self.parent_window)
-        
+
         self.create_ui(product_data)
     
     def create_ui(self, product_data):
@@ -45,11 +45,14 @@ class WzProductEditWindow:
         main_frame = Frame(self.window)
         main_frame.pack(expand=True, fill=BOTH, padx=20, pady=10)
         
-        # Product name
+        # Product name (multi-line up to ~7 lines)
         Label(main_frame, text="Nazwa produktu:", font=("Arial", 12)).grid(row=0, column=0, sticky=W, pady=5)
-        self.entries['name'] = Entry(main_frame, width=40, font=("Arial", 10))
-        self.entries['name'].grid(row=0, column=1, padx=10, pady=5)
-        self.entries['name'].insert(0, product_data.get('name', ''))
+        self.entries['name'] = Text(main_frame, width=40, height=7, font=("Arial", 11), wrap=WORD)
+        self.entries['name'].grid(row=0, column=1, padx=10, pady=5, sticky=W)
+        try:
+            self.entries['name'].insert('1.0', product_data.get('name', ''))
+        except Exception:
+            pass
         
         # Unit
         Label(main_frame, text="Jednostka miary:", font=("Arial", 12)).grid(row=1, column=0, sticky=W, pady=5)
@@ -79,18 +82,37 @@ class WzProductEditWindow:
                            padx=20, pady=5, command=self.close)
         cancel_btn.pack(side=LEFT, padx=10)
         
-        # Focus on name entry
+        # Focus on name field
         self.entries['name'].focus_set()
-        self.entries['name'].select_range(0, END)
-        
-        # Bind Enter key to save
-        self.window.bind('<Return>', lambda e: self.save_changes())
+
+        # Bind Enter: submit unless focused in multi-line name Text
+        def _on_return(event):
+            try:
+                if event.widget is self.entries.get('name'):
+                    return
+                self.save_changes()
+            except Exception:
+                pass
+
+        try:
+            self.entries['unit'].bind('<Return>', _on_return)
+            self.entries['quantity'].bind('<Return>', _on_return)
+        except Exception:
+            pass
+
+        self.window.bind('<Return>', _on_return)
+        self.window.bind('<KP_Enter>', _on_return)
         self.window.bind('<Escape>', lambda e: self.close())
     
     def save_changes(self):
         """Save the changes"""
         # Get values
-        name = self.entries['name'].get().strip()
+        # Read multi-line name properly from Text widget
+        name_widget = self.entries.get('name')
+        if hasattr(name_widget, 'get') and name_widget.winfo_class() == 'Text':
+            name = name_widget.get('1.0', END).rstrip('\n')
+        else:
+            name = self.entries['name'].get().strip()
         unit = self.entries['unit'].get().strip()
         quantity = self.entries['quantity'].get().strip()
         
