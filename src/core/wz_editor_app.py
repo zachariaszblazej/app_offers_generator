@@ -107,7 +107,7 @@ class WzEditorApp:
         # Create supplier search button only (client search removed per requirements)
         supplier_search_btn = Button(self.window, text="Szukaj dostawcy", font=("Arial", 10),
                                      command=self.supplier_search.open_supplier_search)
-        supplier_search_btn.place(x=380, y=400)
+        supplier_search_btn.place(x=300, y=360)
 
         # Expose for potential external use
         self.ui.supplier_search_btn = supplier_search_btn

@@ -86,7 +86,7 @@ class OfferEditorApp:
                                       fg='black',
                                       command=self.supplier_search.open_supplier_search,
                                       cursor='hand2')
-        search_supplier_button.place(x=380, y=380)
+        search_supplier_button.place(x=300, y=360)
         
         # Product management buttons
         Button(self.window, text="DODAJ POZYCJĘ", 

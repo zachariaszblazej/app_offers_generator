@@ -128,13 +128,13 @@ class WzGeneratorApp:
      search_client_button = Button(self.window, text="Szukaj klienta",
                        font=("Arial", 10),
                        command=self.client_search.open_client_search)
-     search_client_button.place(x=980, y=400)
+     search_client_button.place(x=900, y=360)
 
      # Supplier search button
      search_supplier_button = Button(self.window, text="Szukaj dostawcy",
                          font=("Arial", 10),
                          command=self.supplier_search.open_supplier_search)
-     search_supplier_button.place(x=380, y=400)
+     search_supplier_button.place(x=300, y=360)
 
     # Note: 'Generuj WZ' moved to top bar in frame; no bottom button here
     
