@@ -44,6 +44,11 @@ class ProductTable:
         self.delete_callback = delete_callback  # Callback for inline delete
         self.tree = None
         self.count = 0
+        # Dynamic row height management (Treeview supports one rowheight per widget)
+        self._style = None
+        self._style_name = 'Offers.Treeview'
+        self._line_px = 18  # approx single line height in px
+        self._max_lines = 1
         self.create_table()
     
     def create_table(self):
@@ -51,10 +56,11 @@ class ProductTable:
         # Create and configure the treeview
         # Bump row height to accommodate up to ~7 lines (approx 18px per line)
         try:
-            style = ttk.Style()
-            base = style.lookup('Treeview', 'rowheight') or 20
-            style.configure('Offers.Treeview', rowheight=int(18 * 7))
-            tree_style = 'Offers.Treeview'
+            self._style = ttk.Style()
+            base = self._style.lookup('Treeview', 'rowheight') or 18
+            # Start compact; will expand as needed based on content
+            self._style.configure(self._style_name, rowheight=int(self._line_px * self._max_lines))
+            tree_style = self._style_name
         except Exception:
             tree_style = 'Treeview'
 
@@ -98,6 +104,31 @@ class ProductTable:
         
         # Bind single click for edit and delete functionality
         self.tree.bind("<ButtonRelease-1>", self.on_single_click)
+
+    def _compute_needed_lines(self, product_name: str) -> int:
+        try:
+            if not isinstance(product_name, str):
+                return 1
+            lines = product_name.count('\n') + 1
+            # Cap to 7 lines as per UI input limit
+            return max(1, min(7, lines))
+        except Exception:
+            return 1
+
+    def _refresh_rowheight(self):
+        """Set Treeview rowheight to fit the longest multi-line product name currently in the table."""
+        try:
+            if not self._style:
+                return
+            max_lines = 1
+            for child in self.tree.get_children():
+                vals = self.tree.item(child).get('values') or []
+                if len(vals) >= 2:
+                    max_lines = max(max_lines, self._compute_needed_lines(str(vals[1])))
+            self._max_lines = max_lines
+            self._style.configure(self._style_name, rowheight=int(self._line_px * self._max_lines))
+        except Exception:
+            pass
     
     def input_record(self, product_data):
         """Insert a new product record with auto-generated position number"""
@@ -131,6 +162,8 @@ class ProductTable:
                 # Insert product name as-is (may include newlines); Treeview will display multi-line when rowheight allows
                 self.tree.insert('', index=END, iid=self.count,
                                values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "Edytuj", "Usuń"))
+                # Expand rowheight if needed for multi-line names
+                self._refresh_rowheight()
                 self.count += 1
                 return True
             else:
@@ -147,6 +180,8 @@ class ProductTable:
                 self.tree.delete(selected_item)
             # Renumber all remaining items
             self.renumber_items()
+            # Recompute row height after deletion in case the longest row was removed
+            self._refresh_rowheight()
     
     def renumber_items(self):
         """Renumber all items in the table to maintain sequential order"""
@@ -216,6 +251,8 @@ class ProductTable:
                 
                 # Update the record
                 self.tree.item(item_id, values=(position_number, product_name, unit, quantity, unit_price_display, total_display, "Edytuj", "Usuń"))
+                # Rowheight may need to change if product name lines changed
+                self._refresh_rowheight()
                 return True
             else:
                 print("Error: Table not initialized!")
