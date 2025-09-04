@@ -11,7 +11,7 @@ import datetime
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.utils.config import DEFAULT_APP_SETTINGS
+from src.utils.config import DEFAULT_APP_SETTINGS, get_offers_folder, get_wz_folder
 from src.utils.settings import SettingsManager
 import re
 
@@ -64,7 +64,7 @@ def get_database_path():
 
 def is_database_available() -> bool:
     """Check if the configured database exists and is readable without creating it.
-    Uses a read-only SQLite URI to avoid implicit DB creation.
+    Paths table is no longer required; we accept DBs that have any core tables.
     """
     try:
         path = get_database_path()
@@ -72,12 +72,13 @@ def is_database_available() -> bool:
             return False
         # Try read-only connection; will fail if file missing or not a valid SQLite DB
         conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-        # Validate it's an app DB by ensuring required table exists
         cur = conn.cursor()
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
-        has_paths = cur.fetchone() is not None
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = {row[0] for row in cur.fetchall()}
         conn.close()
-        return has_paths
+        # Consider DB available if it has any of the app's known tables
+        expected = {'Clients', 'Suppliers', 'Offers', 'Wuzetkas'}
+        return bool(tables & expected)
     except Exception:
         return False
 
@@ -86,72 +87,7 @@ def is_database_available() -> bool:
 # Paths helpers (Offers root via DB Paths table)
 # ------------------------------
 
-def get_offers_root_from_db() -> str:
-    """Get offers root folder from DB table `Paths` (Name='Offers_Folder').
-    Returns empty string if DB unavailable or path not set.
-    """
-    try:
-        if not is_database_available():
-            return ''
-        path = get_database_path()
-        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Offers_Folder",)
-        )
-        row = cursor.fetchone()
-        conn.close()
-        if row and row[0]:
-            return row[0]
-    except Exception:
-        pass
-    return ''
-
-# ------------------------------
-# Paths helpers (WZ root via DB Paths table)
-# ------------------------------
-
-def get_wz_root_from_db() -> str:
-    """Get WZ root folder from DB table `Paths` (Name='Wz_Folder').
-    Returns empty string if DB unavailable or not set.
-    """
-    try:
-        if not is_database_available():
-            return ''
-        path = get_database_path()
-        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT Path FROM Paths WHERE Name = ? LIMIT 1", ("Wz_Folder",)
-        )
-        row = cursor.fetchone()
-        conn.close()
-        if row and row[0]:
-            return row[0]
-    except Exception:
-        pass
-    return ''
-
-def set_wz_root_in_db(new_path: str) -> bool:
-    """Set or update Wz_Folder path in Paths table."""
-    try:
-        conn = sqlite3.connect(get_database_path())
-        cursor = conn.cursor()
-        # Refuse to create Paths table implicitly; ensure it exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
-        if cursor.fetchone() is None:
-            conn.close()
-            return False
-        cursor.execute(
-            "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
-            ("Wz_Folder", new_path),
-        )
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Failed to set Wz_Folder in DB: {e}")
-        return False
+# Removed: all DB Paths-based getters/setters for offers/wz roots
 
 def normalize_wz_db_path(path: str) -> str:
     """Normalize WZ file path to relative DB format 'YYYY/filename.docx'.
@@ -160,7 +96,7 @@ def normalize_wz_db_path(path: str) -> str:
     if not path:
         return ''
     p = path.replace('\\', '/')
-    base = get_wz_root_from_db().replace('\\', '/')
+    base = (get_wz_folder() or '').replace('\\', '/')
     # Strip leading base if present
     if base and p.startswith(base.rstrip('/') + '/'):
         p = p[len(base.rstrip('/') + '/'):]
@@ -183,7 +119,7 @@ def build_full_wz_path(rel_path: str) -> str:
     """Compose full absolute path from relative WzFilePath using Wz_Folder base.
     Be tolerant of legacy/mis-saved absolute paths without leading slash on POSIX.
     """
-    base = get_wz_root_from_db()
+    base = get_wz_folder() or ''
     if not rel_path:
         return base
     # Absolute path stays as-is
@@ -206,7 +142,7 @@ def normalize_offer_db_path(path: str) -> str:
         return ''
     p = path.replace('\\', '/')
     # Strip leading base offers root if present
-    base = get_offers_root_from_db().replace('\\', '/')
+    base = (get_offers_folder() or '').replace('\\', '/')
     if base and p.startswith(base.rstrip('/') + '/'):
         p = p[len(base.rstrip('/') + '/'):]
     # Remove any leading slashes
@@ -217,31 +153,11 @@ def normalize_offer_db_path(path: str) -> str:
 
 def build_full_offer_path(rel_path: str) -> str:
     """Compose full absolute path from relative OfferFilePath using Offers_Folder base."""
-    base = get_offers_root_from_db()
+    base = get_offers_folder() or ''
     return os.path.join(base, rel_path) if rel_path else base
 
 
-def set_offers_root_in_db(new_path: str) -> bool:
-    """Set or update Offers_Folder path in Paths table."""
-    try:
-        conn = sqlite3.connect(get_database_path())
-        cursor = conn.cursor()
-        # Refuse to create Paths table implicitly; ensure it exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Paths' LIMIT 1")
-        if cursor.fetchone() is None:
-            conn.close()
-            return False
-        # Upsert the Offers_Folder row
-        cursor.execute(
-            "INSERT INTO Paths (Name, Path) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Path=excluded.Path",
-            ("Offers_Folder", new_path),
-        )
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Failed to set Offers_Folder in DB: {e}")
-        return False
+# Removed: set_offers_root_in_db (use Settings in UI layer)
 
 
 def get_clients_from_db(include_extended: bool = False):

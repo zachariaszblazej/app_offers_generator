@@ -14,8 +14,8 @@ from src.data.database_service import (
     delete_offer_from_db,
     find_offer_by_filename,
     get_all_offer_file_paths,
-    get_offers_root_from_db,
 )
+from src.utils.config import get_offers_folder
 
 
 class BrowseOffersFrame(Frame):
@@ -106,7 +106,7 @@ class BrowseOffersFrame(Frame):
             self.tree.delete(iid)
         self.offers_list.clear()
 
-        offers_root = get_offers_root_from_db()
+        offers_root = get_offers_folder()
         if not os.path.isdir(offers_root):
             return
 
@@ -155,7 +155,7 @@ class BrowseOffersFrame(Frame):
 
     # Helpers ----------------------------------------------------------
     def _build_offer_path(self, filename: str) -> str:
-        base = get_offers_root_from_db()
+        base = get_offers_folder()
         if self.current_year_folder:
             return os.path.join(base, self.current_year_folder, filename)
         return os.path.join(base, filename)
@@ -215,7 +215,7 @@ class BrowseOffersFrame(Frame):
 
     def open_offers_folder(self):
         try:
-            folder = get_offers_root_from_db()
+            folder = get_offers_folder()
             if platform.system() == 'Darwin':
                 subprocess.call(['open', folder])
             elif platform.system() == 'Windows':

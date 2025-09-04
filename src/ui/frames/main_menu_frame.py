@@ -11,7 +11,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from src.utils.config import APP_VERSION
 from src.data.database_service import is_database_available
-from src.data.database_service import is_database_available, get_offers_root_from_db, get_wz_root_from_db
+from src.data.database_service import is_database_available
+from src.utils.config import get_offers_folder, get_wz_folder
 
 
 class MainMenuFrame(Frame):
@@ -251,7 +252,7 @@ class MainMenuFrame(Frame):
     def _require_offers_folder_ready(self) -> bool:
         """Ensure Offers_Folder is configured and exists when DB is available."""
         try:
-            path = get_offers_root_from_db()
+            path = get_offers_folder()
         except Exception:
             path = ''
         if not path or not os.path.isdir(path):
@@ -265,7 +266,7 @@ class MainMenuFrame(Frame):
     def _require_wz_folder_ready(self) -> bool:
         """Ensure Wz_Folder is configured and exists when DB is available."""
         try:
-            path = get_wz_root_from_db()
+            path = get_wz_folder()
         except Exception:
             path = ''
         if not path or not os.path.isdir(path):

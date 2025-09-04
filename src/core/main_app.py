@@ -182,7 +182,7 @@ class OfferGeneratorMainApp:
             # When DB is available, we still avoid popups and auto-navigation at startup.
             # We can perform lightweight checks without side effects.
             _ = get_offers_folder()
-            from src.data.database_service import get_wz_root_from_db as _get_wz_root
+            from src.utils.config import get_wz_folder as _get_wz_root
             _ = _get_wz_root()
             return False
         except Exception as e:
