@@ -168,22 +168,29 @@ class UIComponents:
         self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
-        # Client entries
-    # Multi-line Text for client name; convert to literal \n on read for context
-        self.entries['client_name'] = Text(self.window, width=45, height=2, wrap=WORD)
-        self.entries['client_name'].place(x=660, y=270)
+        # Client entries as a one-column table (no labels)
+        client_frame = Frame(self.window, bg='white')
+        # Position the client frame roughly where the previous fields were placed
+        client_frame.place(x=600, y=250)
+
+        # Row 0: Text for client name
+        self.entries['client_name'] = Text(client_frame, width=45, height=2, wrap=WORD)
+        self.entries['client_name'].grid(row=0, column=0, sticky='w', pady=(0, 6))
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_1'] = Entry(self.window, width=45)
-        self.entries['client_address_1'].place(x=660, y=300)
+        # Row 1: Entry for address 1
+        self.entries['client_address_1'] = Entry(client_frame, width=45)
+        self.entries['client_address_1'].grid(row=1, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_address_2'] = Entry(self.window, width=45)
-        self.entries['client_address_2'].place(x=660, y=330)
+        # Row 2: Entry for address 2
+        self.entries['client_address_2'] = Entry(client_frame, width=45)
+        self.entries['client_address_2'].grid(row=2, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        self.entries['client_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
-        self.entries['client_nip'].place(x=660, y=360)
+        # Row 3: Entry for NIP (readonly)
+        self.entries['client_nip'] = Entry(client_frame, width=25, state='readonly', bg='#f0f0f0')
+        self.entries['client_nip'].grid(row=3, column=0, sticky='w')
     
     def create_offer_details_section(self):
         """Create additional offer details as a two-column table (Label | Text)."""
