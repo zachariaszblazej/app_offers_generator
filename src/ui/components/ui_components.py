@@ -189,7 +189,7 @@ class UIComponents:
         """Create additional offer details as a two-column table (Label | Text)."""
         # Container frame placed once; inside we use grid for neat layout
         details_frame = Frame(self.window)
-        details_frame.place(x=240, y=800)
+        details_frame.place(x=40, y=800)
 
         # Define rows: (key, label)
         rows = [
@@ -205,7 +205,7 @@ class UIComponents:
         for r, (key, label_text) in enumerate(rows):
             lbl = Label(details_frame, text=label_text + ':', font=("Arial", 10))
             lbl.grid(row=r, column=0, sticky='ne', padx=(0, 10), pady=(2, 2))
-            txt = Text(details_frame, width=50, height=3)
+            txt = Text(details_frame, width=100, height=3)
             txt.grid(row=r, column=1, sticky='w', pady=(2, 2))
             txt.bind('<KeyRelease>', self._on_field_modified)
             self.entries[key] = txt
