@@ -46,6 +46,26 @@ class WzEditorFrame(Frame):
                          command=self.return_to_browse_wz,
                          cursor='hand2')
         back_btn.pack(side=LEFT)
+
+        # Save changes button on top bar
+        def _save_action():
+            try:
+                if self.wz_app_instance and hasattr(self.wz_app_instance, 'update_wz'):
+                    self.wz_app_instance.update_wz()
+            except Exception as e:
+                try:
+                    tkinter.messagebox.showerror("Błąd", f"Nie udało się zapisać zmian: {e}")
+                except Exception:
+                    pass
+
+        save_btn = Button(back_frame,
+                          text="Zapisz zmiany",
+                          font=("Arial", 12, "bold"),
+                          bg='#ff6600', fg='black',
+                          padx=15, pady=5,
+                          command=_save_action,
+                          cursor='hand2')
+        save_btn.pack(side=LEFT, padx=(10, 0))
         
         # Title indicating this is edit mode
         title_label = Label(back_frame, 

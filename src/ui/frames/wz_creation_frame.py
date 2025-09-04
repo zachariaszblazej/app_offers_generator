@@ -41,6 +41,26 @@ class WzCreationFrame(Frame):
                               command=self.return_to_source,
                               cursor='hand2')
         self.back_btn.pack(side=LEFT)
+
+        # Generate WZ button on the top bar
+        def _generate_action():
+            try:
+                if self.wz_app_instance and hasattr(self.wz_app_instance, 'generate_wz'):
+                    self.wz_app_instance.generate_wz()
+            except Exception as e:
+                try:
+                    tkinter.messagebox.showerror("Błąd", f"Nie udało się wygenerować WZ: {e}")
+                except Exception:
+                    pass
+
+        generate_btn = Button(back_frame,
+                              text="Generuj WZ",
+                              font=("Arial", 12, "bold"),
+                              bg='#ff6600', fg='black',
+                              padx=15, pady=5,
+                              command=_generate_action,
+                              cursor='hand2')
+        generate_btn.pack(side=LEFT, padx=(10, 0))
         
         # Title indicating this is WZ creation mode
         title_label = Label(back_frame, 

@@ -104,30 +104,15 @@ class WzEditorApp:
         if hasattr(self.ui, 'move_down_btn'):
             self.ui.move_down_btn.config(command=self.move_product_down)
 
-        # Create search buttons (not provided by WzUIComponents)
+        # Create supplier search button only (client search removed per requirements)
         supplier_search_btn = Button(self.window, text="Szukaj dostawcy", font=("Arial", 10),
                                      command=self.supplier_search.open_supplier_search)
         supplier_search_btn.place(x=380, y=400)
-        client_search_btn = Button(self.window, text="Szukaj klienta", font=("Arial", 10),
-                                   command=self.client_search.open_client_search)
-        client_search_btn.place(x=980, y=400)
 
         # Expose for potential external use
         self.ui.supplier_search_btn = supplier_search_btn
-        self.ui.client_search_btn = client_search_btn
 
-        # Create editor-specific buttons (save etc.)
-        self.create_buttons()
-    
-    def create_buttons(self):
-        """Create all buttons for editor mode"""
-        # Update WZ button (instead of generate)
-        update_wz_button = Button(self.window, text="Zapisz zmiany", 
-                                font=("Arial", 12, "bold"),
-                                bg='#ff6600', fg='black',
-                                command=self.update_wz)
-        update_wz_button.place(x=700, y=740)
-    
+        # Note: Save button moved to top bar in WzEditorFrame; no bottom button here
     def load_wz_data(self):
         """Load data from existing WZ context stored in database"""
         try:
