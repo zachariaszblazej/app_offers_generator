@@ -27,8 +27,11 @@ class SupplierSearchWindow:
             tkinter.messagebox.showinfo("No Suppliers", "No suppliers found in database.")
             return
         
-        # Sort suppliers alphabetically by company name (index 1)
-        suppliers_sorted = sorted(suppliers, key=lambda x: x[1].lower() if x[1] else "")
+        # Sort suppliers alphabetically by company name (index 1), sanitize literal \n
+        suppliers_sorted = sorted(
+            suppliers,
+            key=lambda x: (x[1] or '').replace('\\n', ' ').lower()
+        )
         
         # Create search window
         search_window = Toplevel(self.parent_window)
@@ -125,7 +128,9 @@ class SupplierSearchWindow:
         
         # Sort suppliers based on selection
         if sort_by == "name":
-            sorted_suppliers = sorted(suppliers, key=lambda x: x[1].lower() if x[1] else "")
+            sorted_suppliers = sorted(
+                suppliers, key=lambda x: (x[1] or '').replace('\\n', ' ').lower()
+            )
         elif sort_by == "nip":
             sorted_suppliers = sorted(suppliers, key=lambda x: x[0] if x[0] else "")
         else:
@@ -138,7 +143,8 @@ class SupplierSearchWindow:
         listbox.delete(0, END)
         for supplier in sorted_suppliers:
             nip, company_name, address1, address2, is_default = supplier
-            display_text = f"{company_name} (NIP: {nip})"
+            safe_name = str(company_name or '').replace('\\n', ' ')
+            display_text = f"{safe_name} (NIP: {nip})"
             listbox.insert(END, display_text)
 
     def _on_supplier_select(self, event, search_window, supplier_listbox, suppliers):

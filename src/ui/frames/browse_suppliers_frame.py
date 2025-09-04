@@ -178,13 +178,16 @@ class BrowseSuppliersFrame(Frame):
                          font=("Arial", 12), bg='#f0f0f0')
             label.pack(anchor=W, padx=20, pady=(10, 0))
             
-            # Entry
-            entry = Entry(self.form_frame, font=("Arial", 12), width=30)
-            if is_readonly:
-                entry.config(state='readonly', bg='#e9ecef')
-            entry.pack(anchor=W, padx=20, pady=(0, 5))
+            # Widget: use Text for multiline company name, Entry otherwise
+            if field_name == 'company_name':
+                widget = Text(self.form_frame, font=("Arial", 12), width=30, height=2, wrap=WORD)
+            else:
+                widget = Entry(self.form_frame, font=("Arial", 12), width=30)
+                if is_readonly:
+                    widget.config(state='readonly', bg='#e9ecef')
+            widget.pack(anchor=W, padx=20, pady=(0, 5))
             
-            self.form_entries[field_name] = entry
+            self.form_entries[field_name] = widget
             
             # Validation labels
             validation_label = Label(self.form_frame, text="", 
@@ -194,10 +197,11 @@ class BrowseSuppliersFrame(Frame):
             
             # Bind validation events
             if field_name == 'nip' and not is_readonly:
-                entry.bind('<KeyRelease>', self.validate_nip_input)
+                widget.bind('<KeyRelease>', self.validate_nip_input)
             
             # Bind Enter key to save supplier
-            entry.bind('<Return>', lambda event: self.save_supplier())
+            if field_name != 'company_name':
+                widget.bind('<Return>', lambda event: self.save_supplier())
         
         # Buttons frame
         form_buttons_frame = Frame(self.form_frame, bg='#f0f0f0')
@@ -221,12 +225,10 @@ class BrowseSuppliersFrame(Frame):
                            command=self.hide_form,
                            cursor='hand2')
         cancel_btn.pack(side=LEFT, padx=10)
-        
-        # Bind Enter key globally to the form frame and all its children
-        self.form_frame.bind('<Return>', lambda event: self.save_supplier())
-        self.form_frame.bind('<KP_Enter>', lambda event: self.save_supplier())  # Numpad Enter
+
+        # Do not bind global Enter here so Text can accept newlines naturally
         self.form_frame.focus_set()  # Allow form frame to receive key events
-        
+
         # If editing, populate form with current data
         if self.form_mode == 'edit' and self.current_editing_nip:
             self.populate_form_for_edit()
@@ -263,11 +265,13 @@ class BrowseSuppliersFrame(Frame):
         
         # Populate tree with current data
         for supplier in self.suppliers_data:
+            # Use display-safe company name (strip literal \n markers)
+            display_company = str(supplier['Nazwa firmy'] or '').replace('\\n', ' ')
             self.suppliers_tree.insert('', 'end', values=(
                 supplier['NIP'], 
-                supplier['Nazwa firmy'], 
+                display_company, 
                 supplier['Adres 1'], 
-                supplier['Adres 2'],
+                supplier['Adres 2'], 
                 supplier['Domyślny'],
                 "Edytuj",
                 "Usuń",
@@ -283,8 +287,14 @@ class BrowseSuppliersFrame(Frame):
             self.sort_column = column
             self.sort_reverse = False
         
-        # Sort the data
-        self.suppliers_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
+        # Sort the data (for 'Nazwa firmy' sort by display value without literal \n)
+        if column == 'Nazwa firmy':
+            self.suppliers_data.sort(
+                key=lambda x: str((x[column] or '')).replace('\\n', ' ').lower(),
+                reverse=self.sort_reverse
+            )
+        else:
+            self.suppliers_data.sort(key=lambda x: str(x[column] or '').lower(), reverse=self.sort_reverse)
         
         # Update column headers to show sort direction
         self.update_column_headers()
@@ -392,8 +402,15 @@ class BrowseSuppliersFrame(Frame):
             self.form_entries['nip'].insert(0, nip)
             self.form_entries['nip'].config(state='readonly')
             
-            self.form_entries['company_name'].delete(0, END)
-            self.form_entries['company_name'].insert(0, company_name)
+            # Company name: Text widget, render literal \n as newlines
+            comp_widget = self.form_entries['company_name']
+            try:
+                comp_widget.delete('1.0', END)
+                comp_widget.insert('1.0', (company_name or '').replace('\\n', '\n'))
+            except Exception:
+                # Fallback if unexpectedly not a Text
+                comp_widget.delete(0, END)
+                comp_widget.insert(0, company_name)
             
             self.form_entries['address_p1'].delete(0, END)
             self.form_entries['address_p1'].insert(0, address1)
@@ -405,7 +422,12 @@ class BrowseSuppliersFrame(Frame):
         """Save supplier (add or update)"""
         # Get form data
         nip = self.form_entries['nip'].get().strip()
-        company_name = self.form_entries['company_name'].get().strip()
+        # Company name may be Text (multiline)
+        comp_widget = self.form_entries['company_name']
+        try:
+            company_name = comp_widget.get('1.0', 'end-1c').strip()
+        except Exception:
+            company_name = comp_widget.get().strip()
         address_p1 = self.form_entries['address_p1'].get().strip()
         address_p2 = self.form_entries['address_p2'].get().strip()
         
@@ -419,10 +441,13 @@ class BrowseSuppliersFrame(Frame):
             tkinter.messagebox.showerror("Błąd", "NIP musi składać się z dokładnie 10 cyfr.")
             return
         
+        # Normalize newlines to literal \n for DB storage (keeps lists single-line)
+        company_name_db = company_name.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\\n')
+
         if self.form_mode == 'add':
-            success, message = add_supplier_to_db(nip, company_name, address_p1, address_p2)
+            success, message = add_supplier_to_db(nip, company_name_db, address_p1, address_p2)
         else:  # edit
-            success, message = update_supplier_in_db(nip, company_name, address_p1, address_p2)
+            success, message = update_supplier_in_db(nip, company_name_db, address_p1, address_p2)
         
         if success:
             self.refresh_suppliers_list()
