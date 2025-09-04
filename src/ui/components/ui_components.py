@@ -172,7 +172,7 @@ class UIComponents:
         # Client entries as a one-column table with header
         client_frame = Frame(self.window, bg='white')
         # Position the client frame roughly where the previous fields were placed
-        client_frame.place(x=600, y=250)
+        client_frame.place(x=600, y=220)
 
         # Header row
         Label(client_frame, text='KLIENT', font=("Arial", 16, "bold"), bg='white').grid(row=0, column=0, sticky='w', pady=(0, 6))
