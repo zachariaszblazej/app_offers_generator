@@ -64,6 +64,7 @@ class UIComponents:
         """Called when any form field is modified"""
         if self.modification_callback:
             self.modification_callback()
+
     
     def refresh_company_data(self):
         """Refresh company data from settings"""
@@ -168,29 +169,34 @@ class UIComponents:
         self.entries['supplier_nip'] = Entry(self.window, width=25, state='readonly', bg='#f0f0f0')
         self.entries['supplier_nip'].place(x=60, y=360)
 
-        # Client entries as a one-column table (no labels)
+        # Client entries as a one-column table with header
         client_frame = Frame(self.window, bg='white')
         # Position the client frame roughly where the previous fields were placed
         client_frame.place(x=600, y=250)
 
-        # Row 0: Text for client name
+        # Header row
+        Label(client_frame, text='KLIENT', font=("Arial", 16, "bold"), bg='white').grid(row=0, column=0, sticky='w', pady=(0, 6))
+
+        # Row 1: Text for client name
         self.entries['client_name'] = Text(client_frame, width=45, height=2, wrap=WORD)
-        self.entries['client_name'].grid(row=0, column=0, sticky='w', pady=(0, 6))
+        self.entries['client_name'].grid(row=1, column=0, sticky='w', pady=(0, 6))
         self.entries['client_name'].bind('<KeyRelease>', self._on_field_modified)
 
-        # Row 1: Entry for address 1
+        # Row 2: Entry for address 1
         self.entries['client_address_1'] = Entry(client_frame, width=45)
-        self.entries['client_address_1'].grid(row=1, column=0, sticky='w', pady=(0, 6))
+        self.entries['client_address_1'].grid(row=2, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_1'].bind('<KeyRelease>', self._on_field_modified)
 
-        # Row 2: Entry for address 2
+        # Row 3: Entry for address 2
         self.entries['client_address_2'] = Entry(client_frame, width=45)
-        self.entries['client_address_2'].grid(row=2, column=0, sticky='w', pady=(0, 6))
+        self.entries['client_address_2'].grid(row=3, column=0, sticky='w', pady=(0, 6))
         self.entries['client_address_2'].bind('<KeyRelease>', self._on_field_modified)
 
-        # Row 3: Entry for NIP (readonly)
+        # Row 4: Entry for NIP (readonly)
         self.entries['client_nip'] = Entry(client_frame, width=25, state='readonly', bg='#f0f0f0')
-        self.entries['client_nip'].grid(row=3, column=0, sticky='w')
+        self.entries['client_nip'].grid(row=4, column=0, sticky='w')
+
+    # No placeholders requested
     
     def create_offer_details_section(self):
         """Create additional offer details as a two-column table (Label | Text)."""
