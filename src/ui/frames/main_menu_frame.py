@@ -120,6 +120,19 @@ class MainMenuFrame(Frame):
         )
         browse_suppliers_btn.pack(pady=10)
 
+        # Restore documents button
+        restore_docs_btn = Button(
+            buttons_frame,
+            text="Przywróć dokumenty",
+            font=("Arial", 14),
+            fg='black',
+            padx=30,
+            pady=10,
+            command=self.open_restore_documents,
+            cursor='hand2',
+        )
+        restore_docs_btn.pack(pady=10)
+
         # Settings button
         settings_btn = Button(
             self,
@@ -222,6 +235,16 @@ class MainMenuFrame(Frame):
     def open_settings(self):
         """Open settings window"""
         self.nav_manager.show_frame('settings')
+
+    def open_restore_documents(self):
+        """Open restore documents window (lazy create)."""
+        try:
+            from src.ui.windows.restore_documents_window import RestoreDocumentsWindow
+            if not hasattr(self, '_restore_win'):
+                self._restore_win = RestoreDocumentsWindow(self.nav_manager.root)
+            self._restore_win.open()
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć okna przywracania: {e}")
     
     def exit_application(self):
         """Exit the application"""
