@@ -22,6 +22,7 @@ class RestoreDocumentsWindow:
         self.status_var = None  # assigned in open()
         # Queue for thread-safe progress passing
         self._progress_queue = queue.Queue()
+        self._end_line_inserted = False
 
     def open(self):
         if self.top and self.top.winfo_exists():
@@ -92,6 +93,14 @@ class RestoreDocumentsWindow:
                 self._append_progress(msg)
         except queue.Empty:
             pass
+        # Fallback: if thread finished, queue empty, final line not yet added
+        if (self.restore_thread and not self.restore_thread.is_alive() and not self._end_line_inserted):
+            try:
+                print("[RestoreWindow DEBUG] fallback final line insertion")
+            except Exception:
+                pass
+            self._append_progress("Zakończono przywracanie (fallback)")
+            self._end_line_inserted = True
         # schedule next poll
         self.top.after(120, self._poll_progress_queue)
 
