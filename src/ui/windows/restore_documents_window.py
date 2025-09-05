@@ -197,46 +197,8 @@ class RestoreDocumentsWindow:
                 progress_cb=lambda m: self._progress_queue.put(m)
             )
             self._last_report = report
-            def _finish():
-                try:
-                    final_line = (f"Zakończono przywracanie | Oferty {report.offers_ok}/{report.offers_total} | "
-                                  f"WZ {report.wz_ok}/{report.wz_total}")
-                    print("[RestoreWindow DEBUG] _finish() adding final line")
-                    # Flush any remaining queued lines first
-                    try:
-                        while True:
-                            pending = self._progress_queue.get_nowait()
-                            self._append_progress(pending)
-                    except queue.Empty:
-                        pass
-                    self._append_progress("")
-                    self._append_progress(final_line)
-                    # Summary lines
-                    for line in report.summary_text().splitlines():
-                        self._append_progress(line)
-                    self._end_line_inserted = True
-                    # Update status bar
-                    if self.status_var is not None:
-                        try:
-                            self.status_var.set(f"Oferty: {report.offers_ok}/{report.offers_total} | WZ: {report.wz_ok}/{report.wz_total}")
-                        except Exception:
-                            pass
-                except Exception as fin_e:
-                    # Ensure at least fallback final line
-                    try:
-                        print(f"[RestoreWindow DEBUG] _finish error: {fin_e}")
-                    except Exception:
-                        pass
-                    if not self._end_line_inserted:
-                        self._append_progress("Zakończono przywracanie (finish-exception)")
-                        self._end_line_inserted = True
-                finally:
-                    self.restore_btn.config(state=NORMAL)
-                    try:
-                        tkinter.messagebox.showinfo("Zakończono", report.summary_text())
-                    except Exception:
-                        pass
-            self.parent.after(0, _finish)
+            # just re-enable button; final line handled by polling fallback
+            self.parent.after(0, lambda: self.restore_btn.config(state=NORMAL))
         except Exception as e:
             def _err():
                 self.restore_btn.config(state=NORMAL)
