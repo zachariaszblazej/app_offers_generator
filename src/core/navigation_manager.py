@@ -76,6 +76,12 @@ class NavigationManager:
                 # Update back button text
                 if hasattr(self.frames[frame_name], 'update_back_button_text'):
                     self.frames[frame_name].update_back_button_text()
+                # Ensure header action button ("Generuj ofertę") is present/updated
+                if hasattr(self.frames[frame_name], 'setup_header_actions'):
+                    try:
+                        self.frames[frame_name].setup_header_actions()
+                    except Exception:
+                        pass
             elif frame_name == 'offer_generator':
                 # Regular generator without template - ensure it's initialized
                 if not hasattr(self.frames[frame_name], 'offer_app_instance') or not self.frames[frame_name].offer_app_instance:
