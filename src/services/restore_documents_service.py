@@ -160,13 +160,41 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
             try:
                 if not wz_template_path:
                     raise FileNotFoundError("Brak szablonu WZ")
-                # Convert date if present
+                # Convert date to Polish long form (e.g. '4 sierpnia 2025') similar to offers
                 date_raw = context.get('date')
-                if isinstance(date_raw, str):
-                    try:
-                        datetime.datetime.fromisoformat(date_raw)  # not used in template maybe
-                    except Exception:
+                try:
+                    # If already in Polish long form (month name), leave as is
+                    if isinstance(date_raw, str) and any(m in date_raw.lower() for m in [
+                        'stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'
+                    ]):
                         pass
+                    else:
+                        date_dt = None
+                        if isinstance(date_raw, str):
+                            # Try multiple patterns
+                            patterns = [
+                                '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y', '%d/%m/%Y', '%d %m %Y'
+                            ]
+                            for p in patterns:
+                                try:
+                                    date_dt = datetime.datetime.strptime(date_raw, p)
+                                    break
+                                except Exception:
+                                    continue
+                            if date_dt is None:
+                                # last resort ISO attempt
+                                try:
+                                    date_dt = datetime.datetime.fromisoformat(date_raw)
+                                except Exception:
+                                    date_dt = datetime.datetime.now()
+                        elif isinstance(date_raw, (datetime.date, datetime.datetime)):
+                            date_dt = date_raw if isinstance(date_raw, datetime.datetime) else datetime.datetime.combine(date_raw, datetime.time())
+                        else:
+                            date_dt = datetime.datetime.now()
+                        context['date'] = convert_date(date_dt)
+                except Exception:
+                    # On any failure just force now() formatted
+                    context['date'] = convert_date(datetime.datetime.now())
                 # Newline conversions
                 context['client_name'] = _rich(context.get('client_name'))
                 context['supplier_name'] = _rich(context.get('supplier_name'))
