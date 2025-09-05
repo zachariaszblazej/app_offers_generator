@@ -2,6 +2,7 @@
 from tkinter import *
 from tkinter import filedialog
 import threading
+import queue
 import tkinter.messagebox
 import os
 
@@ -15,6 +16,12 @@ class RestoreDocumentsWindow:
         self.output_path_var = StringVar()
         self.progress_var = StringVar()
         self.restore_thread = None
+        # Counters (init earlier so safe in progress callback)
+        self._offers_done = 0
+        self._wz_done = 0
+        self.status_var = None  # assigned in open()
+        # Queue for thread-safe progress passing
+        self._progress_queue = queue.Queue()
 
     def open(self):
         if self.top and self.top.winfo_exists():
@@ -73,6 +80,21 @@ class RestoreDocumentsWindow:
         self.restore_btn.pack(side=LEFT)
         Button(btns, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(side=RIGHT)
 
+        # start polling queue (only once per window open)
+        self._poll_progress_queue()
+
+    def _poll_progress_queue(self):
+        if not self.top or not self.top.winfo_exists():
+            return
+        try:
+            while True:
+                msg = self._progress_queue.get_nowait()
+                self._append_progress(msg)
+        except queue.Empty:
+            pass
+        # schedule next poll
+        self.top.after(120, self._poll_progress_queue)
+
     def _choose_db(self):
         path = filedialog.askopenfilename(title="Wybierz plik bazy", filetypes=[("SQLite DB", "*.db"), ("Wszystkie pliki", "*.*")])
         if path:
@@ -84,20 +106,31 @@ class RestoreDocumentsWindow:
             self.output_path_var.set(path)
 
     def _append_progress(self, msg: str):
+        # Debug + normalize
+        raw_msg = msg
+        msg_strip = msg.lstrip()
         try:
-            # Detect counters
-            if msg.startswith("Oferta:"):
-                self._offers_done += 1
-            elif msg.startswith("WZ:"):
-                self._wz_done += 1
-            if hasattr(self, 'status_var'):
+            # Print debug to stdout (terminal) to help diagnose prefix issues
+            print(f"[RestoreWindow DEBUG] msg={raw_msg!r} offers={self._offers_done} wz={self._wz_done}")
+        except Exception:
+            pass
+        # Detect counters (ignore leading whitespace)
+        if msg_strip.startswith("Oferta:"):
+            self._offers_done += 1
+        elif msg_strip.startswith("WZ:"):
+            self._wz_done += 1
+        if self.status_var is not None:
+            try:
                 self.status_var.set(f"Oferty: {self._offers_done} | WZ: {self._wz_done}")
+            except Exception:
+                pass
+        try:
             self.progress_box.configure(state=NORMAL)
             self.progress_box.insert(END, msg + "\n")
             self.progress_box.see(END)
             self.progress_box.configure(state=DISABLED)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[RestoreWindow] progress write error: {e}")
 
     def _start_restore(self):
         # Prevent duplicate runs
@@ -122,6 +155,11 @@ class RestoreDocumentsWindow:
             self.progress_box.configure(state=DISABLED)
         except Exception:
             pass
+        # Reset counters
+        self._offers_done = 0
+        self._wz_done = 0
+        if self.status_var:
+            self.status_var.set("Oferty: 0 | WZ: 0")
         self._append_progress("Start przywracania...")
         self.restore_btn.config(state=DISABLED)
 
@@ -138,11 +176,17 @@ class RestoreDocumentsWindow:
             report = restore_from_database(
                 db_path,
                 out_path,
-                progress_cb=lambda m: (self.top.after(0, self._append_progress, m) if self.top and self.top.winfo_exists() else None)
+                progress_cb=lambda m: self._progress_queue.put(m)
             )
             def _finish():
                 self._append_progress("--- Zakończono ---")
                 self._append_progress(report.summary_text())
+                # Ensure final counts displayed (in case no progress lines matched)
+                if self.status_var is not None:
+                    try:
+                        self.status_var.set(f"Oferty: {report.offers_ok}/{report.offers_total} | WZ: {report.wz_ok}/{report.wz_total}")
+                    except Exception:
+                        pass
                 self.restore_btn.config(state=NORMAL)
                 tkinter.messagebox.showinfo("Zakończono", report.summary_text())
             self.parent.after(0, _finish)
