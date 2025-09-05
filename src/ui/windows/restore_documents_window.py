@@ -23,6 +23,7 @@ class RestoreDocumentsWindow:
         # Queue for thread-safe progress passing
         self._progress_queue = queue.Queue()
         self._end_line_inserted = False
+        self._last_report = None  # store report for fallback final line
 
     def open(self):
         if self.top and self.top.winfo_exists():
@@ -99,7 +100,15 @@ class RestoreDocumentsWindow:
                 print("[RestoreWindow DEBUG] fallback final line insertion")
             except Exception:
                 pass
-            self._append_progress("Zakończono przywracanie (fallback)")
+            # Build final line using stored report if present
+            if self._last_report is not None:
+                r = self._last_report
+                final_line = (f"Zakończono przywracanie | Oferty {r.offers_ok}/{r.offers_total} | "
+                              f"WZ {r.wz_ok}/{r.wz_total}")
+            else:
+                final_line = "Zakończono przywracanie"
+            self._append_progress("")
+            self._append_progress(final_line)
             self._end_line_inserted = True
         # schedule next poll
         self.top.after(120, self._poll_progress_queue)
@@ -187,17 +196,46 @@ class RestoreDocumentsWindow:
                 out_path,
                 progress_cb=lambda m: self._progress_queue.put(m)
             )
+            self._last_report = report
             def _finish():
-                self._append_progress("--- Zakończono ---")
-                self._append_progress(report.summary_text())
-                # Ensure final counts displayed (in case no progress lines matched)
-                if self.status_var is not None:
+                try:
+                    final_line = (f"Zakończono przywracanie | Oferty {report.offers_ok}/{report.offers_total} | "
+                                  f"WZ {report.wz_ok}/{report.wz_total}")
+                    print("[RestoreWindow DEBUG] _finish() adding final line")
+                    # Flush any remaining queued lines first
                     try:
-                        self.status_var.set(f"Oferty: {report.offers_ok}/{report.offers_total} | WZ: {report.wz_ok}/{report.wz_total}")
+                        while True:
+                            pending = self._progress_queue.get_nowait()
+                            self._append_progress(pending)
+                    except queue.Empty:
+                        pass
+                    self._append_progress("")
+                    self._append_progress(final_line)
+                    # Summary lines
+                    for line in report.summary_text().splitlines():
+                        self._append_progress(line)
+                    self._end_line_inserted = True
+                    # Update status bar
+                    if self.status_var is not None:
+                        try:
+                            self.status_var.set(f"Oferty: {report.offers_ok}/{report.offers_total} | WZ: {report.wz_ok}/{report.wz_total}")
+                        except Exception:
+                            pass
+                except Exception as fin_e:
+                    # Ensure at least fallback final line
+                    try:
+                        print(f"[RestoreWindow DEBUG] _finish error: {fin_e}")
                     except Exception:
                         pass
-                self.restore_btn.config(state=NORMAL)
-                tkinter.messagebox.showinfo("Zakończono", report.summary_text())
+                    if not self._end_line_inserted:
+                        self._append_progress("Zakończono przywracanie (finish-exception)")
+                        self._end_line_inserted = True
+                finally:
+                    self.restore_btn.config(state=NORMAL)
+                    try:
+                        tkinter.messagebox.showinfo("Zakończono", report.summary_text())
+                    except Exception:
+                        pass
             self.parent.after(0, _finish)
         except Exception as e:
             def _err():
