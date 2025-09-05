@@ -27,36 +27,48 @@ class RestoreDocumentsWindow:
         # Build window fresh
         self.top = Toplevel(self.parent)
         self.top.title("Przywróć dokumenty")
-        self.top.geometry("760x520")
+        self.top.geometry("980x600")  # wider so browse buttons never clip
         self.top.resizable(False, False)
         self.top.grab_set()
         self.top.configure(bg='#f8f9fa')
 
-        Label(self.top, text="Przywracanie dokumentów z bazy danych", font=("Arial", 16, "bold"), bg='#f8f9fa').pack(pady=20)
+        Label(self.top, text="Przywracanie dokumentów z bazy danych", font=("Arial", 16, "bold"), bg='#f8f9fa').pack(pady=18)
 
         form = Frame(self.top, bg='white', relief=RIDGE, bd=2)
-        form.pack(fill=BOTH, expand=True, padx=20, pady=10)
+        form.pack(fill=BOTH, expand=True, padx=18, pady=10)
+        for col in (0,1,2):
+            form.grid_columnconfigure(col, weight=1 if col==1 else 0)
 
-        # DB path (read-only display + browse)
-        Label(form, text="Plik bazy (.db):", font=("Arial", 12), bg='white').grid(row=0, column=0, sticky=W, padx=10, pady=12)
-        db_disp = Entry(form, textvariable=self.db_path_var, width=54, state='readonly')
-        db_disp.grid(row=0, column=1, padx=10, pady=12, sticky=W)
-        Button(form, text="Przeglądaj...", command=self._choose_db).grid(row=0, column=2, padx=5, pady=12)
+        # Paths
+        Label(form, text="Plik bazy (.db):", font=("Arial", 12), bg='white').grid(row=0, column=0, sticky=W, padx=8, pady=10)
+        db_disp = Entry(form, textvariable=self.db_path_var, state='readonly')
+        db_disp.grid(row=0, column=1, padx=8, pady=10, sticky=EW)
+        Button(form, text="Przeglądaj", command=self._choose_db, width=14).grid(row=0, column=2, padx=6, pady=10, sticky=E)
 
-        # Output path (read-only display + browse)
-        Label(form, text="Folder docelowy:", font=("Arial", 12), bg='white').grid(row=1, column=0, sticky=W, padx=10, pady=12)
-        out_disp = Entry(form, textvariable=self.output_path_var, width=54, state='readonly')
-        out_disp.grid(row=1, column=1, padx=10, pady=12, sticky=W)
-        Button(form, text="Przeglądaj...", command=self._choose_output).grid(row=1, column=2, padx=5, pady=12)
+        Label(form, text="Folder docelowy:", font=("Arial", 12), bg='white').grid(row=1, column=0, sticky=W, padx=8, pady=10)
+        out_disp = Entry(form, textvariable=self.output_path_var, state='readonly')
+        out_disp.grid(row=1, column=1, padx=8, pady=10, sticky=EW)
+        Button(form, text="Przeglądaj", command=self._choose_output, width=14).grid(row=1, column=2, padx=6, pady=10, sticky=E)
 
-        # Progress area
-        Label(form, text="Postęp:", font=("Arial", 12), bg='white').grid(row=2, column=0, sticky=NW, padx=10, pady=12)
-        self.progress_box = Text(form, width=50, height=10, state=DISABLED)
-        self.progress_box.grid(row=2, column=1, padx=10, pady=12, sticky=W)
+        # Progress
+        Label(form, text="Postęp:", font=("Arial", 12), bg='white').grid(row=2, column=0, sticky=NW, padx=8, pady=10)
+        progress_wrapper = Frame(form, bg='white')
+        progress_wrapper.grid(row=2, column=1, columnspan=2, padx=8, pady=10, sticky=EW)
+        progress_wrapper.grid_columnconfigure(0, weight=1)
+        self.progress_box = Text(progress_wrapper, height=16, state=DISABLED, wrap='word')
+        self.progress_box.grid(row=0, column=0, sticky=EW)
+        scroll = Scrollbar(progress_wrapper, orient=VERTICAL, command=self.progress_box.yview)
+        scroll.grid(row=0, column=1, sticky=NS)
+        self.progress_box.configure(yscrollcommand=scroll.set)
+        # Status line
+        self._offers_done = 0
+        self._wz_done = 0
+        self.status_var = StringVar(value="Oferty: 0 | WZ: 0")
+        Label(progress_wrapper, textvariable=self.status_var, anchor=W, bg='white', fg='#555').grid(row=1, column=0, columnspan=2, sticky=EW, pady=(4,0))
 
-        # Action buttons
+        # Buttons
         btns = Frame(self.top, bg='#f8f9fa')
-        btns.pack(fill=X, padx=20, pady=10)
+        btns.pack(fill=X, padx=18, pady=10)
         self.restore_btn = Button(btns, text="Przywracaj", font=("Arial", 14, "bold"), command=self._start_restore, cursor='hand2')
         self.restore_btn.pack(side=LEFT)
         Button(btns, text="Zamknij", font=("Arial", 12), command=self.top.destroy).pack(side=RIGHT)
@@ -73,6 +85,13 @@ class RestoreDocumentsWindow:
 
     def _append_progress(self, msg: str):
         try:
+            # Detect counters
+            if msg.startswith("Oferta:"):
+                self._offers_done += 1
+            elif msg.startswith("WZ:"):
+                self._wz_done += 1
+            if hasattr(self, 'status_var'):
+                self.status_var.set(f"Oferty: {self._offers_done} | WZ: {self._wz_done}")
             self.progress_box.configure(state=NORMAL)
             self.progress_box.insert(END, msg + "\n")
             self.progress_box.see(END)
@@ -96,6 +115,13 @@ class RestoreDocumentsWindow:
             tkinter.messagebox.showerror("Błąd", "Wybierz folder docelowy")
             return
 
+        # Clear previous log
+        try:
+            self.progress_box.configure(state=NORMAL)
+            self.progress_box.delete(1.0, END)
+            self.progress_box.configure(state=DISABLED)
+        except Exception:
+            pass
         self._append_progress("Start przywracania...")
         self.restore_btn.config(state=DISABLED)
 
@@ -109,9 +135,14 @@ class RestoreDocumentsWindow:
 
     def _run_restore(self, db_path: str, out_path: str):
         try:
-            report = restore_from_database(db_path, out_path, progress_cb=lambda m: self.parent.after(0, self._append_progress, m))
+            report = restore_from_database(
+                db_path,
+                out_path,
+                progress_cb=lambda m: (self.top.after(0, self._append_progress, m) if self.top and self.top.winfo_exists() else None)
+            )
             def _finish():
-                self._append_progress("\n" + report.summary_text())
+                self._append_progress("--- Zakończono ---")
+                self._append_progress(report.summary_text())
                 self.restore_btn.config(state=NORMAL)
                 tkinter.messagebox.showinfo("Zakończono", report.summary_text())
             self.parent.after(0, _finish)
