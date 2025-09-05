@@ -65,6 +65,33 @@ class ClientEditWindow:
         form.bind('<Configure>', _on_form_configure)
         canvas.bind('<Configure>', _on_canvas_configure)
 
+        # Local mouse wheel handler to prevent parent scrolling
+        def _on_wheel(event):
+            try:
+                if getattr(event, 'delta', 0):
+                    delta = event.delta
+                    step = -1 if delta > 0 else 1
+                elif getattr(event, 'num', None) == 4:
+                    step = -1
+                elif getattr(event, 'num', None) == 5:
+                    step = 1
+                else:
+                    step = 0
+                if step:
+                    canvas.yview_scroll(step, 'units')
+            except Exception:
+                pass
+            return 'break'  # block propagation to underlying windows
+
+        # Bind to window and inner widgets
+        for w in (self.window, form_holder, canvas, form):
+            try:
+                w.bind('<MouseWheel>', _on_wheel)
+                w.bind('<Button-4>', _on_wheel)
+                w.bind('<Button-5>', _on_wheel)
+            except Exception:
+                pass
+
         # Fields
         rows = [
             ('nip', 'NIP (10 cyfr)*:', True if mode == 'edit' else False),
