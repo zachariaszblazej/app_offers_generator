@@ -287,6 +287,19 @@ def save_offer_to_db(offer_order_number, offer_file_path, offer_context=None):
 
         context_json = None
         if offer_context:
+            try:
+                _ctx = dict(offer_context)
+                for k in ('client_name','supplier_name'):
+                    if k in _ctx and isinstance(_ctx[k], str):
+                        if '<w:r>' in _ctx[k] or '<w:t' in _ctx[k]:
+                            import re as _re
+                            t = _ctx[k]
+                            t = _re.sub(r'<w:[^>]+>', '', t)
+                            t = t.replace('</w:t>', '').replace('</w:r>', '')
+                            _ctx[k] = t
+                offer_context = _ctx
+            except Exception:
+                pass
             context_json = json.dumps(offer_context, default=str, ensure_ascii=False)
 
         # Store relative path in DB
@@ -899,6 +912,20 @@ def save_wz_to_db(wz_order_number, wz_file_path, wz_context=None):
 
         context_json = None
         if wz_context:
+            try:
+                # Make a shallow copy to avoid mutating caller
+                _ctx = dict(wz_context)
+                for k in ('client_name','supplier_name'):
+                    if k in _ctx and isinstance(_ctx[k], str):
+                        if '<w:r>' in _ctx[k] or '<w:t' in _ctx[k]:
+                            import re as _re
+                            t = _ctx[k]
+                            t = _re.sub(r'<w:[^>]+>', '', t)
+                            t = t.replace('</w:t>', '').replace('</w:r>', '')
+                            _ctx[k] = t
+                wz_context = _ctx
+            except Exception:
+                pass
             context_json = json.dumps(wz_context, ensure_ascii=False)
 
         # Normalize path to relative before saving

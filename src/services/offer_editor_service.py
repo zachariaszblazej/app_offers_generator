@@ -64,6 +64,23 @@ def update_offer_document(context_data, offer_file_path):
 
         # Przygotuj pełne dane kontekstowe dla szablonu
         template_context = context_data.copy()
+        # Sanitize potential RichText / Word XML remnants before storage
+        def _sanitize_plain(val):
+            try:
+                if val is None:
+                    return ''
+                if val.__class__.__name__ == 'RichText':
+                    val = str(val)
+                text = str(val)
+                if '<w:r>' in text or '<w:t' in text:
+                    import re as _re
+                    text = _re.sub(r'<w:[^>]+>', '', text)
+                    text = text.replace('</w:t>', '').replace('</w:r>', '')
+                return text
+            except Exception:
+                return str(val)
+        template_context['client_name'] = _sanitize_plain(template_context.get('client_name',''))
+        template_context['supplier_name'] = _sanitize_plain(template_context.get('supplier_name',''))
         template_context.update({
             'client_name': client_data.get('name', ''),
             'client_address1': client_data.get('address1', ''),

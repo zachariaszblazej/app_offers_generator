@@ -167,20 +167,32 @@ def prepare_wz_context(context_data):
     for field, default_value in default_fields.items():
         if field not in template_context:
             template_context[field] = default_value
-    # Convert client_name '\n' markers to actual newlines via RichText so multi-line names render in Word
+    # Sanitize and convert names only for template rendering; keep plain text in original context
+    def _sanitize_plain(value):
+        if value is None:
+            return ''
+        text = str(value)
+        if '<w:r>' in text or '<w:t' in text:
+            import re as _re
+            text = _re.sub(r'<w:[^>]+>', '', text)
+            text = text.replace('</w:t>', '').replace('</w:r>', '')
+        return text
+
+    raw_client_name = _sanitize_plain(template_context.get('client_name', ''))
+    raw_supplier_name = _sanitize_plain(template_context.get('supplier_name', ''))
+
     def _to_richtext_with_newlines(value):
         if value is None:
-            return ""
-        text = str(value)
-        if '\\n' not in text:
-            return text
+            return ''
+        txt = str(value)
+        if '\\n' not in txt:
+            return txt
         rt = RichText()
-        rt.add(text.replace('\\n', '\n'))
+        rt.add(txt.replace('\\n', '\n'))
         return rt
 
-    template_context['client_name'] = _to_richtext_with_newlines(template_context.get('client_name', ''))
-    # Apply the same newline conversion for supplier_name so it renders multiline in Word
-    template_context['supplier_name'] = _to_richtext_with_newlines(template_context.get('supplier_name', ''))
+    template_context['client_name'] = _to_richtext_with_newlines(raw_client_name)
+    template_context['supplier_name'] = _to_richtext_with_newlines(raw_supplier_name)
 
 
     # Format NIPs (supplier & client) to XXX-XXX-XX-XX like offers

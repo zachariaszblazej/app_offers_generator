@@ -108,6 +108,25 @@ def extract_client_alias_from_context(context_data):
 def generate_offer_document(context_data):
     """Generate offer document using the provided context data"""
     try:
+        # Sanitize context data copy for document generation and ensure plain-text stored later
+        def _sanitize_name(value):
+            try:
+                if value is None:
+                    return ''
+                if value.__class__.__name__ == 'RichText':
+                    value = str(value)
+                text = str(value)
+                if '<w:r>' in text or '<w:t' in text:
+                    import re as _re
+                    text = _re.sub(r'<w:[^>]+>', '', text)
+                    text = text.replace('</w:t>', '').replace('</w:r>', '')
+                return text
+            except Exception:
+                return str(value)
+
+        raw_client_name = _sanitize_name(context_data.get('client_name', ''))
+        raw_supplier_name = _sanitize_name(context_data.get('supplier_name', ''))
+
         # Extract necessary data
         date_obj = context_data.get('date')
         if isinstance(date_obj, str):
@@ -159,17 +178,17 @@ def generate_offer_document(context_data):
         # This can be directly used in Word template as table rows
         # Headers are available in context['product_headers']
         
-    # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
+        # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
         supplier_name = context_data.get('supplier_name', '')
         supplier_address1 = context_data.get('supplier_address_1', '')
         client_name = context_data.get('client_name', '')
         client_address1 = context_data.get('client_address_1', '')
         gwarancja = context_data.get('gwarancja', '')
-        
+
         template_filename = select_template(
             supplier_name, supplier_address1, client_name, client_address1, gwarancja
         )
-        
+
         # Utwórz ścieżkę do wybranego szablonu
         template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', template_filename)
 
@@ -180,13 +199,12 @@ def generate_offer_document(context_data):
             text = str(value)
             if '\\n' not in text:
                 return text
-            # Add as a single run with embedded line breaks to preserve style
             rt = RichText()
             rt.add(text.replace('\\n', '\n'))
             return rt
 
-        context_data['client_name'] = _to_richtext_with_newlines(context_data.get('client_name', ''))
-        context_data['supplier_name'] = _to_richtext_with_newlines(context_data.get('supplier_name', ''))
+        context_data['client_name'] = _to_richtext_with_newlines(raw_client_name)
+        context_data['supplier_name'] = _to_richtext_with_newlines(raw_supplier_name)
 
         # Generate document
         doc = DocxTemplate(template_path)
@@ -217,6 +235,9 @@ def generate_offer_document(context_data):
         if order_number is not None:
             # Make a copy of context data for storage (exclude template-specific conversions)
             storage_context = context_data.copy()
+            # Replace RichText back with plain text (with literal \n markers kept) for DB storage
+            storage_context['client_name'] = raw_client_name
+            storage_context['supplier_name'] = raw_supplier_name
             # Convert date back to timestamp for storage
             if isinstance(date_obj, datetime.datetime):
                 storage_context['date'] = date_obj.isoformat()
