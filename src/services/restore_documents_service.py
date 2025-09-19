@@ -22,6 +22,7 @@ import tkinter.messagebox
 # Reuse existing logic
 from src.services.offer_generator_service import select_template, convert_date
 from docxtpl import DocxTemplate, RichText
+from jinja2 import Environment
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates')
 
@@ -127,7 +128,8 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
                 _ensure_parent(target_path)
 
                 doc = DocxTemplate(template_path)
-                doc.render(context)
+                jinja_env = Environment(autoescape=True)
+                doc.render(context, jinja_env=jinja_env)
                 doc.save(target_path)
                 rep.offers_ok += 1
                 progress_cb(f"Oferta: {rel_path}")
@@ -203,7 +205,8 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
                 target_path = os.path.join(output_root, 'WZki', rel_path)
                 _ensure_parent(target_path)
                 doc = DocxTemplate(wz_template_path)
-                doc.render(context)
+                jinja_env = Environment(autoescape=True)
+                doc.render(context, jinja_env=jinja_env)
                 doc.save(target_path)
                 rep.wz_ok += 1
                 progress_cb(f"WZ: {rel_path}")

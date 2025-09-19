@@ -2,6 +2,7 @@
 Service for editing offers
 """
 from docxtpl import DocxTemplate
+from jinja2 import Environment
 import tkinter.messagebox
 import datetime
 import os
@@ -105,8 +106,9 @@ def update_offer_document(context_data, offer_file_path):
             # Fallback: leave as plain text if RichText unavailable
             pass
 
-        # Render template with new data
-        doc.render(template_context)
+        # Render template with Jinja2 autoescape enabled
+        jinja_env = Environment(autoescape=True)
+        doc.render(template_context, jinja_env=jinja_env)
 
         # Save to the same location (overwrite)
         doc.save(offer_file_path)

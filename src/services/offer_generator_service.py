@@ -36,6 +36,7 @@ def select_template(supplier_name: str, supplier_address1: str, client_name: str
         return "offer_template.docx"
     return "offer_template_no_gwarancja.docx"
 from docxtpl import DocxTemplate, RichText
+from jinja2 import Environment
 import tkinter.messagebox
 import datetime
 import os
@@ -206,9 +207,10 @@ def generate_offer_document(context_data):
         context_data['client_name'] = _to_richtext_with_newlines(raw_client_name)
         context_data['supplier_name'] = _to_richtext_with_newlines(raw_supplier_name)
 
-        # Generate document
+        # Generate document with Jinja2 autoescape to preserve XML entities like '&'
         doc = DocxTemplate(template_path)
-        doc.render(context_data)
+        jinja_env = Environment(autoescape=True)
+        doc.render(context_data, jinja_env=jinja_env)
         
         # Ensure base offers root exists (do NOT auto-create root to enforce startup validation)
         offers_root = get_offers_folder()

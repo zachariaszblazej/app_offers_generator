@@ -6,6 +6,7 @@ import locale  # kept only if elsewhere needed; will not be used for date format
 from docx import Document
 from datetime import datetime
 from docxtpl import DocxTemplate, RichText
+from jinja2 import Environment
 import tkinter.messagebox
 import datetime
 import os
@@ -50,8 +51,10 @@ def generate_wz_document(context_data, custom_output_path=None):
         # Prepare context data for template
         template_context = prepare_wz_context(context_data)
 
-        # Render document
-        doc.render(template_context)
+        # Render document with Jinja2 autoescape to preserve XML entities
+        from jinja2 import Environment
+        jinja_env = Environment(autoescape=True)
+        doc.render(template_context, jinja_env=jinja_env)
 
         # Determine output path
         if custom_output_path:
