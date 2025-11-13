@@ -100,7 +100,8 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
                 client_name = context.get('client_name', '')
                 client_address1 = context.get('client_address_1', '')
                 gwarancja = context.get('gwarancja', '')
-                template_name = select_template(supplier_name, supplier_address1, client_name, client_address1, gwarancja)
+                language = context.get('language', 'PL')  # Default to PL if not in context
+                template_name = select_template(supplier_name, supplier_address1, client_name, client_address1, gwarancja, language)
                 template_path = os.path.join(TEMPLATES_DIR, template_name)
                 if not os.path.isfile(template_path):
                     raise FileNotFoundError(f"Brak szablonu: {template_name}")
@@ -143,13 +144,7 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
         cur.execute("SELECT WzFilePath, WzContext FROM Wuzetkas")
         rows = cur.fetchall()
         rep.wz_total = len(rows)
-        # Pick first available wz template
-        wz_template_path = None
-        for cand in DEFAULT_WZ_TEMPLATE_CANDIDATES:
-            p = os.path.join(TEMPLATES_DIR, cand)
-            if os.path.isfile(p):
-                wz_template_path = p
-                break
+        
         for rel_path, ctx_json in rows:
             if not rel_path:
                 rep.wz_errors.append("Pusty WzFilePath")
@@ -160,8 +155,19 @@ def restore_from_database(db_path: str, output_root: str, progress_cb: Optional[
                 rep.wz_errors.append(f"{rel_path}: JSON error {e}")
                 continue
             try:
-                if not wz_template_path:
-                    raise FileNotFoundError("Brak szablonu WZ")
+                # Get language from context, default to PL
+                language = context.get('language', 'PL')
+                
+                # Select appropriate WZ template based on language
+                if language and language.upper() == "EN":
+                    wz_template_name = 'wz_template_english.docx'
+                else:
+                    wz_template_name = 'wz_template.docx'
+                
+                wz_template_path = os.path.join(TEMPLATES_DIR, wz_template_name)
+                if not os.path.isfile(wz_template_path):
+                    raise FileNotFoundError(f"Brak szablonu WZ: {wz_template_name}")
+                
                 # Convert date to Polish long form (e.g. '4 sierpnia 2025') similar to offers
                 date_raw = context.get('date')
                 try:

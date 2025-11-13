@@ -2,6 +2,7 @@
 WZ UI Components - simplified version for WZ creation without pricing and some other elements
 """
 from tkinter import *
+from tkinter import ttk
 import tkinter.messagebox
 from datetime import datetime
 from tkcalendar import DateEntry, Calendar
@@ -53,6 +54,13 @@ class WzUIComponents:
     
     
     def create_upper_section(self, show_wz_number=False):
+        """Create the upper section with date and company info"""
+        
+        # Language selector (top right, before date)
+        Label(self.window, text="Język szablonu:", bg='white', font=("Arial", 9)).place(x=600, y=60)
+        self.entries['language'] = ttk.Combobox(self.window, width=8, state='readonly', values=["PL", "EN"])
+        self.entries['language'].place(x=700, y=60)
+        self.entries['language'].set("PL")  # Default to Polish
 
         # Town entry
         self.entries['town'] = Entry(self.window, width=50)
@@ -489,6 +497,7 @@ class WzUIComponents:
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
             'date': parsed_date,
+            'language': self.entries.get('language', ttk.Combobox()).get() if 'language' in self.entries else 'PL',  # Get language selection
             'supplier_name': _name_value('supplier_name'),
             'supplier_address_1': self.entries['supplier_address_1'].get(),
             'supplier_address_2': self.entries['supplier_address_2'].get(),

@@ -39,8 +39,11 @@ def generate_wz_document(context_data, custom_output_path=None):
         str: Path to generated WZ file, or None if failed
     """
     try:
+        # Get language from context, default to PL
+        language = context_data.get('language', 'PL')
+        
         # Resolve template path in a PyInstaller-friendly way via helper
-        template_path = get_wz_template_path()
+        template_path = get_wz_template_path(language)
         if not template_path:
             tkinter.messagebox.showerror("Błąd", "Szablon WZ nie został znaleziony (wz_template.docx)")
             return None
@@ -245,7 +248,22 @@ def prepare_wz_context(context_data):
     return template_context
 
 
-def get_wz_template_path():
-    """Get the path to WZ template file (runtime safe)."""
-    path = get_resource_path(os.path.join('templates', 'wz_template.docx'))
+def get_wz_template_path(language: str = "PL"):
+    """
+    Get the path to WZ template file (runtime safe).
+    
+    Args:
+        language: Language code ("PL" or "EN"), defaults to "PL"
+        
+    Returns:
+        str: Path to template file, or None if not found
+    """
+    # Select base template (always use wz_template as base, ignoring long_names for now)
+    base_template = 'wz_template.docx'
+    
+    # Apply language suffix if English
+    if language and language.upper() == "EN":
+        base_template = base_template.replace(".docx", "_english.docx")
+    
+    path = get_resource_path(os.path.join('templates', base_template))
     return path if os.path.exists(path) else None

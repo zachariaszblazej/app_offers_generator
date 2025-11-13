@@ -97,6 +97,12 @@ class UIComponents:
     
     def create_upper_section(self, show_offer_number=False):
         """Create the upper section of the form"""
+        # Language selector (top right, before date)
+        Label(self.window, text="Język szablonu:", bg='white', font=("Arial", 9)).place(x=600, y=60)
+        self.entries['language'] = ttk.Combobox(self.window, width=8, state='readonly', values=["PL", "EN"])
+        self.entries['language'].place(x=700, y=60)
+        self.entries['language'].set("PL")  # Default to Polish
+        
         # Town entry
         self.entries['town'] = Entry(self.window, width=50)
         self.entries['town'].place(x=600, y=90)
@@ -375,6 +381,7 @@ class UIComponents:
             'bank_name': self.entries['bank_name'].get(),
             'account_number': self.entries['account_number'].get(),
             'date': parsed_date,
+            'language': self.entries.get('language', ttk.Combobox()).get() if 'language' in self.entries else 'PL',  # Get language selection
             # Convert actual newlines to literal \n for downstream services/templates
             'supplier_name': (
                 self.entries['supplier_name'].get('1.0', 'end-1c')

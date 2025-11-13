@@ -225,6 +225,12 @@ class OfferEditorApp:
                 self.ui.entries['town'].delete(0, END)
                 self.ui.entries['town'].insert(0, context_data.get('town', ''))
 
+            # Load language selection
+            if 'language' in context_data and 'language' in self.ui.entries:
+                language_value = context_data.get('language', 'PL')
+                self.ui.entries['language'].set(language_value)
+                print(f"Loaded language: {language_value}")
+
             # Load company (supplier self) header data from context instead of settings (editor mode requirement)
             company_map = {
                 'address1': 'address_1',

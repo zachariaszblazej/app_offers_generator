@@ -42,12 +42,14 @@ def update_offer_document(context_data, offer_file_path):
         products = context_data.get('products', [])
 
         # Wybierz odpowiedni szablon na podstawie długości nazw i pola gwarancji
+        language = context_data.get('language', 'PL')  # Get language from context, default PL
         template_filename = select_template(
             supplier_data.get('name', ''),
             supplier_data.get('address1', ''),
             client_data.get('name', ''),
             client_data.get('address1', ''),
             context_data.get('gwarancja', ''),
+            language
         )
 
         template_path = os.path.join(

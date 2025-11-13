@@ -222,6 +222,12 @@ class WzEditorApp:
                 self.ui.entries['town'].delete(0, END)
                 self.ui.entries['town'].insert(0, context_data.get('town', ''))
 
+            # Load language selection
+            if 'language' in context_data and 'language' in self.ui.entries:
+                language_value = context_data.get('language', 'PL')
+                self.ui.entries['language'].set(language_value)
+                print(f"Loaded language: {language_value}")
+
             # Load company header fields from context (editor mode) overriding settings
             company_keys = ['address_1', 'address_2', 'nip', 'regon', 'email', 'phone_number', 'bank_name', 'account_number']
             for key in company_keys:

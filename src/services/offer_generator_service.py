@@ -12,15 +12,17 @@ from datetime import datetime
 from src.utils.date_utils import format_polish_date
 
 
-def select_template(supplier_name: str, supplier_address1: str, client_name: str, client_address1: str, gwarancja: str) -> str:
+def select_template(supplier_name: str, supplier_address1: str, client_name: str, client_address1: str, gwarancja: str, language: str = "PL") -> str:
     """
-    Select offer template based on client name/address length and warranty field.
+    Select offer template based on client name/address length, warranty field, and language.
 
     Criteria:
     - "Small" sum (client_name + client_address1) AND gwarancja non-empty -> offer_template.docx
     - "Small" sum AND gwarancja empty -> offer_template_no_gwarancja.docx
     - "Large" sum (>= threshold) AND gwarancja non-empty -> offer_template_long_names.docx
     - "Large" sum AND gwarancja empty -> offer_template_long_names_no_gwarancja.docx
+    
+    If language is "EN", adds "_english" suffix before .docx extension.
 
     Note: Threshold kept at 95 characters for client_name + client_address1.
     """
@@ -29,12 +31,19 @@ def select_template(supplier_name: str, supplier_address1: str, client_name: str
     has_warranty = bool((gwarancja or "").strip())
 
     if is_long and has_warranty:
-        return "offer_template_long_names.docx"
-    if is_long and not has_warranty:
-        return "offer_template_long_names_no_gwarancja.docx"
-    if not is_long and has_warranty:
-        return "offer_template.docx"
-    return "offer_template_no_gwarancja.docx"
+        base_template = "offer_template_long_names.docx"
+    elif is_long and not has_warranty:
+        base_template = "offer_template_long_names_no_gwarancja.docx"
+    elif not is_long and has_warranty:
+        base_template = "offer_template.docx"
+    else:
+        base_template = "offer_template_no_gwarancja.docx"
+    
+    # Apply language suffix if English
+    if language and language.upper() == "EN":
+        base_template = base_template.replace(".docx", "_english.docx")
+    
+    return base_template
 from docxtpl import DocxTemplate, RichText
 from jinja2 import Environment
 import tkinter.messagebox
@@ -185,9 +194,10 @@ def generate_offer_document(context_data):
         client_name = context_data.get('client_name', '')
         client_address1 = context_data.get('client_address_1', '')
         gwarancja = context_data.get('gwarancja', '')
+        language = context_data.get('language', 'PL')  # Get language from context, default PL
 
         template_filename = select_template(
-            supplier_name, supplier_address1, client_name, client_address1, gwarancja
+            supplier_name, supplier_address1, client_name, client_address1, gwarancja, language
         )
 
         # Utwórz ścieżkę do wybranego szablonu
