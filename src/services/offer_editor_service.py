@@ -92,9 +92,12 @@ def update_offer_document(context_data, offer_file_path):
             'products': products,
         })
 
-        # Convert date for display if needed
+        # Get language from context (default to PL)
+        language = context_data.get('language', 'PL')
+        
+        # Convert date for display if needed with language-specific formatting
         if 'date' in template_context:
-            template_context['date'] = convert_date(template_context['date'])
+            template_context['date'] = convert_date(template_context['date'], language)
 
         # Convert client_name '\n' markers to real line breaks using RichText for Word rendering
         try:

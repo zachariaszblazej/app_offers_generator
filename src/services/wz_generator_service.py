@@ -17,14 +17,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.utils.config import get_wz_folder
 from src.utils.resources import get_resource_path
-from src.utils.date_utils import format_polish_date
+from src.utils.date_utils import format_date
 from src.data.database_service import get_next_wz_number, save_wz_to_db
 import re
 
 
-def convert_date(date: datetime.datetime) -> str:
-    """Return Polish formatted date (manual month mapping, no locale)."""
-    return format_polish_date(date)
+def convert_date(date: datetime.datetime, language: str = "PL") -> str:
+    """Convert datetime to formatted string based on language.
+    PL: '13 listopada 2025'
+    EN: 'November 13, 2025'
+    """
+    return format_date(date, language)
 
 
 def generate_wz_document(context_data, custom_output_path=None):
@@ -115,15 +118,18 @@ def prepare_wz_context(context_data):
     # Start with the original context
     template_context = context_data.copy()
     
+    # Get language from context (default to PL)
+    language = context_data.get('language', 'PL')
+    
     # Format date if needed - use same approach as offers
     date_value = context_data.get('date', '')
     if date_value:
         try:
             # Check if date is already a datetime object
             if isinstance(date_value, (datetime.datetime, datetime.date)):
-                # Convert datetime object to formatted string
-                template_context['date'] = convert_date(date_value)
-                template_context['formatted_date'] = convert_date(date_value)
+                # Convert datetime object to formatted string with language-specific formatting
+                template_context['date'] = convert_date(date_value, language)
+                template_context['formatted_date'] = convert_date(date_value, language)
             else:
                 # Parse date string and convert to datetime, then format
                 date_parts = str(date_value).split()
@@ -131,8 +137,8 @@ def prepare_wz_context(context_data):
                     day, month, year = date_parts
                     # Create datetime object and use convert_date function
                     date_obj = datetime.datetime(int(year), int(month), int(day))
-                    template_context['date'] = convert_date(date_obj)
-                    template_context['formatted_date'] = convert_date(date_obj)
+                    template_context['date'] = convert_date(date_obj, language)
+                    template_context['formatted_date'] = convert_date(date_obj, language)
                 else:
                     template_context['date'] = str(date_value)
                     template_context['formatted_date'] = str(date_value)
@@ -142,8 +148,8 @@ def prepare_wz_context(context_data):
     else:
         # Use current date like offers do
         current_date = datetime.datetime.now()
-        template_context['date'] = convert_date(current_date)
-        template_context['formatted_date'] = convert_date(current_date)
+        template_context['date'] = convert_date(current_date, language)
+        template_context['formatted_date'] = convert_date(current_date, language)
     
     # Ensure all required fields have default values
     default_fields = {

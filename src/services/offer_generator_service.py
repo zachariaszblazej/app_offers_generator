@@ -9,7 +9,7 @@ and whether the warranty (gwarancja) field is provided. Maps to four templates:
 import os
 from docx import Document
 from datetime import datetime
-from src.utils.date_utils import format_polish_date
+from src.utils.date_utils import format_date
 
 
 def select_template(supplier_name: str, supplier_address1: str, client_name: str, client_address1: str, gwarancja: str, language: str = "PL") -> str:
@@ -62,9 +62,12 @@ from src.data.database_service import (
 )
 
 
-def convert_date(date: datetime.datetime) -> str:
-    """Convert datetime to Polish formatted string (manual month mapping)."""
-    return format_polish_date(date)
+def convert_date(date: datetime.datetime, language: str = "PL") -> str:
+    """Convert datetime to formatted string based on language.
+    PL: '13 listopada 2025'
+    EN: 'November 13, 2025'
+    """
+    return format_date(date, language)
 
 
 def generate_offer_number(date: datetime.datetime, client_alias: str) -> tuple:
@@ -153,11 +156,14 @@ def generate_offer_document(context_data):
         if not offer_number or not file_path:
             return False
         
+        # Get language from context (default to PL)
+        language = context_data.get('language', 'PL')
+        
         # Update context with the generated offer number
         context_data['offer_number'] = offer_number
         
-        # Convert date to string for template
-        context_data['date'] = convert_date(date_obj)
+        # Convert date to string for template with language-specific formatting
+        context_data['date'] = convert_date(date_obj, language)
         
         # Debug: Print products to see if they're being passed as list of lists
         products = context_data.get('products', [])
