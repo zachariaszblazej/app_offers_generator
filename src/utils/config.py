@@ -12,11 +12,20 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def get_data_dir():
-    """Get data directory that's persistent and writable"""
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
+    """Get data directory that's persistent and writable.
+    
+    Uses %APPDATA%/HantechDokumenty on Windows (standard application data location).
+    Falls back to ~/.HantechDokumenty on other platforms.
+    The directory is created automatically if it doesn't exist.
+    """
+    if sys.platform == 'win32':
+        appdata = os.environ.get('APPDATA', os.path.expanduser('~'))
+        data_dir = os.path.join(appdata, 'HantechDokumenty')
     else:
-        return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        data_dir = os.path.join(os.path.expanduser('~'), '.HantechDokumenty')
+    
+    os.makedirs(data_dir, exist_ok=True)
+    return data_dir
 
 # Default application settings
 DEFAULT_APP_SETTINGS = {

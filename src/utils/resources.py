@@ -18,16 +18,20 @@ def get_resource_path(relative_path):
 
 def get_data_dir():
     """
-    Get the data directory for the application
-    This should be persistent and writable
+    Get the data directory for the application.
+    
+    Uses %APPDATA%/HantechDokumenty on Windows (standard application data location).
+    Falls back to ~/.HantechDokumenty on other platforms.
+    The directory is created automatically if it doesn't exist.
     """
-    if getattr(sys, 'frozen', False):
-        # We're running in a PyInstaller bundle
-        # Use the directory where the executable is located
-        return os.path.dirname(sys.executable)
+    if sys.platform == 'win32':
+        appdata = os.environ.get('APPDATA', os.path.expanduser('~'))
+        data_dir = os.path.join(appdata, 'HantechDokumenty')
     else:
-        # We're running in a normal Python environment
-        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_dir = os.path.join(os.path.expanduser('~'), '.HantechDokumenty')
+    
+    os.makedirs(data_dir, exist_ok=True)
+    return data_dir
 
 def get_settings_file_path():
     """Get the path to the settings file"""
