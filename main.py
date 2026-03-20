@@ -4,8 +4,12 @@ Main entry point for the Offer Generator application
 """
 import sys
 import os
+import time
+import logging
 import traceback
 from datetime import datetime
+
+_APP_START_TIME = time.perf_counter()
 
 # Add the src directory to the Python path so we can import our modules
 def setup_python_path():
@@ -73,7 +77,15 @@ def safe_input(prompt="Press Enter to exit..."):
 
 def main():
     """Main entry point"""
-    log_error = setup_error_logging()
+    # ── Logging setup (file-based, rotating) ──────────────────────────────
+    from src.utils.app_logging import setup_logging
+    setup_logging()
+    logger = logging.getLogger("main")
+
+    logger.info("=" * 60)
+    logger.info("Application starting...")
+
+    log_error = setup_error_logging()   # legacy error logger kept for safety
     
     try:
         log_error("Starting OfferGenerator application...")
@@ -82,41 +94,55 @@ def main():
         if hasattr(sys, '_MEIPASS'):
             # Running as PyInstaller executable
             current_dir = sys._MEIPASS
+            logger.info("Running from PyInstaller bundle: %s", current_dir)
             log_error(f"Running from PyInstaller bundle: {current_dir}")
         else:
             # Running in development
             current_dir = os.path.dirname(os.path.abspath(__file__))
+            logger.info("Running in development mode: %s", current_dir)
             log_error(f"Running in development mode: {current_dir}")
         
         # Check if src directory exists
         src_dir = get_resource_path('src')
+        logger.debug("Looking for src directory at: %s", src_dir)
         log_error(f"Looking for src directory at: {src_dir}")
         
         if not os.path.exists(src_dir):
             error_msg = f"ERROR: src directory not found at {src_dir}"
+            logger.critical(error_msg)
             log_error(error_msg)
             log_error(f"Available files in current directory: {os.listdir(current_dir) if os.path.exists(current_dir) else 'Directory not accessible'}")
             print(error_msg)
             safe_input("Press Enter to exit...")
             sys.exit(1)
         
+        logger.debug("Importing main application module...")
         log_error("Importing main application...")
         # Python path should already be set up
         from src.core.main_app import OfferGeneratorMainApp
         
+        logger.debug("Creating application instance...")
         log_error("Creating application instance...")
         # Initialize and run the application
         app = OfferGeneratorMainApp()
+
+        # ── Startup time measurement ──────────────────────────────────────
+        elapsed = time.perf_counter() - _APP_START_TIME
+        logger.info("Application ready. Startup time: %.2f s", elapsed)
         
         log_error("Starting application...")
         app.run()
+
+        logger.info("Application closed normally.")
         
     except KeyboardInterrupt:
+        logger.info("Application interrupted by user.")
         log_error("Application interrupted by user")
         print("\nApplication interrupted by user")
         sys.exit(0)
     except ImportError as e:
         error_msg = f"Import Error: {e}"
+        logger.critical(error_msg, exc_info=True)
         log_error(error_msg)
         log_error(f"Python path: {sys.path}")
         print(f"❌ Import Error: {e}")
@@ -127,6 +153,7 @@ def main():
     except Exception as e:
         error_msg = f"Error starting application: {e}"
         traceback_str = traceback.format_exc()
+        logger.critical(error_msg, exc_info=True)
         log_error(error_msg)
         log_error(f"Full traceback:\n{traceback_str}")
         

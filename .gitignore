@@ -12,3 +12,4 @@ test_*.py
 build_*.py
 *.zip
 *.bat
+/logs/
