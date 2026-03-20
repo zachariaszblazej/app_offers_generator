@@ -3,6 +3,7 @@ Main menu frame for navigation
 """
 from tkinter import *
 import tkinter.messagebox
+import tkinter.filedialog
 import sys
 import os
 
@@ -159,6 +160,19 @@ class MainMenuFrame(Frame):
         )
         about_btn.pack(pady=10)
 
+        # Download logs button
+        download_logs_btn = Button(
+            self,
+            text="Pobierz logi aplikacji",
+            font=("Arial", 12),
+            fg='black',
+            padx=20,
+            pady=8,
+            command=self.download_logs,
+            cursor='hand2',
+        )
+        download_logs_btn.pack(pady=5)
+
         # Exit button
         exit_btn = Button(
             self,
@@ -246,6 +260,46 @@ class MainMenuFrame(Frame):
         except Exception as e:
             tkinter.messagebox.showerror("Błąd", f"Nie udało się otworzyć okna przywracania: {e}")
     
+    def download_logs(self):
+        """Zip the application logs folder and let the user choose where to save."""
+        from src.utils.app_logging import _get_logs_dir
+        import zipfile
+        from datetime import datetime as _dt
+
+        logs_dir = _get_logs_dir()
+
+        # Check if there are any log files
+        log_files = [f for f in os.listdir(logs_dir) if os.path.isfile(os.path.join(logs_dir, f))]
+        if not log_files:
+            tkinter.messagebox.showinfo("Brak logów", "Folder logów jest pusty — nie ma nic do pobrania.")
+            return
+
+        # Suggest a filename with current date/time
+        default_name = f"logi_hantech_{_dt.now().strftime('%Y%m%d_%H%M%S')}.zip"
+
+        dest_path = tkinter.filedialog.asksaveasfilename(
+            title="Zapisz logi jako…",
+            initialfile=default_name,
+            defaultextension=".zip",
+            filetypes=[("Archiwum ZIP", "*.zip")],
+        )
+        if not dest_path:
+            return  # User cancelled
+
+        try:
+            with zipfile.ZipFile(dest_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for fname in log_files:
+                    full_path = os.path.join(logs_dir, fname)
+                    zf.write(full_path, fname)
+
+            tkinter.messagebox.showinfo(
+                "Logi zapisane",
+                f"Logi zostały zapisane w:\n{dest_path}\n\n"
+                f"Plików w archiwum: {len(log_files)}",
+            )
+        except Exception as e:
+            tkinter.messagebox.showerror("Błąd", f"Nie udało się zapisać logów:\n{e}")
+
     def exit_application(self):
         """Exit the application"""
         if tkinter.messagebox.askquestion("Potwierdzenie", "Czy na pewno chcesz zamknąć aplikację?") == 'yes':
