@@ -77,6 +77,41 @@ def safe_input(prompt="Press Enter to exit..."):
 
 def main():
     """Main entry point"""
+    # ── Single instance check (Windows named mutex) ───────────────────────
+    _mutex_handle = None
+    if sys.platform == 'win32':
+        import ctypes
+        _mutex_handle = ctypes.windll.kernel32.CreateMutexW(None, True, "HantechDokumentyAppMutex")
+        last_error = ctypes.windll.kernel32.GetLastError()
+        if last_error == 183:  # ERROR_ALREADY_EXISTS
+            ctypes.windll.kernel32.CloseHandle(_mutex_handle)
+            # Try to bring existing window to front
+            try:
+                import ctypes.wintypes
+                hwnd = ctypes.windll.user32.FindWindowW(None, None)
+                # Search for window with our title
+                EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+                target_hwnd = None
+
+                def enum_callback(hwnd, _):
+                    nonlocal target_hwnd
+                    length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                    if length > 0:
+                        buf = ctypes.create_unicode_buffer(length + 1)
+                        ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1)
+                        if "Kreator Dokumentów Hantech" in buf.value:
+                            target_hwnd = hwnd
+                            # Restore if minimized (SW_RESTORE = 9)
+                            ctypes.windll.user32.ShowWindow(hwnd, 9)
+                            ctypes.windll.user32.SetForegroundWindow(hwnd)
+                            return False  # stop enumeration
+                    return True
+
+                ctypes.windll.user32.EnumWindows(EnumWindowsProc(enum_callback), 0)
+            except Exception:
+                pass
+            sys.exit(0)
+
     # ── Logging setup (file-based, rotating) ──────────────────────────────
     t0 = time.perf_counter()
     from src.utils.app_logging import setup_logging
