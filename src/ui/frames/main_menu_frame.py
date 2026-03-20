@@ -134,6 +134,19 @@ class MainMenuFrame(Frame):
         )
         restore_docs_btn.pack(pady=10)
 
+        # Download logs button
+        download_logs_btn = Button(
+            buttons_frame,
+            text="Pobierz logi aplikacji",
+            font=("Arial", 12),
+            fg='black',
+            padx=20,
+            pady=8,
+            command=self.download_logs,
+            cursor='hand2',
+        )
+        download_logs_btn.pack(pady=5)
+
         # Settings button
         settings_btn = Button(
             self,
@@ -159,19 +172,6 @@ class MainMenuFrame(Frame):
             cursor='hand2',
         )
         about_btn.pack(pady=10)
-
-        # Download logs button
-        download_logs_btn = Button(
-            self,
-            text="Pobierz logi aplikacji",
-            font=("Arial", 12),
-            fg='black',
-            padx=20,
-            pady=8,
-            command=self.download_logs,
-            cursor='hand2',
-        )
-        download_logs_btn.pack(pady=5)
 
         # Exit button
         exit_btn = Button(
