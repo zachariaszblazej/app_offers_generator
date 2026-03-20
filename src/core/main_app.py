@@ -51,20 +51,15 @@ class OfferGeneratorMainApp:
         # Set locale
         t = time.perf_counter()
         locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
-        self._log.info("Locale set in %.3f s", time.perf_counter() - t)
+        self._log.info("  Locale set in %.3f s", time.perf_counter() - t)
 
-        # Create main window
+        # Create and configure main window
         t = time.perf_counter()
         self.window = Tk()
-        self._log.info("Tk window created in %.3f s", time.perf_counter() - t)
-
-        # Ensure all multiline Text widgets use the same default font as Entry across the whole app
         try:
             default_font = tkfont.nametofont("TkDefaultFont")
-            # Apply to all classic Tk Text widgets created afterwards
             self.window.option_add("*Text*font", default_font)
         except Exception:
-            # Non-fatal if fonts aren't available yet
             pass
         try:
             from src.utils.version import get_version_string
@@ -73,49 +68,47 @@ class OfferGeneratorMainApp:
         except ImportError:
             self.window.title(APP_TITLE)
         self.window.geometry(WINDOW_SIZE)
+        self._log.info("  Tk window created & configured in %.3f s", time.perf_counter() - t)
 
         # Initialize navigation manager
         t = time.perf_counter()
         self.nav_manager = NavigationManager(self.window)
-        self._log.info("Navigation manager initialized in %.3f s", time.perf_counter() - t)
+        self._log.info("  Navigation manager initialized in %.3f s", time.perf_counter() - t)
 
         # Create frames
         t = time.perf_counter()
         self.setup_frames()
-        self._log.info("Frames setup completed in %.3f s", time.perf_counter() - t)
+        self._log.info("  Frames setup completed in %.3f s", time.perf_counter() - t)
 
-        # Verify required folders (offers & WZ); navigate to settings if any missing
+        # Verify required folders & show main menu
         t = time.perf_counter()
         missing = self.check_required_folders()
         if not missing:
             self.nav_manager.show_frame('main_menu')
-        self._log.info("Required folders check in %.3f s", time.perf_counter() - t)
+        self._log.info("  Folders check & initial frame shown in %.3f s", time.perf_counter() - t)
 
         # Enable DB popups after initial UI is ready
+        t = time.perf_counter()
         try:
             import src.data.database_service as _dbs
             _dbs.DB_POPUPS_ENABLED = True
         except Exception:
             pass
-
-        # Enable DB error popups after initial navigation has been decided
         try:
             _dbs.DB_POPUPS_ENABLED = True
         except Exception:
             pass
-
-        # Initialize offer creation components (but don't show them yet)
         self.setup_offer_components()
+        self._log.info("  DB popups & offer components in %.3f s", time.perf_counter() - t)
 
         # Perform optional database backup after UI initialized
         t = time.perf_counter()
         try:
             self.perform_database_backup_on_start()
         except Exception as e:
-            # Non-fatal: log to console
             self._log.warning("Database backup on start failed: %s", e)
             print(f"Database backup on start failed: {e}")
-        self._log.info("Database backup step in %.3f s", time.perf_counter() - t)
+        self._log.info("  Database backup step in %.3f s", time.perf_counter() - t)
 
         self._log.info("OfferGeneratorMainApp.__init__ completed in %.3f s", time.perf_counter() - t_init)
     
