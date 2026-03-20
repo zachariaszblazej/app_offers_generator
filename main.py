@@ -78,12 +78,14 @@ def safe_input(prompt="Press Enter to exit..."):
 def main():
     """Main entry point"""
     # ── Logging setup (file-based, rotating) ──────────────────────────────
+    t0 = time.perf_counter()
     from src.utils.app_logging import setup_logging
     setup_logging()
     logger = logging.getLogger("main")
 
     logger.info("=" * 60)
     logger.info("Application starting...")
+    logger.info("Logging setup completed in %.3f s", time.perf_counter() - t0)
 
     log_error = setup_error_logging()   # legacy error logger kept for safety
     
@@ -92,43 +94,40 @@ def main():
         
         # Get correct paths for both development and PyInstaller
         if hasattr(sys, '_MEIPASS'):
-            # Running as PyInstaller executable
             current_dir = sys._MEIPASS
             logger.info("Running from PyInstaller bundle: %s", current_dir)
             log_error(f"Running from PyInstaller bundle: {current_dir}")
         else:
-            # Running in development
             current_dir = os.path.dirname(os.path.abspath(__file__))
             logger.info("Running in development mode: %s", current_dir)
             log_error(f"Running in development mode: {current_dir}")
         
         # Check if src directory exists
         src_dir = get_resource_path('src')
-        logger.debug("Looking for src directory at: %s", src_dir)
-        log_error(f"Looking for src directory at: {src_dir}")
         
         if not os.path.exists(src_dir):
             error_msg = f"ERROR: src directory not found at {src_dir}"
             logger.critical(error_msg)
             log_error(error_msg)
-            log_error(f"Available files in current directory: {os.listdir(current_dir) if os.path.exists(current_dir) else 'Directory not accessible'}")
             print(error_msg)
             safe_input("Press Enter to exit...")
             sys.exit(1)
         
-        logger.debug("Importing main application module...")
-        log_error("Importing main application...")
-        # Python path should already be set up
+        # ── Import phase ─────────────────────────────────────────────────
+        t1 = time.perf_counter()
+        logger.info("Importing main application module...")
         from src.core.main_app import OfferGeneratorMainApp
+        logger.info("Import completed in %.3f s", time.perf_counter() - t1)
         
-        logger.debug("Creating application instance...")
-        log_error("Creating application instance...")
-        # Initialize and run the application
+        # ── Initialization phase ─────────────────────────────────────────
+        t2 = time.perf_counter()
+        logger.info("Creating application instance...")
         app = OfferGeneratorMainApp()
+        logger.info("Application instance created in %.3f s", time.perf_counter() - t2)
 
-        # ── Startup time measurement ──────────────────────────────────────
-        elapsed = time.perf_counter() - _APP_START_TIME
-        logger.info("Application ready. Startup time: %.2f s", elapsed)
+        # ── Total startup summary ────────────────────────────────────────
+        total = time.perf_counter() - _APP_START_TIME
+        logger.info("Application ready. Total startup time: %.2f s", total)
         
         log_error("Starting application...")
         app.run()
