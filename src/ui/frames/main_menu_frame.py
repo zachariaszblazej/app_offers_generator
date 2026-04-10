@@ -149,7 +149,7 @@ class MainMenuFrame(Frame):
 
         # Settings button
         settings_btn = Button(
-            self,
+            buttons_frame,
             text="Ustawienia",
             font=("Arial", 14),
             fg='black',
@@ -162,7 +162,7 @@ class MainMenuFrame(Frame):
 
         # About button
         about_btn = Button(
-            self,
+            buttons_frame,
             text="O programie",
             font=("Arial", 14),
             fg='black',
