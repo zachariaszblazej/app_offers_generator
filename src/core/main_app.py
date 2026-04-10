@@ -55,7 +55,40 @@ class OfferGeneratorMainApp:
 
         # Create and configure main window
         t = time.perf_counter()
+
+        # Enable DPI awareness on Windows (must be before Tk() creation)
+        if sys.platform == 'win32':
+            try:
+                import ctypes
+                # Per-Monitor DPI Aware v2 (Windows 10 1703+)
+                ctypes.windll.shcore.SetProcessDpiAwareness(2)
+            except Exception:
+                try:
+                    import ctypes
+                    # Fallback: System DPI Aware
+                    ctypes.windll.user32.SetProcessDPIAware()
+                except Exception:
+                    pass
+
         self.window = Tk()
+
+        # Scale window size based on actual DPI
+        try:
+            dpi = self.window.winfo_fpixels('1i')  # actual DPI
+            scale_factor = dpi / 96.0               # 96 = default 100%
+            # Base size at 100% scaling
+            base_w, base_h = 1600, 1200
+            scaled_w = int(base_w / scale_factor)
+            scaled_h = int(base_h / scale_factor)
+            # Don't exceed screen size
+            screen_w = self.window.winfo_screenwidth()
+            screen_h = self.window.winfo_screenheight()
+            final_w = min(scaled_w, screen_w - 50)
+            final_h = min(scaled_h, screen_h - 80)
+            self.window.geometry(f"{final_w}x{final_h}")
+            self._log.info("  DPI=%.0f, scale=%.2f, window=%dx%d", dpi, scale_factor, final_w, final_h)
+        except Exception:
+            self.window.geometry(WINDOW_SIZE)
         try:
             default_font = tkfont.nametofont("TkDefaultFont")
             self.window.option_add("*Text*font", default_font)
@@ -67,7 +100,6 @@ class OfferGeneratorMainApp:
             self.window.title(f"{APP_TITLE} - {version_str}")
         except ImportError:
             self.window.title(APP_TITLE)
-        self.window.geometry(WINDOW_SIZE)
         self._log.info("  Tk window created & configured in %.3f s", time.perf_counter() - t)
 
         # Initialize navigation manager
