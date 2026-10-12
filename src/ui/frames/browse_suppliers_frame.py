@@ -133,8 +133,7 @@ class BrowseSuppliersFrame(Frame):
         self.form_frame = None
         self.form_mode = None
 
-        # Load suppliers
-        self.refresh_suppliers_list()
+        # Suppliers are loaded lazily in show() to keep application startup fast
     
     def show_add_supplier_form(self):
         """Open modal for adding a new supplier"""
@@ -340,6 +339,7 @@ class BrowseSuppliersFrame(Frame):
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
+        self.refresh_suppliers_list()
     
     def on_supplier_single_click(self, event):
         """Handle single-click on suppliers table to check for edit/delete column clicks"""

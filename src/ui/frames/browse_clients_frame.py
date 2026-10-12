@@ -145,8 +145,7 @@ class BrowseClientsFrame(Frame):
         # Bind single click for delete functionality
         self.clients_tree.bind('<ButtonRelease-1>', self.on_client_single_click)
         
-        # Load clients
-        self.refresh_clients_list()
+        # Clients are loaded lazily in show() to keep application startup fast
     
     def show_add_client_form(self):
         """Open modal window for adding a new client"""
@@ -390,6 +389,7 @@ class BrowseClientsFrame(Frame):
     def show(self):
         """Show this frame"""
         self.pack(fill=BOTH, expand=True)
+        self.refresh_clients_list()
     
     def on_client_single_click(self, event):
         """Handle single-click on clients table to check for edit/delete column clicks"""

@@ -29,7 +29,7 @@ class BrowseOffersFrame(Frame):
         self.sort_by = 'date'
         self.sort_reverse = True
         self._build_ui()
-        self.load_offers()
+        # Data is loaded lazily in show() to keep application startup fast
 
     # UI --------------------------------------------------------------
     def _build_ui(self):

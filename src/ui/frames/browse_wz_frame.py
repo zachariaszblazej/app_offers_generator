@@ -28,7 +28,7 @@ class BrowseWzFrame(Frame):
      self.sort_by = 'date'
      self.sort_reverse = True
      self._build_ui()
-     self.refresh_wz_list()
+     # Data is loaded lazily in show() to keep application startup fast
 
     def _build_ui(self):
      self.configure(bg='#f0f0f0')

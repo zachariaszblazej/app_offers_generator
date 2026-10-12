@@ -1,7 +1,11 @@
 """
 Navigation manager for handling frame switching
 """
+import logging
+import time
 from tkinter import *
+
+_log = logging.getLogger("navigation")
 
 
 class NavigationManager:
@@ -14,8 +18,10 @@ class NavigationManager:
         
     def add_frame(self, name, frame_class, *args, **kwargs):
         """Add a frame to the navigation manager"""
+        t = time.perf_counter()
         frame = frame_class(self.root, self, *args, **kwargs)
         self.frames[name] = frame
+        _log.info("    Frame '%s' created in %.3f s", name, time.perf_counter() - t)
         return frame
     
     def show_frame(self, frame_name, **kwargs):
@@ -126,10 +132,6 @@ class NavigationManager:
                         widget.destroy()
                 # Always create new instance
                 self.frames[frame_name].initialize_wz_app()
-            elif frame_name == 'browse_wz':
-                # Refresh WZ list when showing browse frame
-                if hasattr(self.frames[frame_name], 'refresh_wz_list'):
-                    self.frames[frame_name].refresh_wz_list()
             
             self.frames[frame_name].show()
             self.current_frame = frame_name
