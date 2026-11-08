@@ -13,3 +13,4 @@ build_*.py
 *.zip
 *.bat
 /logs/
+.venv/
