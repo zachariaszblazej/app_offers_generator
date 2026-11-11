@@ -14,6 +14,7 @@ from src.utils.config import APP_VERSION
 from src.data.database_service import is_database_available
 from src.data.database_service import is_database_available
 from src.utils.config import get_offers_folder, get_wz_folder
+from src.ui.components.sharepoint_env_ui import EnvironmentBadge
 
 
 class MainMenuFrame(Frame):
@@ -37,7 +38,10 @@ class MainMenuFrame(Frame):
             bg='#f0f0f0',
             fg='#333333',
         )
-        title_label.pack(pady=50)
+        title_label.pack(pady=(50, 15))
+
+        # Active SharePoint environment indicator (DEV/PROD)
+        EnvironmentBadge(self, font=("Arial", 14, "bold")).pack(pady=(0, 20))
 
         # Main menu buttons frame
         buttons_frame = Frame(self, bg='#f0f0f0')

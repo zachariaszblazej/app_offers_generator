@@ -11,6 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from src.utils.settings import settings_manager
+from src.ui.components.sharepoint_env_ui import SharePointSection
 
 
 class SettingsFrame(Frame):
@@ -110,6 +111,9 @@ class SettingsFrame(Frame):
         
         # App settings section
         self.create_app_settings_section(content_container)
+
+        # SharePoint environment section (DEV/PROD switch and read-only connection test)
+        SharePointSection(content_container).pack(fill=X)
         
         # Buttons section
         self.create_buttons_section(self.scrollable_frame)

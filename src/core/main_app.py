@@ -31,6 +31,7 @@ from src.utils.config import get_offers_folder, get_wz_folder
 from src.data.database_service import get_database_path, is_database_available
 import src.data.database_service as _dbs
 from src.utils.settings import settings_manager
+from src.integrations.sharepoint import environment_manager
 import shutil
 from datetime import datetime
 
@@ -97,9 +98,11 @@ class OfferGeneratorMainApp:
         try:
             from src.utils.version import get_version_string
             version_str = get_version_string()
-            self.window.title(f"{APP_TITLE} - {version_str}")
+            self._base_title = f"{APP_TITLE} - {version_str}"
         except ImportError:
-            self.window.title(APP_TITLE)
+            self._base_title = APP_TITLE
+        self._update_window_title(environment_manager.get_active())
+        environment_manager.subscribe(self._update_window_title)
         self._log.info("  Tk window created & configured in %.3f s", time.perf_counter() - t)
 
         # Initialize navigation manager
@@ -144,6 +147,10 @@ class OfferGeneratorMainApp:
 
         self._log.info("OfferGeneratorMainApp.__init__ completed in %.3f s", time.perf_counter() - t_init)
     
+    def _update_window_title(self, env):
+        """Show the active SharePoint environment in the window title."""
+        self.window.title(f"{self._base_title} [SharePoint: {env.name}]")
+
     def setup_frames(self):
         """Setup navigation frames"""
         # Main menu frame
