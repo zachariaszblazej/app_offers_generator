@@ -42,3 +42,13 @@ class ConflictMessage(str):
     „dane zmieniły się od czasu odczytu” od innych błędów bez zmiany publicznego API (krotki (bool, str)).
     """
     conflict = True
+
+
+class PartialFailureMessage(str):
+    """Komunikat (False, komunikat) zwracany, gdy operacja obejmująca kilka zapisów została wykonana tylko częściowo.
+
+    Stan w SharePoint może być niespójny (np. dwóch domyślnych dostawców), więc operacja NIE jest zgłaszana jako
+    sukces. Zachowuje się jak zwykły tekst; `isinstance(msg, PartialFailureMessage)` lub `msg.partial` pozwala
+    interfejsowi odróżnić częściowe niepowodzenie od zwykłego błędu i konfliktu współbieżności.
+    """
+    partial = True

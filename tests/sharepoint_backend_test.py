@@ -127,6 +127,7 @@ class FakeGraph:
         self.data, self.env, self.page_cap = data, env, page_cap
         self.requests, self._cursors = [], {}
         self.writes, self.faults = [], []
+        self.after_write = None  # callback(method, path, body) po każdym wykonanym zapisie (np. kontrola niezmienników)
         self._list_by_id = {v: k for k, v in env.lists.items()}
         self._next_id = 1 + max([i["id"] for items in data.values() for i in items] or [0])
 
@@ -196,6 +197,8 @@ class FakeGraph:
         self.writes.append({"method": method, "path": path, "json": json, "if_match": headers.get("If-Match"),
                             "auth_present": str(headers.get("Authorization", "")).startswith("Bearer ")})
         fault = self.faults.pop(0) if self.faults else None
+        if fault and fault["kind"] == "pass":  # ten zapis przechodzi normalnie (pozwala trafić awarią w n-te żądanie)
+            fault = None
         if fault and fault["kind"] == "raise":
             raise requests.ConnectionError("brak połączenia (test)")
         if fault and fault["kind"] == "status":
@@ -203,6 +206,8 @@ class FakeGraph:
                               "message": fault.get("message", "błąd wstrzyknięty w teście")}}
             return FakeResponse(fault["status"], body, fault.get("headers"))
         response = self._apply(method, path, json, headers)
+        if self.after_write is not None:
+            self.after_write(method, path, json)
         if fault and fault["kind"] == "lose":  # operacja wykonana, odpowiedź utracona
             raise requests.ConnectionError("odpowiedź utracona (test)")
         return response
@@ -252,6 +257,9 @@ class FakeGraph:
             item["version"] = item.get("version", 1) + 1
             return FakeResponse(200, {"@odata.etag": self._etag(item), **new_fields}, {"ETag": self._etag(item)})
         if method == "DELETE" and not m.group(3):
+            if_match = headers.get("If-Match")
+            if if_match not in (None, "*") and if_match != self._etag(item):
+                return self._error(412, "resourceModified", "The resource has changed since the caller last read it; usually an eTag mismatch")
             self.data[list_name].remove(item)
             return FakeResponse(204)
         raise AssertionError(f"nieobsługiwane żądanie: {method} {path}")
@@ -640,20 +648,19 @@ class ErrorConventionTests(SpTestCase):
 # tylko odczyt, DEV-only, brak przekierowania do SQLite
 # ---------------------------------------------------------------------------
 class ReadOnlyAndSafetyTests(SpTestCase):
-    """Operacje spoza zakresu etapu 4A (dostawcy, oferty, WZ, numeracja) nadal są odrzucane."""
+    """Operacje spoza zakresu (set_default_supplier, oferty, WZ, numeracja) nadal są odrzucane."""
 
     CLIENT_WRITE_METHODS = {"add_client", "update_client", "set_client_extended_fields", "delete_client"}
+    SUPPLIER_WRITE_METHODS = {"add_supplier", "update_supplier", "delete_supplier", "set_default_supplier"}  # 4B-2, 4B-3
     WRITE_CALLS = [
-        ("add_supplier", ("1234563218", "D", "a", "b")), ("update_supplier", ("1234563218", "D", "a", "b")),
-        ("delete_supplier", ("1234563218",)), ("set_default_supplier", ("1234563218",)),
         ("get_next_offer_number", ()), ("get_next_offer_number_for_year", (2026,)),
         ("save_offer", (1, "2026/a.docx", {"k": 1})), ("update_offer_context", ("2026/a.docx", {})),
         ("delete_offer", ("2026/a.docx",)), ("get_next_wz_number", (2026,)), ("save_wz", (1, "2026/a.docx", {})),
         ("update_wz_context", ("2026/a.docx", {})), ("delete_wz", (1,)), ("delete_wz_by_file_path", ("2026/a.docx",)),
     ]
 
-    def test_every_supplier_offer_wz_and_numbering_write_method_is_still_rejected(self):
-        self.assertEqual(len(self.WRITE_CALLS), 14)
+    def test_every_remaining_write_method_is_still_rejected(self):
+        self.assertEqual(len(self.WRITE_CALLS), 10)
         before = self.rows("SELECT (SELECT COUNT(*) FROM Clients), (SELECT COUNT(*) FROM Offers), (SELECT COUNT(*) FROM Wuzetkas)")
         data_before = json.dumps(self.graph.data, sort_keys=True)
         for name, args in self.WRITE_CALLS:
@@ -667,23 +674,27 @@ class ReadOnlyAndSafetyTests(SpTestCase):
         self.assertEqual(self.popups, [])
 
     def test_rejected_operations_do_not_fall_back_to_sqlite(self):
-        before = self.rows("SELECT * FROM Suppliers ORDER BY Nip")
+        before = self.rows("SELECT * FROM Offers ORDER BY OfferOrderNumber")
         with self.assertRaises(ReadOnlyBackendError):
-            self.sp.add_supplier("5555555559", "Nowy", "a", "b")
-        self.assertEqual(self.rows("SELECT * FROM Suppliers ORDER BY Nip"), before)
+            self.sp.save_offer(999, "2026/999_OF_2026_NOWY.docx", {"k": 1})
+        self.assertEqual(self.rows("SELECT * FROM Offers ORDER BY OfferOrderNumber"), before)
 
-    def test_client_write_methods_are_no_longer_read_only_and_never_touch_sqlite(self):
-        before = self.rows("SELECT * FROM Clients ORDER BY Nip")
+    def test_client_and_supplier_write_methods_are_no_longer_read_only_and_never_touch_sqlite(self):
+        before = self.rows("SELECT * FROM Clients ORDER BY Nip"), self.rows("SELECT * FROM Suppliers ORDER BY Nip")
         self.assertEqual(self.sp.add_client("5555555559", "Nowy", "a", "b", "NOWY"),
                          (True, "Klient został pomyślnie dodany do bazy"))
-        self.assertEqual(self.rows("SELECT * FROM Clients ORDER BY Nip"), before)  # zapis poszedł do SharePoint, nie do SQLite
+        self.assertEqual(self.sp.add_supplier("5555555559", "Nowy dostawca", "a", "b"),
+                         (True, "Dostawca został pomyślnie dodany do bazy"))
+        self.assertEqual((self.rows("SELECT * FROM Clients ORDER BY Nip"), self.rows("SELECT * FROM Suppliers ORDER BY Nip")),
+                         before)  # zapis poszedł do SharePoint, nie do SQLite
 
     def test_all_contract_methods_are_covered_by_read_write_or_rejection(self):
         read_methods = {"is_available", "get_clients", "get_client_by_nip", "validate_nip", "validate_alias", "get_suppliers",
                         "get_supplier_by_nip", "get_default_supplier", "validate_supplier_nip", "get_offer_context",
                         "find_offer_by_filename", "get_all_offer_file_paths", "get_wz_context", "get_all_wz",
                         "get_all_wz_file_paths"}
-        covered = read_methods | self.CLIENT_WRITE_METHODS | {n for n, _ in self.WRITE_CALLS}
+        covered = (read_methods | self.CLIENT_WRITE_METHODS | self.SUPPLIER_WRITE_METHODS
+                   | {n for n, _ in self.WRITE_CALLS})
         self.assertEqual(covered, set(DataBackend.__abstractmethods__))
 
     def test_only_dev_environment_is_accepted(self):
@@ -697,12 +708,16 @@ class ReadOnlyAndSafetyTests(SpTestCase):
         for forbidden in ("requests.", ".post(", ".patch(", ".put(", ".delete(", "sqlite3", "tkinter", "DELETE", "PATCH"):
             self.assertNotIn(forbidden, source, forbidden)
 
-    def test_backend_writes_only_to_the_clients_list(self):
+    def test_backend_writes_only_to_clients_and_suppliers_and_deletes_only_from_allowed_lists(self):
         source = inspect.getsource(sp_module)
         calls = re.findall(r"\.(create_item|update_item_fields|delete_item)\(\s*([^,)]+)", source)
         self.assertTrue(calls)
-        self.assertEqual({list_arg.strip() for _, list_arg in calls}, {'"Clients"', "list_name"})
-        self.assertIn('list_name != "Clients"', source)  # _delete_verified odrzuca każdą inną listę
+        # tworzenie: Clients i Suppliers; aktualizacja i usuwanie: lista przekazana po weryfikacji (`list_name`)
+        self.assertEqual({list_arg.strip() for _, list_arg in calls}, {'"Clients"', '"Suppliers"', "list_name"})
+        self.assertEqual(sp_module.DELETABLE_LISTS, ("Clients", "Suppliers"))
+        self.assertIn("list_name not in DELETABLE_LISTS", source)  # _delete_verified odrzuca każdą inną listę
+        self.assertEqual(set(sp_module.UPDATABLE_FIELDS), {"Clients", "Suppliers"})
+        self.assertNotIn("IsDefault", sp_module.UPDATABLE_FIELDS["Suppliers"])  # IsDefault tylko set_default_supplier
 
     def test_facade_default_backend_is_still_sqlite_and_does_not_know_sharepoint(self):
         self.assertEqual(type(dbs.get_backend()).__name__, "SqliteBackend")

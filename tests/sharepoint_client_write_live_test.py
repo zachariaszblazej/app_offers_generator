@@ -99,6 +99,8 @@ class WriteGuard:
                 raise AssertionError("ZABLOKOWANE: PATCH nieznanego pola")
             return
         if method == "DELETE" and not m.group(2):
+            if not (headers or {}).get("If-Match") or (headers or {}).get("If-Match") == "*":
+                raise AssertionError("ZABLOKOWANE: DELETE bez konkretnego If-Match")
             return
         raise AssertionError(f"ZABLOKOWANE: {method} {rest}")
 
@@ -121,14 +123,20 @@ class WriteGuardLogicTests(unittest.TestCase):
         ok_post = {"fields": {"Title": "9990000011", "CompanyName": "ZZTEST-A", "Alias": "ZZTEST-A"}}
         self.guard.check("POST", self.base, ok_post)
         self.guard.check("PATCH", f"{self.base}/41/fields", {"Alias": "ZZTEST-B"}, {"If-Match": '"e,1"'})
-        self.guard.check("DELETE", f"{self.base}/41")
+        self.guard.check("DELETE", f"{self.base}/41", None, {"If-Match": '"e,1"'})
         self.guard.check("GET", f"{self.base}/2")
         self.guard.check("POST", "https://login.microsoftonline.com/x/oauth2/v2.0/token")
 
     def test_blocks_writes_to_real_records_and_unknown_ids(self):
         for real_id in ("2", "3", "40", "42", "999"):
-            self.blocked("DELETE", f"{self.base}/{real_id}")
+            self.blocked("DELETE", f"{self.base}/{real_id}", None, {"If-Match": '"e,1"'})
             self.blocked("PATCH", f"{self.base}/{real_id}/fields", {"Alias": "X"}, {"If-Match": '"e,1"'})
+
+    def test_blocks_delete_without_a_concrete_if_match(self):
+        self.blocked("DELETE", f"{self.base}/41")
+        self.blocked("DELETE", f"{self.base}/41", None, {})
+        self.blocked("DELETE", f"{self.base}/41", None, {"If-Match": "*"})
+        self.blocked("DELETE", f"{self.base}/41/fields", None, {"If-Match": '"e,1"'})
 
     def test_blocks_non_synthetic_posts(self):
         for fields in ({"Title": "1234563218", "CompanyName": "ZZTEST-A", "Alias": "ZZTEST-A"},
@@ -147,11 +155,11 @@ class WriteGuardLogicTests(unittest.TestCase):
     def test_blocks_other_lists_prod_other_sites_and_hosts(self):
         for name in ("Suppliers", "Offers", "Wuzetkas"):
             other = f"https://graph.microsoft.com/v1.0/sites/{self.env.site_id}/lists/{self.env.lists[name]}/items"
-            self.blocked("DELETE", f"{other}/41")
+            self.blocked("DELETE", f"{other}/41", None, {"If-Match": '"e,1"'})
             self.blocked("POST", other, {"fields": {"Title": "9990000011", "CompanyName": "ZZTEST-A", "Alias": "ZZTEST-A"}})
         prod_url = f"https://graph.microsoft.com/v1.0/sites/{self.prod.site_id}/lists/{self.prod.lists['Clients']}/items"
         self.blocked("GET", prod_url)
-        self.blocked("DELETE", f"{prod_url}/41")
+        self.blocked("DELETE", f"{prod_url}/41", None, {"If-Match": '"e,1"'})
         self.blocked("GET", "https://graph.microsoft.com/v1.0/me/drive")
         self.blocked("GET", "https://example.com/x")
         self.blocked("POST", f"https://graph.microsoft.com/v1.0/sites/{self.env.site_id}/lists")
@@ -359,7 +367,7 @@ class LiveClientWriteTests(unittest.TestCase):
                 results[item_id] = "POMINIĘTO (to nie jest rekord testowy)"
                 continue
             try:
-                GraphWriter(cls.env, cls.session.get_token()).delete_item("Clients", item_id)
+                GraphWriter(cls.env, cls.session.get_token()).delete_item("Clients", item_id, got["@odata.etag"])
                 results[item_id] = "usunięty"
             except GraphError as e:
                 results[item_id] = f"BŁĄD usuwania: HTTP {e.status}"
@@ -492,7 +500,8 @@ class LiveClientWriteTests(unittest.TestCase):
         c = self.create()
         self.backend.get_client_by_nip(c["nip"])  # ETag zapamiętany, więc PATCH naprawdę zostanie wysłany
         snapshot = self.backend._find_client(c["nip"])
-        self.raw_writer.delete_item("Clients", c["id"])  # „inny użytkownik” usuwa klienta po wyszukaniu
+        snapshot_etag = snapshot.etag
+        self.raw_writer.delete_item("Clients", c["id"], snapshot_etag)  # „inny użytkownik” usuwa klienta po wyszukaniu
         self.assertIsNone(self.item_by_title(c["nip"]))
         mark = self.mark()
         with mock.patch.object(self.backend, "_find_client", return_value=snapshot):
@@ -617,7 +626,7 @@ class LiveClientWriteTests(unittest.TestCase):
 
     def test_11_remaining_write_operations_are_still_rejected_without_requests(self):
         mark = self.mark()
-        for name, args in (("add_supplier", ("1234567890", "D", "a", "b")), ("save_offer", (1, "2026/a.docx", {})),
+        for name, args in (("get_next_wz_number", (2026,)), ("save_offer", (1, "2026/a.docx", {})),
                            ("save_wz", (1, "2026/a.docx", {})), ("get_next_offer_number_for_year", (2026,)),
                            ("delete_wz", (1,)), ("delete_offer", ("2026/a.docx",))):
             with self.assertRaises(ReadOnlyBackendError):

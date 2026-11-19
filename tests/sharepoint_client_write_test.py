@@ -369,6 +369,7 @@ class DeleteSafetyTests(WriteCase):
         others = [(i["id"], dict(i["fields"]), i.get("version", 1)) for i in self.clients() if i is not target]
         self.assertEqual(self.sp.delete_client(2222222222), DELETE_OK)
         self.assertEqual([(w["method"], w["path"].rsplit("/", 1)[-1]) for w in self.graph.writes], [("DELETE", str(target["id"]))])
+        self.assertEqual(self.graph.writes[0]["if_match"], self.graph._etag(target))  # konkretny ETag z odczytu weryfikującego
         self.assertEqual([(i["id"], dict(i["fields"]), i.get("version", 1)) for i in self.clients()], others)
         self.assertEqual(self.sp.get_client_by_nip(2222222222), None)
 
@@ -390,7 +391,8 @@ class DeleteSafetyTests(WriteCase):
 
     def test_verified_delete_refuses_non_numeric_ids_and_other_lists_without_any_request(self):
         for list_name, item_id in (("Clients", "abc"), ("Clients", "1; DROP"), ("Clients", "../2"), ("Clients", ""),
-                                   ("Offers", "2"), ("Suppliers", "2"), ("Wuzetkas", "2")):
+                                   ("Suppliers", "abc"), ("Suppliers", "../2"), ("Offers", "2"), ("Wuzetkas", "2"),
+                                   ("Nieznana", "2")):
             with self.subTest(list_name=list_name, item_id=item_id), self.assertRaises(SharePointError) as caught:
                 self.sp._delete_verified(list_name, item_id, "1111111111")
             self.assertIn("Odmowa usunięcia", str(caught.exception))
@@ -425,16 +427,16 @@ class WriterGuardTests(unittest.TestCase):
         self.fake = spt.FakeGraph(spt.build_graph_data(spt.TABLES))
         return GraphWriter(env or spt.DEV_ENV, "TOKEN-NIE-DO-LOGOW", http=http or self.fake.http, sleep=lambda s: None)
 
-    def test_only_the_clients_list_is_writable(self):
+    def test_only_clients_and_suppliers_are_writable(self):
         w = self.writer()
-        for list_name in ("Offers", "Suppliers", "Wuzetkas", "Nieznana"):
+        for list_name in ("Offers", "Wuzetkas", "Nieznana", "clients", ""):
             with self.subTest(list_name=list_name):
                 with self.assertRaises(GraphWriteError):
                     w.create_item(list_name, {"Title": "x"})
                 with self.assertRaises(GraphWriteError):
                     w.update_item_fields(list_name, "2", {"Title": "x"}, '"e,1"')
                 with self.assertRaises(GraphWriteError):
-                    w.delete_item(list_name, "2")
+                    w.delete_item(list_name, "2", '"e,1"')
         self.assertEqual(self.fake.writes, [])
 
     def test_update_requires_a_concrete_etag(self):
@@ -448,7 +450,7 @@ class WriterGuardTests(unittest.TestCase):
         w = self.writer()
         for item_id in ("abc", "2/../3", "2?x=1", "", None, "２"):
             with self.subTest(item_id=item_id), self.assertRaises(GraphWriteError):
-                w.delete_item("Clients", item_id)
+                w.delete_item("Clients", item_id, '"e,1"')
         for fields in ({}, None, {"@odata.type": "x"}, {"a b": 1}, {"Title": object()}, {"Title": ["x"]}):
             with self.subTest(fields=fields), self.assertRaises(GraphWriteError):
                 w.create_item("Clients", fields)
@@ -606,7 +608,7 @@ class WriteFailureTests(WriteCase):
 
 class StillReadOnlyTests(WriteCase):
     def test_supplier_offer_wz_and_numbering_operations_never_reach_the_writer(self):
-        calls = [("add_supplier", ("1234567890", "D", "a", "b")), ("delete_supplier", (3333333333,)),
+        calls = [("get_next_offer_number", ()),
                  ("save_offer", (1, "2026/a.docx", {})), ("delete_offer", ("2026/a.docx",)),
                  ("save_wz", (1, "2026/a.docx", {})), ("get_next_offer_number_for_year", (2026,)),
                  ("get_next_wz_number", (2026,)), ("update_wz_context", ("2026/a.docx", {}))]

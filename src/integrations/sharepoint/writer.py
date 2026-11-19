@@ -1,11 +1,12 @@
-"""Zapis do list SharePoint przez Graph API (etap 4A: wyłącznie lista Clients, wyłącznie środowisko DEV).
+"""Zapis do list SharePoint przez Graph API (listy Clients i Suppliers, wyłącznie środowisko DEV).
 
 To jedyne miejsce w warstwie danych, które wysyła żądania POST, PATCH i DELETE do Graph. Zabezpieczenia:
 * każde żądanie przechodzi przez `assert_dev_only` (aktywne środowisko aplikacji, Site ID i adres muszą być DEV)
   oraz przez strażnika `GraphClient._guard` (witryna klienta, brak identyfikatorów innego środowiska),
-* zapis jest dozwolony tylko dla list z `WRITABLE_LISTS` (na tym etapie wyłącznie Clients),
+* zapis jest dozwolony tylko dla list z `WRITABLE_LISTS` (Clients i Suppliers; Offers, Wuzetkas i każda inna lista
+  są odrzucane przed wysłaniem żądania),
 * adres jest budowany wyłącznie z konfiguracji środowiska i cyfrowego ID elementu,
-* aktualizacja wymaga konkretnego ETagu w nagłówku If-Match (gwiazdka i brak ETagu są odrzucane),
+* aktualizacja i usuwanie wymagają konkretnego ETagu w nagłówku If-Match (gwiazdka i brak ETagu są odrzucane),
 * ponawiany jest wyłącznie HTTP 429 (żądanie nie zostało przetworzone), z limitem prób i Retry-After;
   zapisu nie ponawia się po 412, 5xx ani po błędzie połączenia (wynik mógłby być niejednoznaczny).
 Komunikaty błędów nie zawierają tokenów ani nagłówków.
@@ -24,7 +25,7 @@ from .reader import retry_delay
 
 _log = logging.getLogger("sharepoint.writer")
 
-WRITABLE_LISTS = frozenset({"Clients"})
+WRITABLE_LISTS = frozenset({"Clients", "Suppliers"})
 MAX_ATTEMPTS = 3
 _FIELD_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ALLOWED_VALUE_TYPES = (str, int, float, bool, type(None))
@@ -55,7 +56,7 @@ class GraphWriter(GraphClient):
     # ------------------------------------------------------------------
     def _collection_path(self, list_name):
         if list_name not in self._writable:
-            raise GraphWriteError(f"Zapis do listy {list_name} nie jest dozwolony na tym etapie.")
+            raise GraphWriteError(f"Zapis do listy {list_name} nie jest dozwolony.")
         list_id = self.environment.lists.get(list_name)
         if not list_id:
             raise GraphWriteError(f"Nieznana lista: {list_name}")
@@ -119,6 +120,14 @@ class GraphWriter(GraphClient):
     def _etag(resp, body):
         return resp.headers.get("ETag") or body.get("@odata.etag") or body.get("eTag")
 
+    @staticmethod
+    def _require_etag(etag, operation):
+        """If-Match musi zawierać konkretny ETag: brak, pusty, `*` oraz znaki nowej linii (nagłówek HTTP) są odrzucane."""
+        if (not isinstance(etag, str) or not etag.strip() or etag.strip() == "*"
+                or "\r" in etag or "\n" in etag):
+            raise GraphWriteError(f"{operation} wymaga konkretnego ETagu elementu (If-Match).")
+        return etag
+
     # ------------------------------------------------------------------
     def create_item(self, list_name, fields) -> WriteResult:
         """POST: tworzy element i zwraca jego ID oraz ETag."""
@@ -130,13 +139,16 @@ class GraphWriter(GraphClient):
     def update_item_fields(self, list_name, item_id, fields, etag) -> WriteResult:
         """PATCH pól elementu z If-Match: wymaga konkretnego ETagu (nie '*'). 412 => GraphWriteError(status=412)."""
         self._check_fields(fields)
-        if not isinstance(etag, str) or not etag.strip() or etag.strip() == "*":
-            raise GraphWriteError("Aktualizacja wymaga konkretnego ETagu elementu (If-Match).")
+        self._require_etag(etag, "Aktualizacja")
         path = self._item_path(list_name, item_id, "/fields")
         resp = self._send("PATCH", path, (200,), json_body=fields, extra_headers={"If-Match": etag})
         body = resp.json()
         return WriteResult(str(item_id), self._etag(resp, body), body)
 
-    def delete_item(self, list_name, item_id):
-        """DELETE elementu o dokładnym ID (element trafia do kosza witryny)."""
-        self._send("DELETE", self._item_path(list_name, item_id), (200, 204))
+    def delete_item(self, list_name, item_id, etag):
+        """DELETE elementu o dokładnym ID z If-Match (element trafia do kosza witryny).
+
+        Wymaga konkretnego ETagu (brak, pusty i `*` są odrzucane), bez wariantu zapasowego bez If-Match.
+        204 => sukces; 404 => GraphWriteError(status=404); 412 => GraphWriteError(status=412), bez ponowienia."""
+        self._require_etag(etag, "Usuwanie")
+        self._send("DELETE", self._item_path(list_name, item_id), (200, 204), extra_headers={"If-Match": etag})
