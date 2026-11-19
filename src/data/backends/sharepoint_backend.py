@@ -1,12 +1,17 @@
-"""Backend SharePoint - WYŁĄCZNIE ODCZYT (etap 3).
+"""Backend SharePoint (DEV): odczyt czterech list oraz - od etapu 4A - zapis, aktualizacja i usuwanie klientów.
 
-Zwraca dane z czterech list SharePoint DEV w dokładnie takich samych kształtach i z takimi samymi konwencjami
+Zwraca dane z list SharePoint DEV w dokładnie takich samych kształtach i z takimi samymi konwencjami
 błędów jak `SqliteBackend` (krotki pozycyjne, NIP jako int, sortowanie, formatowanie). Granica konwersji:
 SharePoint przechowuje NIP jako 10-znakowy tekst (Title), a publiczny wynik ma NIP jako int.
 
-Zapis, aktualizacja, usuwanie i numerowanie NIE są obsługiwane: metody zgłaszają `ReadOnlyBackendError`,
-nie wykonują żadnych żądań i nigdy nie przekierowują operacji do SQLite. Backend używa wyłącznie metody GET.
-Na tym etapie działa wyłącznie dla środowiska DEV.
+Zapis klientów idzie wyłącznie przez `GraphWriter` (osobny moduł z zabezpieczeniami DEV-only i listą dozwolonych
+list). Pozostałe operacje zapisu (dostawcy, oferty, WZ, numeracja) nadal zgłaszają `ReadOnlyBackendError`:
+nie wykonują żadnych żądań i nigdy nie są przekierowywane do SQLite. Na tym etapie backend działa wyłącznie dla DEV.
+
+Współbieżność: backend zapamiętuje ETag każdego klienta odczytanego przez `get_clients` / `get_client_by_nip`
+oraz zapisanego przez siebie. Aktualizacja używa tego ETagu w nagłówku If-Match (a gdy klient nie był wcześniej
+odczytany - ETagu z odczytu wykonanego tuż przed zapisem). Przy konflikcie (412) zapis nie jest ponawiany, a wynik
+to (False, ConflictMessage).
 """
 import json
 import re
@@ -15,12 +20,16 @@ from collections import namedtuple
 
 from src.data import path_utils
 from src.data.backends.base import BackendContext, DataBackend
-from src.data.errors import DataAccessError, ReadOnlyBackendError, SharePointError
+from src.data.errors import (
+    ConcurrencyConflictError, ConflictMessage, DataAccessError, ItemNotFoundError, ReadOnlyBackendError,
+    SharePointError, UniqueConstraintError)
 from src.integrations.sharepoint.config import DEV
 from src.integrations.sharepoint.environment import get_active_environment
 from src.integrations.sharepoint.graph_client import AuthError, GraphError
+from src.integrations.sharepoint.migration.mapping import newline_to_comma
 from src.integrations.sharepoint.reader import RetryingGraphClient
 from src.integrations.sharepoint.session import NotSignedInError, SharePointSession
+from src.integrations.sharepoint.writer import GraphWriteError, GraphWriter, WriteResult
 
 DEFAULT_PAGE_SIZE = 999
 MAX_PAGES = 500
@@ -30,7 +39,14 @@ CLIENT_FIELDS = ("Title", "CompanyName", "AddressP1", "AddressP2", "Alias")
 CLIENT_EXTENDED_FIELDS = ("TerminRealizacji", "TerminPlatnosci", "WarunkiDostawy", "WaznoscOferty", "Gwarancja", "Cena")
 SUPPLIER_FIELDS = ("Title", "CompanyName", "AddressP1", "AddressP2", "IsDefault")
 
-_Item = namedtuple("_Item", "id fields")
+UNAVAILABLE_MESSAGE = "Baza danych jest niedostępna lub nie istnieje."
+NIP_FORMAT_MESSAGE = "NIP musi składać się z dokładnie 10 cyfr"
+ALIAS_TAKEN_MESSAGE = "Alias już istnieje dla innego klienta"
+CLIENT_NOT_FOUND_MESSAGE = "Klient nie został znaleziony"
+CONFLICT_MESSAGE = ("Dane klienta zostały zmienione przez innego użytkownika od czasu ich odczytu. "
+                    "Zapis nie został wykonany - odśwież listę klientów i spróbuj ponownie.")
+
+_Item = namedtuple("_Item", "id fields etag", defaults=(None,))
 
 
 def sqlite_like(pattern: str, text: str) -> bool:
@@ -62,7 +78,8 @@ def _text(value):
 
 class SharePointBackend(DataBackend):
     def __init__(self, context: BackendContext, session: SharePointSession, environment=None,
-                 page_size: int = DEFAULT_PAGE_SIZE, client_factory=None, clock=time.monotonic):
+                 page_size: int = DEFAULT_PAGE_SIZE, client_factory=None, clock=time.monotonic,
+                 writer_factory=None):
         self._ctx = context
         self._session = session
         self._env = environment or get_active_environment()
@@ -70,8 +87,10 @@ class SharePointBackend(DataBackend):
             raise DataAccessError("SharePointBackend działa na tym etapie wyłącznie dla środowiska DEV.")
         self._page_size = page_size
         self._client_factory = client_factory
+        self._writer_factory = writer_factory
         self._clock = clock
         self._down_until = 0.0
+        self._etags = {}  # Title klienta -> (ID elementu, ETag z ostatniego odczytu lub własnego zapisu)
         self.page_requests = 0
 
     @property
@@ -90,10 +109,35 @@ class SharePointBackend(DataBackend):
             return self._client_factory()
         return RetryingGraphClient(self._env, self._session.get_token())
 
-    def _request(self, call):
-        """Wykonuje call(client); błędy Graph/uwierzytelniania zamienia na SharePointError."""
+    def _writer(self):
+        if self._writer_factory is not None:
+            return self._writer_factory()
+        return GraphWriter(self._env, self._session.get_token())
+
+    def _request(self, call, item_scope=False):
+        """Odczyt: call(client). Zapis: patrz `_write`. Błędy Graph/uwierzytelniania => SharePointError (lub podtyp)."""
+        return self._guarded(self._client, call, item_scope)
+
+    def _write(self, call, item_scope=False):
+        """Zapis: call(writer). `item_scope=True`: HTTP 404 oznacza brak elementu o podanym ID (ItemNotFoundError)."""
+        return self._guarded(self._writer, call, item_scope)
+
+    @staticmethod
+    def _friendly(e):
+        """Czytelny komunikat dla błędów zapisu; błędy odczytu zachowują dotychczasowe brzmienie."""
+        if not isinstance(e, GraphWriteError):
+            return f"Graph API: {e}"
+        if e.status == 429:
+            return "SharePoint tymczasowo ogranicza liczbę żądań (HTTP 429). Spróbuj ponownie za chwilę."
+        if e.status is not None and e.status >= 500:
+            return f"SharePoint jest chwilowo niedostępny (HTTP {e.status}). Spróbuj ponownie za chwilę."
+        if e.status is None and e.ambiguous:
+            return "Brak połączenia z SharePoint - wynik operacji jest nieznany. Sprawdź listę i spróbuj ponownie."
+        return f"Graph API: {e}"
+
+    def _guarded(self, factory, call, item_scope):
         try:
-            result = call(self._client())
+            result = call(factory())
         except NotSignedInError as e:
             raise SharePointError(str(e)) from e
         except AuthError as e:
@@ -103,7 +147,15 @@ class SharePointBackend(DataBackend):
                 self._session.invalidate_token()
             elif e.status is None or e.status >= 500 or e.status == 429:
                 self._down_until = self._clock() + FAILURE_COOLDOWN_SECONDS
-            raise SharePointError(f"Graph API: {e}") from e
+            if e.status == 412:
+                raise ConcurrencyConflictError(f"Graph API: {e}") from e
+            if item_scope and e.status == 404:
+                raise ItemNotFoundError(f"Graph API: {e}") from e
+            if isinstance(e, GraphWriteError) and e.status == 400 and "unique constraints" in str(e):
+                raise UniqueConstraintError(f"Graph API: {e}") from e
+            error = SharePointError(self._friendly(e))
+            error.ambiguous = bool(getattr(e, "ambiguous", False))
+            raise error from e
         self._down_until = 0.0
         return result
 
@@ -121,7 +173,7 @@ class SharePointBackend(DataBackend):
                 pages += 1
                 self.page_requests += 1
                 for raw in data.get("value", []):
-                    collected[int(raw["id"])] = raw.get("fields") or {}
+                    collected[int(raw["id"])] = (raw.get("fields") or {}, raw.get("@odata.etag") or raw.get("eTag"))
                 next_link = data.get("@odata.nextLink")
                 if not next_link:
                     return collected
@@ -130,7 +182,7 @@ class SharePointBackend(DataBackend):
                 data = client.get(next_link)
 
         collected = self._request(run)
-        return [_Item(i, collected[i]) for i in sorted(collected)]
+        return [_Item(i, *collected[i]) for i in sorted(collected)]
 
     def _items_by_value(self, list_name, fields, field, value):
         """Elementy z dokładną (wielkość liter) wartością pola; $filter w SharePoint ignoruje wielkość liter."""
@@ -174,17 +226,30 @@ class SharePointBackend(DataBackend):
         if nip is None:
             return None
         f = item.fields
-        row = (nip, f.get("CompanyName"), f.get("AddressP1"), f.get("AddressP2"), f.get("Alias"))
+        # SharePoint nie odróżnia NULL od "" (pole puste jest pomijane), więc pusty tekst zwracamy jak SQLite: ""
+        row = (nip, _text(f.get("CompanyName")), _text(f.get("AddressP1")), _text(f.get("AddressP2")),
+               _text(f.get("Alias")))
         if extended:
             row += tuple(_text(f.get(k)) for k in CLIENT_EXTENDED_FIELDS)
         return row
+
+    def _remember_etag(self, title, item_id, etag):
+        if title and etag:
+            self._etags[title] = (str(item_id), etag)
+
+    def _forget_etag(self, title):
+        self._etags.pop(title, None)
 
     def get_clients(self, include_extended: bool = False):
         try:
             if not self.is_available():
                 return []
             fields = CLIENT_FIELDS + (CLIENT_EXTENDED_FIELDS if include_extended else ())
-            rows = [r for r in (self._client_row(i, include_extended) for i in self._items("Clients", fields)) if r]
+            items = self._items("Clients", fields)
+            self._etags = {}  # pełny odczyt: ETagi odpowiadają dokładnie temu, co zobaczył użytkownik
+            for item in items:
+                self._remember_etag(item.fields.get("Title"), item.id, item.etag)
+            rows = [r for r in (self._client_row(i, include_extended) for i in items) if r]
             rows.sort(key=lambda r: r[1] or "")  # jak ORDER BY CompanyName (porównanie kodów znaków)
             return rows
         except SharePointError as e:
@@ -199,6 +264,7 @@ class SharePointBackend(DataBackend):
             if title is None:
                 return None
             for item in self._items_by_value("Clients", CLIENT_FIELDS, "Title", title):
+                self._remember_etag(title, item.id, item.etag)
                 return self._client_row(item, False)
             return None
         except SharePointError as e:
@@ -208,9 +274,12 @@ class SharePointBackend(DataBackend):
     def validate_nip(self, nip):
         """Validate NIP format and uniqueness"""
         if not nip.isdigit() or len(nip) != 10:
-            return False, "NIP musi składać się z dokładnie 10 cyfr"
+            return False, NIP_FORMAT_MESSAGE
+        title = self._nip_title(nip)
+        if title is None:  # cyfry spoza ASCII - nie mogą być NIP-em
+            return False, NIP_FORMAT_MESSAGE
         try:
-            exists = bool(self._items_by_value("Clients", ("Title",), "Title", self._nip_title(nip)))
+            exists = bool(self._items_by_value("Clients", ("Title",), "Title", title))
             if exists:
                 return False, "Klient z tym NIP już istnieje w bazie"
             return True, "NIP jest prawidłowy"
@@ -222,6 +291,186 @@ class SharePointBackend(DataBackend):
         if not alias.strip():
             return False, "Alias nie może być pusty"
         return True, "Alias jest prawidłowy"
+
+    # ------------------------------------------------------------------
+    # klienci (zapis, aktualizacja, usuwanie)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _same_alias(a, b):
+        """SharePoint porównuje unikalne wartości bez rozróżniania wielkości liter."""
+        return _text(a).casefold() == _text(b).casefold()
+
+    def _alias_in_use(self, alias, ignore_title=None):
+        for item in self._items("Clients", ("Title", "Alias")):
+            if ignore_title is not None and item.fields.get("Title") == ignore_title:
+                continue
+            if self._same_alias(item.fields.get("Alias"), alias):
+                return True
+        return False
+
+    def _find_client(self, title, fields=CLIENT_FIELDS + CLIENT_EXTENDED_FIELDS):
+        """Dokładne dopasowanie po Title (NIP); None, gdy NIP jest nieprawidłowy lub klienta nie ma."""
+        if title is None:
+            return None
+        found = self._items_by_value("Clients", fields, "Title", title)
+        return found[0] if found else None
+
+    def add_client(self, nip, company_name, address_p1, address_p2, alias):
+        try:
+            if not self.is_available():
+                return False, UNAVAILABLE_MESSAGE
+            nip_valid, nip_message = self.validate_nip(nip)
+            if not nip_valid:
+                return False, nip_message
+            alias_valid, alias_message = self.validate_alias(alias)
+            if not alias_valid:
+                return False, alias_message
+            if self._alias_in_use(alias):
+                return False, ALIAS_TAKEN_MESSAGE
+
+            title = self._nip_title(nip)
+            values = {"Title": title, "CompanyName": company_name, "AddressP1": address_p1,
+                      "AddressP2": newline_to_comma(address_p2), "Alias": alias}
+            fields = {k: v for k, v in values.items() if v not in (None, "")}  # SharePoint nie przechowuje pustych pól
+            try:
+                created = self._write(lambda w: w.create_item("Clients", fields))
+            except UniqueConstraintError:
+                return False, self._explain_unique_conflict(title, alias)
+            except SharePointError as e:
+                created = self._confirm_created(title, fields) if getattr(e, "ambiguous", False) else None
+                if created is None:
+                    raise
+            self._remember_etag(title, created.item_id, created.etag)
+            return True, "Klient został pomyślnie dodany do bazy"
+        except SharePointError as e:
+            return False, f"Błąd podczas dodawania klienta: {e}"
+
+    def _explain_unique_conflict(self, title, alias):
+        """POST zwrócił 400 bez wskazania pola - odczyt weryfikacyjny ustala, która wartość jest zajęta."""
+        items = self._items("Clients", ("Title", "Alias"))
+        if any(item.fields.get("Title") == title for item in items):
+            return "Klient z tym NIP już istnieje w bazie"
+        if any(self._same_alias(item.fields.get("Alias"), alias) for item in items):
+            return ALIAS_TAKEN_MESSAGE
+        return "Klient nie został dodany: SharePoint zgłosił naruszenie unikalności (NIP lub alias)."
+
+    def _confirm_created(self, title, fields):
+        """Po niejednoznacznym błędzie POST (brak odpowiedzi, 5xx): czy element o tym NIP, nazwie i aliasie już istnieje?"""
+        try:
+            for item in self._items_by_value("Clients", ("Title", "CompanyName", "Alias"), "Title", title):
+                if (item.fields.get("CompanyName") == fields.get("CompanyName")
+                        and item.fields.get("Alias") == fields.get("Alias")):
+                    return WriteResult(str(item.id), item.etag, item.fields)
+        except SharePointError:
+            return None
+        return None
+
+    def _patch_client(self, item, desired, success_message):
+        """Zapisuje różnice między `desired` a stanem elementu z If-Match; bez różnic nie wysyła nic (brak nowej wersji)."""
+        title = item.fields.get("Title")
+        changed = {k: v for k, v in desired.items() if _text(item.fields.get(k)) != _text(v)}
+        if not changed:
+            return True, success_message
+        body = {k: (None if v in (None, "") else v) for k, v in changed.items()}
+        cached = self._etags.get(title)
+        etag = cached[1] if cached and cached[0] == str(item.id) else item.etag
+        if not etag:
+            raise SharePointError("Brak ETagu elementu - nie można bezpiecznie zapisać zmian.")
+        try:
+            result = self._write(lambda w: w.update_item_fields("Clients", item.id, body, etag), item_scope=True)
+        except ConcurrencyConflictError:
+            self._forget_etag(title)
+            return False, ConflictMessage(CONFLICT_MESSAGE)
+        except ItemNotFoundError:
+            self._forget_etag(title)
+            return False, CLIENT_NOT_FOUND_MESSAGE
+        except UniqueConstraintError:
+            return False, ALIAS_TAKEN_MESSAGE
+        except SharePointError as e:
+            if getattr(e, "ambiguous", False):  # zapis mógł się udać - zapamiętany ETag jest już nieaktualny
+                self._forget_etag(title)
+            raise
+        self._remember_etag(title, item.id, result.etag)
+        return True, success_message
+
+    def update_client(self, nip, company_name, address_p1, address_p2, alias):
+        """Update client data (NIP cannot be changed)"""
+        try:
+            if not self.is_available():
+                return False, UNAVAILABLE_MESSAGE
+            title = self._nip_title(nip)
+            if self._alias_in_use(alias, ignore_title=title):
+                return False, ALIAS_TAKEN_MESSAGE
+            alias_valid, alias_message = self.validate_alias(alias)
+            if not alias_valid:
+                return False, alias_message
+            item = self._find_client(title)
+            if item is None:  # świadoma różnica względem SQLite (tam: cichy sukces) - w SharePoint to realny błąd
+                return False, CLIENT_NOT_FOUND_MESSAGE
+            desired = {"CompanyName": company_name, "AddressP1": address_p1,
+                       "AddressP2": newline_to_comma(address_p2), "Alias": alias}
+            return self._patch_client(item, desired, "Dane klienta zostały zaktualizowane")
+        except SharePointError as e:
+            return False, f"Błąd podczas aktualizacji klienta: {e}"
+
+    def set_client_extended_fields(self, nip, termin_realizacji=None, termin_platnosci=None,
+                                   warunki_dostawy=None, waznosc_oferty=None,
+                                   gwarancja=None, cena=None):
+        """Update extended nullable text fields for a client by NIP.
+        All parameters are optional; missing values will be set to NULL.
+        """
+        try:
+            if not self.is_available():
+                return False, UNAVAILABLE_MESSAGE
+            item = self._find_client(self._nip_title(nip))
+            if item is None:  # świadoma różnica względem SQLite (tam: cichy sukces) - w SharePoint to realny błąd
+                return False, CLIENT_NOT_FOUND_MESSAGE
+            values = dict(zip(CLIENT_EXTENDED_FIELDS, (termin_realizacji, termin_platnosci, warunki_dostawy,
+                                                      waznosc_oferty, gwarancja, cena)))
+            return self._patch_client(item, values, "Zapisano dodatkowe pola klienta")
+        except SharePointError as e:
+            return False, f"Błąd zapisu dodatkowych pól klienta: {e}"
+
+    def _offers_for_alias(self, alias):
+        """Liczba ofert, których ścieżka kończy się na `_{alias}.docx` (semantyka LIKE jak w SQLite)."""
+        pattern = f"%_{alias}.docx"
+        paths = (i.fields.get("OfferFilePath") for i in self._items("Offers", ("OfferFilePath",)))
+        return sum(1 for path in paths if path is not None and sqlite_like(pattern, path))
+
+    def _delete_verified(self, list_name, item_id, expected_title):
+        """Usuwa element o dokładnym ID, ale dopiero po ponownym odczycie i sprawdzeniu, że jego Title to oczekiwany NIP."""
+        text = str(item_id)
+        if list_name != "Clients" or not (text.isascii() and text.isdigit()):
+            raise SharePointError("Odmowa usunięcia: nieprawidłowa lista lub ID elementu.")
+        path = f"/sites/{self._env.site_id}/lists/{self._env.lists[list_name]}/items/{text}"
+        current = self._request(lambda c: c.get(path, {"$expand": "fields($select=Title)"}), item_scope=True)
+        if (current.get("fields") or {}).get("Title") != expected_title:
+            raise SharePointError(f"Odmowa usunięcia: element {text} nie odpowiada oczekiwanemu NIP-owi.")
+        self._write(lambda w: w.delete_item(list_name, text), item_scope=True)
+
+    def delete_client(self, nip):
+        try:
+            if not self.is_available():
+                return False, UNAVAILABLE_MESSAGE
+            title = self._nip_title(nip)
+            item = self._find_client(title, ("Title", "Alias"))
+            if item is None:
+                return False, CLIENT_NOT_FOUND_MESSAGE
+            offer_count = self._offers_for_alias(_text(item.fields.get("Alias")))
+            if offer_count > 0:
+                return False, f"Nie można usunąć klienta - istnieją {offer_count} ofert(y) dla tego klienta"
+            try:
+                self._delete_verified("Clients", item.id, title)
+            except ItemNotFoundError:
+                self._forget_etag(title)
+                return False, CLIENT_NOT_FOUND_MESSAGE
+            except SharePointError:
+                self._forget_etag(title)  # po błędzie wynik usunięcia może być nieznany - nie ufamy starym danym
+                raise
+            self._forget_etag(title)
+            return True, "Klient został usunięty z bazy"
+        except SharePointError as e:
+            return False, f"Błąd podczas usuwania klienta: {e}"
 
     # ------------------------------------------------------------------
     # dostawcy (odczyt)
@@ -274,10 +523,13 @@ class SharePointBackend(DataBackend):
         """Validate NIP format and uniqueness for suppliers"""
         if not nip.isdigit() or len(nip) != 10:
             return False, "NIP musi składać się z dokładnie 10 cyfr"
+        title = self._nip_title(nip)
+        if title is None:  # cyfry spoza ASCII - nie mogą być NIP-em
+            return False, "NIP musi składać się z dokładnie 10 cyfr"
         try:
             if not self.is_available():
                 return False, "Baza danych jest niedostępna"
-            exists = bool(self._items_by_value("Suppliers", ("Title",), "Title", self._nip_title(nip)))
+            exists = bool(self._items_by_value("Suppliers", ("Title",), "Title", title))
             if exists:
                 return False, "Dostawca z tym NIP już istnieje w bazie"
             return True, "NIP jest prawidłowy"
@@ -402,25 +654,12 @@ class SharePointBackend(DataBackend):
             return []
 
     # ------------------------------------------------------------------
-    # operacje NIEOBSŁUGIWANE w trybie tylko do odczytu (bez żadnych żądań i bez przekierowania do SQLite)
+    # operacje NIEOBSŁUGIWANE (dostawcy, oferty, WZ, numeracja) - bez żadnych żądań i bez przekierowania do SQLite
     # ------------------------------------------------------------------
     @staticmethod
     def _read_only(operation):
         raise ReadOnlyBackendError(
             f"Operacja '{operation}' nie jest jeszcze obsługiwana przez backend SharePoint (tryb tylko do odczytu).")
-
-    def add_client(self, nip, company_name, address_p1, address_p2, alias):
-        self._read_only("add_client")
-
-    def update_client(self, nip, company_name, address_p1, address_p2, alias):
-        self._read_only("update_client")
-
-    def set_client_extended_fields(self, nip, termin_realizacji=None, termin_platnosci=None,
-                                   warunki_dostawy=None, waznosc_oferty=None, gwarancja=None, cena=None):
-        self._read_only("set_client_extended_fields")
-
-    def delete_client(self, nip):
-        self._read_only("delete_client")
 
     def add_supplier(self, nip, company_name, address_p1, address_p2):
         self._read_only("add_supplier")

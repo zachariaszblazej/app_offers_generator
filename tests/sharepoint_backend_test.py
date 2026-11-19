@@ -13,6 +13,8 @@ from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import requests  # noqa: E402
+
 import src.data.backends.sharepoint_backend as sp_module  # noqa: E402
 import src.data.database_service as dbs  # noqa: E402
 import tests.database_service_characterization_test as base  # noqa: E402  (moduł - bez duplikowania testów)
@@ -25,6 +27,7 @@ from src.integrations.sharepoint.graph_client import GraphClient, GraphError  # 
 from src.integrations.sharepoint.migration import mapping  # noqa: E402
 from src.integrations.sharepoint.reader import RetryingGraphClient  # noqa: E402
 from src.integrations.sharepoint.session import NotSignedInError, SharePointSession  # noqa: E402
+from src.integrations.sharepoint.writer import GraphWriter  # noqa: E402
 
 DEV_ENV = get_environment("DEV")
 
@@ -97,17 +100,57 @@ def build_graph_data(tables, start_id=2):
     return data
 
 
+class FakeResponse:
+    def __init__(self, status, body=None, headers=None):
+        self.status_code, self._body, self.headers = status, body, dict(headers or {})
+        self.text = "" if body is None else json.dumps(body)
+
+    def json(self):
+        if self._body is None:
+            raise ValueError("brak treści")
+        return self._body
+
+
+UNIQUE_COLUMNS = {"Clients": ("Title", "Alias"), "Suppliers": ("Title",), "Offers": ("Title", "OfferFilePath"),
+                  "Wuzetkas": ("Title", "WzFilePath")}
+CLIENT_COLUMNS = {"Title", "CompanyName", "AddressP1", "AddressP2", "Alias", "TerminRealizacji", "TerminPlatnosci",
+                  "WarunkiDostawy", "WaznoscOferty", "Gwarancja", "Cena"}
+
+
 class FakeGraph:
-    """Atrapa odczytu Graph: $select, $expand=fields($select=...), $top, $filter (eq/startswith bez rozróżniania wielkości liter),
-    paginacja przez @odata.nextLink. Obsługuje wyłącznie GET."""
+    """Atrapa Graph: $select, $expand=fields($select=...), $top, $filter (eq/startswith bez rozróżniania wielkości liter),
+    paginacja przez @odata.nextLink, odczyt elementu po ID oraz - przez `http` - zapis: POST/PATCH/DELETE z ETagiem,
+    unikalnością Title/Alias bez rozróżniania wielkości liter (HTTP 400 invalidRequest), 412 przy złym If-Match, 404 dla
+    nieistniejącego ID. Pola wymagane NIE są wymuszane (tak jak w prawdziwym Graph). `faults` wstrzykuje awarie zapisu."""
 
     def __init__(self, data, env=DEV_ENV, page_cap=None):
         self.data, self.env, self.page_cap = data, env, page_cap
         self.requests, self._cursors = [], {}
+        self.writes, self.faults = [], []
         self._list_by_id = {v: k for k, v in env.lists.items()}
+        self._next_id = 1 + max([i["id"] for items in data.values() for i in items] or [0])
+
+    # ----- odczyt -----
+    @staticmethod
+    def _etag(item):
+        item.setdefault("guid", f"00000000-0000-0000-0000-{item['id']:012d}")
+        return f'"{item["guid"]},{item.get("version", 1)}"'
+
+    def _public(self, item, fields):
+        return {"id": str(item["id"]), "@odata.etag": self._etag(item),
+                "fields": {k: v for k, v in item["fields"].items() if k in fields}}
 
     def get(self, path_or_url, params=None):
         self.requests.append(("GET", path_or_url, dict(params or {})))
+        if not path_or_url.startswith("http"):
+            one = re.fullmatch(r"/sites/.+?/lists/([0-9a-f-]+)/items/(\d+)", path_or_url)
+            if one:
+                list_name = self._list_by_id[one.group(1)]
+                fields = re.fullmatch(r"fields\(\$select=(.+)\)", (params or {})["$expand"]).group(1).split(",")
+                for item in self.data[list_name]:
+                    if item["id"] == int(one.group(2)):
+                        return self._public(item, fields)
+                raise GraphError("HTTP 404 - itemNotFound", status=404)
         if path_or_url.startswith("http"):
             token = re.search(r"\$skiptoken=(\d+)", path_or_url).group(1)
             list_name, remaining, fields, top = self._cursors[int(token)]
@@ -121,7 +164,7 @@ class FakeGraph:
             top = int(params["$top"])
         size = min(top, self.page_cap or top)
         page, rest = remaining[:size], remaining[size:]
-        result = {"value": [{"id": str(i["id"]), "fields": {k: v for k, v in i["fields"].items() if k in fields}} for i in page]}
+        result = {"value": [self._public(i, fields) for i in page]}
         if rest:
             token = len(self._cursors) + 1
             self._cursors[token] = (list_name, rest, fields, top)
@@ -141,6 +184,77 @@ class FakeGraph:
             field, value = m.group(1), m.group(2).replace("''", "'")
             return [i for i in items if str(i["fields"].get(field, "")).lower().startswith(value.lower())]
         raise AssertionError(f"nieobsługiwany filtr: {flt}")
+
+    # ----- zapis (używany przez GraphWriter jako `http`) -----
+    @staticmethod
+    def _error(status, code, message):
+        return FakeResponse(status, {"error": {"code": code, "message": message}})
+
+    def http(self, method, url, headers=None, json=None, timeout=None):
+        headers = headers or {}
+        path = url[len(GRAPH_BASE_URL):]
+        self.writes.append({"method": method, "path": path, "json": json, "if_match": headers.get("If-Match"),
+                            "auth_present": str(headers.get("Authorization", "")).startswith("Bearer ")})
+        fault = self.faults.pop(0) if self.faults else None
+        if fault and fault["kind"] == "raise":
+            raise requests.ConnectionError("brak połączenia (test)")
+        if fault and fault["kind"] == "status":
+            body = {"error": {"code": fault.get("code", "generalException"),
+                              "message": fault.get("message", "błąd wstrzyknięty w teście")}}
+            return FakeResponse(fault["status"], body, fault.get("headers"))
+        response = self._apply(method, path, json, headers)
+        if fault and fault["kind"] == "lose":  # operacja wykonana, odpowiedź utracona
+            raise requests.ConnectionError("odpowiedź utracona (test)")
+        return response
+
+    def _collision(self, list_name, fields, ignore_id=None):
+        for column in UNIQUE_COLUMNS[list_name]:
+            if column in fields and fields[column] not in (None, ""):
+                for other in self.data[list_name]:
+                    if other["id"] != ignore_id and str(other["fields"].get(column, "")).lower() == str(fields[column]).lower():
+                        return True
+        return False
+
+    def _apply(self, method, path, body, headers):
+        m = re.fullmatch(r"/sites/.+?/lists/([0-9a-f-]+)/items(?:/(\d+)(/fields)?)?", path)
+        assert m, f"nieobsługiwana ścieżka zapisu: {path}"
+        list_name, item_id = self._list_by_id[m.group(1)], m.group(2)
+        unique_error = self._error(400, "invalidRequest", "One or more fields with unique constraints already has the provided value.")
+        if method == "POST" and item_id is None:
+            fields = {k: v for k, v in body["fields"].items() if v not in (None, "")}
+            if list_name == "Clients" and set(fields) - CLIENT_COLUMNS:
+                return self._error(400, "invalidRequest", f"Field '{sorted(set(fields) - CLIENT_COLUMNS)[0]}' is not recognized")
+            if self._collision(list_name, fields):
+                return unique_error
+            item = {"id": self._next_id, "fields": fields, "version": 1}
+            self._next_id += 1
+            self.data[list_name].append(item)
+            return FakeResponse(201, {"id": str(item["id"]), "@odata.etag": self._etag(item), "fields": dict(fields)},
+                                {"ETag": self._etag(item)})
+        item = next((i for i in self.data[list_name] if item_id and i["id"] == int(item_id)), None)
+        if item is None:
+            return self._error(404, "itemNotFound", "The specified list item was not found")
+        if method == "PATCH" and m.group(3):
+            if_match = headers.get("If-Match")
+            if if_match not in (None, "*") and if_match != self._etag(item):
+                return self._error(412, "resourceModified", "The resource has been modified")
+            if list_name == "Clients" and set(body) - CLIENT_COLUMNS:
+                return self._error(400, "invalidRequest", f"Field '{sorted(set(body) - CLIENT_COLUMNS)[0]}' is not recognized")
+            new_fields = dict(item["fields"])
+            for key, value in body.items():
+                if value in (None, ""):
+                    new_fields.pop(key, None)
+                else:
+                    new_fields[key] = value
+            if self._collision(list_name, new_fields, ignore_id=item["id"]):
+                return unique_error
+            item["fields"] = new_fields
+            item["version"] = item.get("version", 1) + 1
+            return FakeResponse(200, {"@odata.etag": self._etag(item), **new_fields}, {"ETag": self._etag(item)})
+        if method == "DELETE" and not m.group(3):
+            self.data[list_name].remove(item)
+            return FakeResponse(204)
+        raise AssertionError(f"nieobsługiwane żądanie: {method} {path}")
 
 
 class FakeSession:
@@ -171,7 +285,7 @@ class SpTestCase(base.DbTestCase):
             for row in rows:
                 cols = [c for c in row if c != "_rowid_"]
                 self.run_sql(f"INSERT INTO {table} ({','.join(cols)}) VALUES ({','.join('?' * len(cols))})", [row[c] for c in cols])
-        self.sp_popups, self.sp_logs, self.clock = [], [], {"now": 1000.0}
+        self.sp_popups, self.sp_logs, self.clock, self.sleeps = [], [], {"now": 1000.0}, []
         self.graph = FakeGraph(self.graph_data or build_graph_data(TABLES), page_cap=self.page_cap)
         self.session = FakeSession()
         context = BackendContext(
@@ -180,7 +294,9 @@ class SpTestCase(base.DbTestCase):
             show_error=lambda title, message: self.sp_popups.append(("error", title, message)),
             log=lambda *a, **k: self.sp_logs.append(a))
         self.sp = SharePointBackend(context, self.session, DEV_ENV, client_factory=lambda: self.graph,
-                                    clock=lambda: self.clock["now"])
+                                    clock=lambda: self.clock["now"],
+                                    writer_factory=lambda: GraphWriter(DEV_ENV, self.session.get_token(), http=self.graph.http,
+                                                                       sleep=self.sleeps.append))
         self.sq = dbs.get_backend()
 
     @staticmethod
@@ -524,9 +640,10 @@ class ErrorConventionTests(SpTestCase):
 # tylko odczyt, DEV-only, brak przekierowania do SQLite
 # ---------------------------------------------------------------------------
 class ReadOnlyAndSafetyTests(SpTestCase):
+    """Operacje spoza zakresu etapu 4A (dostawcy, oferty, WZ, numeracja) nadal są odrzucane."""
+
+    CLIENT_WRITE_METHODS = {"add_client", "update_client", "set_client_extended_fields", "delete_client"}
     WRITE_CALLS = [
-        ("add_client", ("1234563218", "F", "a", "b", "A")), ("update_client", ("1234563218", "F", "a", "b", "A")),
-        ("set_client_extended_fields", ("1234563218", "x")), ("delete_client", ("1234563218",)),
         ("add_supplier", ("1234563218", "D", "a", "b")), ("update_supplier", ("1234563218", "D", "a", "b")),
         ("delete_supplier", ("1234563218",)), ("set_default_supplier", ("1234563218",)),
         ("get_next_offer_number", ()), ("get_next_offer_number_for_year", (2026,)),
@@ -535,30 +652,39 @@ class ReadOnlyAndSafetyTests(SpTestCase):
         ("update_wz_context", ("2026/a.docx", {})), ("delete_wz", (1,)), ("delete_wz_by_file_path", ("2026/a.docx",)),
     ]
 
-    def test_every_write_update_delete_and_numbering_method_is_rejected(self):
-        self.assertEqual(len(self.WRITE_CALLS), 18)
+    def test_every_supplier_offer_wz_and_numbering_write_method_is_still_rejected(self):
+        self.assertEqual(len(self.WRITE_CALLS), 14)
         before = self.rows("SELECT (SELECT COUNT(*) FROM Clients), (SELECT COUNT(*) FROM Offers), (SELECT COUNT(*) FROM Wuzetkas)")
+        data_before = json.dumps(self.graph.data, sort_keys=True)
         for name, args in self.WRITE_CALLS:
             with self.subTest(method=name), self.assertRaises(ReadOnlyBackendError) as caught:
                 getattr(self.sp, name)(*args)
             self.assertIn(name, str(caught.exception))
             self.assertIn("tryb tylko do odczytu", str(caught.exception))
-        self.assertEqual(self.graph.requests, [])  # żadnych żądań
+        self.assertEqual((self.graph.requests, self.graph.writes), ([], []))  # żadnych żądań
+        self.assertEqual(json.dumps(self.graph.data, sort_keys=True), data_before)
         self.assertEqual(self.rows("SELECT (SELECT COUNT(*) FROM Clients), (SELECT COUNT(*) FROM Offers), (SELECT COUNT(*) FROM Wuzetkas)"), before)
         self.assertEqual(self.popups, [])
 
     def test_rejected_operations_do_not_fall_back_to_sqlite(self):
-        before = self.rows("SELECT * FROM Clients ORDER BY Nip")
+        before = self.rows("SELECT * FROM Suppliers ORDER BY Nip")
         with self.assertRaises(ReadOnlyBackendError):
-            self.sp.add_client("5555555559", "Nowy", "a", "b", "NOWY")
-        self.assertEqual(self.rows("SELECT * FROM Clients ORDER BY Nip"), before)
+            self.sp.add_supplier("5555555559", "Nowy", "a", "b")
+        self.assertEqual(self.rows("SELECT * FROM Suppliers ORDER BY Nip"), before)
 
-    def test_all_contract_methods_are_covered_by_read_or_rejection(self):
+    def test_client_write_methods_are_no_longer_read_only_and_never_touch_sqlite(self):
+        before = self.rows("SELECT * FROM Clients ORDER BY Nip")
+        self.assertEqual(self.sp.add_client("5555555559", "Nowy", "a", "b", "NOWY"),
+                         (True, "Klient został pomyślnie dodany do bazy"))
+        self.assertEqual(self.rows("SELECT * FROM Clients ORDER BY Nip"), before)  # zapis poszedł do SharePoint, nie do SQLite
+
+    def test_all_contract_methods_are_covered_by_read_write_or_rejection(self):
         read_methods = {"is_available", "get_clients", "get_client_by_nip", "validate_nip", "validate_alias", "get_suppliers",
                         "get_supplier_by_nip", "get_default_supplier", "validate_supplier_nip", "get_offer_context",
                         "find_offer_by_filename", "get_all_offer_file_paths", "get_wz_context", "get_all_wz",
                         "get_all_wz_file_paths"}
-        self.assertEqual(read_methods | {n for n, _ in self.WRITE_CALLS}, set(DataBackend.__abstractmethods__))
+        covered = read_methods | self.CLIENT_WRITE_METHODS | {n for n, _ in self.WRITE_CALLS}
+        self.assertEqual(covered, set(DataBackend.__abstractmethods__))
 
     def test_only_dev_environment_is_accepted(self):
         prod = get_environment("PROD")
@@ -566,16 +692,23 @@ class ReadOnlyAndSafetyTests(SpTestCase):
             SharePointBackend(BackendContext(lambda: "", lambda: "", lambda: False, lambda t, m: None, lambda *a: None),
                               FakeSession(), prod)
 
-    def test_backend_source_contains_no_write_http_calls_and_no_sqlite(self):
+    def test_backend_source_has_no_direct_http_and_no_sqlite(self):
         source = inspect.getsource(sp_module)
         for forbidden in ("requests.", ".post(", ".patch(", ".put(", ".delete(", "sqlite3", "tkinter", "DELETE", "PATCH"):
             self.assertNotIn(forbidden, source, forbidden)
+
+    def test_backend_writes_only_to_the_clients_list(self):
+        source = inspect.getsource(sp_module)
+        calls = re.findall(r"\.(create_item|update_item_fields|delete_item)\(\s*([^,)]+)", source)
+        self.assertTrue(calls)
+        self.assertEqual({list_arg.strip() for _, list_arg in calls}, {'"Clients"', "list_name"})
+        self.assertIn('list_name != "Clients"', source)  # _delete_verified odrzuca każdą inną listę
 
     def test_facade_default_backend_is_still_sqlite_and_does_not_know_sharepoint(self):
         self.assertEqual(type(dbs.get_backend()).__name__, "SqliteBackend")
         self.assertNotIn("SharePoint", inspect.getsource(dbs))
 
-    def test_real_client_exposes_only_get(self):
+    def test_real_read_client_exposes_only_get(self):
         for name in ("post", "patch", "put", "delete", "request"):
             self.assertFalse(hasattr(RetryingGraphClient, name), name)
 
