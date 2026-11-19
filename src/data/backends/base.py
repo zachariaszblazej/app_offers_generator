@@ -1,0 +1,103 @@
+"""Kontrakt backendu danych aplikacji i zależności wstrzykiwane do backendów.
+
+Fasada `src.data.database_service` deleguje do jednego backendu. Backend zwraca dokładnie te same kształty
+danych co dotychczasowe funkcje publiczne (krotki pozycyjne, `(bool, komunikat)`, `bool`, `None`, listy).
+NIP w krotkach zawsze jest `int` (konwersja do tekstu jest sprawą backendu, który tego wymaga).
+"""
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Callable
+
+
+@dataclass(frozen=True)
+class BackendContext:
+    """Zależności aplikacyjne dostarczane backendowi przez fasadę (wywoływane przy każdym użyciu)."""
+    offers_folder: Callable[[], str]
+    wz_folder: Callable[[], str]
+    popups_enabled: Callable[[], bool]
+    show_error: Callable[[str, str], None]
+    log: Callable[..., None]
+
+
+class DataBackend(ABC):
+    """Operacje danych używane przez aplikację (klienci, dostawcy, oferty, WZ)."""
+
+    # --- dostępność ---
+    @abstractmethod
+    def is_available(self) -> bool: ...
+
+    # --- klienci ---
+    @abstractmethod
+    def get_clients(self, include_extended: bool = False) -> list: ...
+    @abstractmethod
+    def get_client_by_nip(self, nip) -> Any: ...
+    @abstractmethod
+    def validate_nip(self, nip) -> tuple: ...
+    @abstractmethod
+    def validate_alias(self, alias) -> tuple: ...
+    @abstractmethod
+    def add_client(self, nip, company_name, address_p1, address_p2, alias) -> tuple: ...
+    @abstractmethod
+    def update_client(self, nip, company_name, address_p1, address_p2, alias) -> tuple: ...
+    @abstractmethod
+    def set_client_extended_fields(self, nip, termin_realizacji=None, termin_platnosci=None,
+                                   warunki_dostawy=None, waznosc_oferty=None,
+                                   gwarancja=None, cena=None) -> tuple: ...
+    @abstractmethod
+    def delete_client(self, nip) -> tuple: ...
+
+    # --- dostawcy ---
+    @abstractmethod
+    def get_suppliers(self) -> list: ...
+    @abstractmethod
+    def get_supplier_by_nip(self, nip) -> Any: ...
+    @abstractmethod
+    def get_default_supplier(self) -> Any: ...
+    @abstractmethod
+    def validate_supplier_nip(self, nip) -> tuple: ...
+    @abstractmethod
+    def add_supplier(self, nip, company_name, address_p1, address_p2) -> tuple: ...
+    @abstractmethod
+    def update_supplier(self, nip, company_name, address_p1, address_p2) -> tuple: ...
+    @abstractmethod
+    def delete_supplier(self, nip) -> tuple: ...
+    @abstractmethod
+    def set_default_supplier(self, nip) -> tuple: ...
+
+    # --- oferty ---
+    @abstractmethod
+    def get_next_offer_number(self) -> int: ...
+    @abstractmethod
+    def get_next_offer_number_for_year(self, year: int) -> int:
+        """Zgłasza NumberingError zamiast zwracać „domyślny” numer."""
+    @abstractmethod
+    def save_offer(self, offer_order_number, offer_file_path, offer_context=None) -> bool: ...
+    @abstractmethod
+    def get_offer_context(self, offer_file_path) -> Any: ...
+    @abstractmethod
+    def update_offer_context(self, offer_file_path, offer_context) -> bool: ...
+    @abstractmethod
+    def delete_offer(self, offer_file_path) -> tuple: ...
+    @abstractmethod
+    def find_offer_by_filename(self, filename) -> Any: ...
+    @abstractmethod
+    def get_all_offer_file_paths(self) -> list: ...
+
+    # --- WZ ---
+    @abstractmethod
+    def get_next_wz_number(self, year: int) -> int:
+        """Zgłasza NumberingError zamiast zwracać „domyślny” numer."""
+    @abstractmethod
+    def save_wz(self, wz_order_number, wz_file_path, wz_context=None) -> tuple: ...
+    @abstractmethod
+    def get_wz_context(self, wz_file_path) -> Any: ...
+    @abstractmethod
+    def update_wz_context(self, wz_file_path, wz_context) -> bool: ...
+    @abstractmethod
+    def get_all_wz(self) -> list: ...
+    @abstractmethod
+    def delete_wz(self, wz_id) -> tuple: ...
+    @abstractmethod
+    def delete_wz_by_file_path(self, wz_file_path: str) -> tuple: ...
+    @abstractmethod
+    def get_all_wz_file_paths(self) -> list: ...
