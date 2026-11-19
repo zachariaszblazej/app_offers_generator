@@ -33,9 +33,10 @@ REQUEST_TIMEOUT = 30
 class GraphError(Exception):
     """Błąd komunikacji z Graph API (komunikat nie zawiera tokenu)."""
 
-    def __init__(self, message, status=None):
+    def __init__(self, message, status=None, retry_after=None):
         super().__init__(message)
         self.status = status
+        self.retry_after = retry_after
 
 
 class AuthError(Exception):
@@ -165,7 +166,11 @@ class GraphClient:
             403: "HTTP 403 - brak uprawnień do zasobu (uprawnień nie zmieniam automatycznie).",
             404: "HTTP 404 - nie znaleziono zasobu lub brak dostępu do witryny (Sites.Selected bez grantu).",
         }.get(resp.status_code, f"HTTP {resp.status_code}")
-        raise GraphError(f"{hint} URL: {url} Szczegóły: {details}", status=resp.status_code)
+        raise GraphError(
+            f"{hint} URL: {url} Szczegóły: {details}",
+            status=resp.status_code,
+            retry_after=resp.headers.get("Retry-After"),
+        )
 
     def get_all(self, path, params=None):
         """Zbiera wszystkie strony kolekcji (@odata.nextLink)."""
