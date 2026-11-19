@@ -7,7 +7,8 @@ Zabezpieczenia przed pomyłką środowiska:
 * ścieżki zapytań muszą dotyczyć Site ID klienta i nie mogą zawierać żadnego identyfikatora
   witryny ani listy z innego środowiska.
 
-Klient udostępnia tylko metodę GET. Tokeny nie są logowane ani zapisywane na dysku.
+Klient udostępnia tylko metodę GET. Tokeny dostępu nie są logowane; na dysku trafia wyłącznie cache MSAL
+zaszyfrowany przez Windows DPAPI (token_cache.py).
 """
 import logging
 import threading
@@ -24,6 +25,7 @@ from .config import (
     get_tenant_id,
 )
 from .environment import get_active_environment
+from .token_cache import create_default_cache
 
 _log = logging.getLogger("sharepoint.graph")
 
@@ -48,21 +50,46 @@ class EnvironmentMismatchError(Exception):
 
 
 _msal_app = None
+_persistent_cache = None
 _msal_lock = threading.Lock()
 
 
 def _get_msal_app():
-    """Jedna aplikacja MSAL z cache tylko w pamięci (ta sama rejestracja dla DEV i PROD)."""
-    global _msal_app
+    """Jedna aplikacja MSAL (ta sama rejestracja dla DEV i PROD) z trwałym cache szyfrowanym DPAPI.
+
+    Gdy trwały cache jest niedostępny (np. poza Windows), cache pozostaje tylko w pamięci."""
+    global _msal_app, _persistent_cache
     with _msal_lock:
         if _msal_app is None:
             import msal
 
+            # MSAL na poziomie DEBUG loguje zdarzenia z danymi konta/tokenów (aplikacja loguje do pliku na DEBUG)
+            logging.getLogger("msal").setLevel(logging.WARNING)
+            _persistent_cache = create_default_cache()
             _msal_app = msal.PublicClientApplication(
                 get_client_id(),
                 authority=f"https://login.microsoftonline.com/{get_tenant_id()}",
+                token_cache=_persistent_cache.cache if _persistent_cache else None,
             )
         return _msal_app
+
+
+def _persist_cache():
+    """Zapisuje cache po operacji MSAL (tylko gdy się zmienił); błędy zapisu nie przerywają pracy."""
+    if _persistent_cache is not None:
+        _persistent_cache.save()
+
+
+def forget_account():
+    """Wylogowanie z zapomnieniem: usuwa konta z cache MSAL oraz zaszyfrowany plik cache z dysku."""
+    try:
+        app = _get_msal_app()
+        for account in app.get_accounts():
+            app.remove_account(account)
+    except Exception as e:
+        _log.warning("Nie udało się usunąć kont z cache MSAL (%s).", type(e).__name__)
+    if _persistent_cache is not None:
+        _persistent_cache.clear()
 
 
 def acquire_token(interactive_log=None):
@@ -83,6 +110,8 @@ def acquire_token(interactive_log=None):
             result = app.acquire_token_interactive(scopes=list(SCOPES), prompt="select_account")
     except Exception as e:
         raise AuthError(f"Błąd logowania MSAL: {e}")
+    finally:
+        _persist_cache()
 
     if not result or "access_token" not in result:
         details = ""
@@ -90,6 +119,24 @@ def acquire_token(interactive_log=None):
             details = f"{result.get('error')}: {result.get('error_description')}"
         raise AuthError(f"Logowanie nie zwróciło tokenu dostępowego. {details}".strip())
     return result
+
+
+def acquire_token_silent():
+    """Wynik MSAL z cache aplikacji bez żadnej interakcji z użytkownikiem albo None (brak konta/odświeżenie niemożliwe)."""
+    try:
+        app = _get_msal_app()
+    except ImportError:
+        return None
+    try:
+        accounts = app.get_accounts()
+        if not accounts:
+            return None
+        result = app.acquire_token_silent(list(SCOPES), account=accounts[0])
+    except Exception:
+        return None
+    finally:
+        _persist_cache()
+    return result if result and "access_token" in result else None
 
 
 class GraphClient:
