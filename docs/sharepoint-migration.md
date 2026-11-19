@@ -113,5 +113,6 @@ usuwania oraz walidacja katalogu danych (poza repozytorium).
 ## Czego ta migracja nie zmienia
 
 Aplikacja (`src/data/database_service.py` i logika biznesowa) nadal czyta i zapisuje dane w SQLite.
-Przełączenie aplikacji na SharePoint, operacje CRUD na listach, migracja do PROD oraz ewentualna
-migracja dokumentów dodanych po 2026-11-18 to osobne etapy.
+Przełączenie aplikacji na SharePoint, migracja do PROD oraz ewentualna migracja dokumentów dodanych po 2026-11-18
+to osobne etapy. Backend SharePoint (odczyt oraz CRUD klientów i dostawców, bez podłączenia do fasady) opisują
+[sharepoint-graph-behavior.md](./sharepoint-graph-behavior.md) i [sharepoint-backend-tests.md](./sharepoint-backend-tests.md).
